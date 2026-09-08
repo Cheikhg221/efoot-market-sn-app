@@ -1374,6 +1374,365 @@
     }
 
     /* ==========================================================
+       9bis. STYLES TRANSACTIONS, AVIS ÉTOILÉS & PROFIL VENDEUR
+       ========================================================== */
+    .modal-card-lg {
+      max-width: 640px !important;
+      max-height: 88vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .modal-close-btn:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Bannière de transaction dans la messagerie */
+    .chat-transaction-banner {
+      background: #1c1c1c;
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tx-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tx-banner-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-white);
+    }
+
+    .tx-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .tx-status-badge.ongoing {
+      background: rgba(255, 214, 0, 0.15);
+      color: #FFD600;
+      border: 1px solid rgba(255, 214, 0, 0.35);
+    }
+
+    .tx-status-badge.completed {
+      background: rgba(0, 200, 83, 0.15);
+      color: #00E676;
+      border: 1px solid rgba(0, 200, 83, 0.35);
+    }
+
+    .btn-tx-complete {
+      background: #00C853;
+      color: #000;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      font-size: 12.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-tx-complete:hover {
+      background: #00E676;
+      transform: translateY(-1px);
+    }
+
+    .btn-tx-review {
+      background: #FFD600;
+      color: #000;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      font-size: 12.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-tx-review:hover {
+      background: #ffe033;
+      transform: translateY(-1px);
+    }
+
+    /* Sélecteur d'étoiles interactif */
+    .stars-select-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 16px 12px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .stars-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 6px;
+      user-select: none;
+    }
+
+    .star-btn {
+      font-size: 36px;
+      cursor: pointer;
+      color: #4b5563;
+      transition: transform 0.15s ease, color 0.15s ease;
+      line-height: 1;
+      display: inline-block;
+    }
+
+    .star-btn:hover {
+      transform: scale(1.18);
+    }
+
+    .star-btn.active, .star-btn.hover {
+      color: var(--badge-gold);
+      text-shadow: 0 0 14px rgba(255, 214, 0, 0.6);
+    }
+
+    .star-feedback-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--badge-gold);
+      min-height: 20px;
+    }
+
+    /* Suggestions de tags d'avis */
+    .review-tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 14px 0;
+    }
+
+    .review-quick-chip {
+      background: #252525;
+      border: 1px solid #3d3d3d;
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      color: var(--text-gray);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .review-quick-chip:hover {
+      color: var(--text-white);
+      border-color: var(--primary);
+      background: rgba(0, 200, 83, 0.12);
+    }
+
+    /* Cartes d'avis */
+    .reviews-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .review-card {
+      background: #232323;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      transition: var(--transition);
+    }
+
+    .review-card:hover {
+      border-color: #444;
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .review-author-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .review-author-name {
+      font-weight: 600;
+      font-size: 13.5px;
+      color: var(--text-white);
+    }
+
+    .review-date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .review-verified-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      background: rgba(0, 200, 83, 0.12);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    .review-stars-gold {
+      color: var(--badge-gold);
+      font-size: 14px;
+      letter-spacing: 2px;
+    }
+
+    .review-comment-text {
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    /* Profil Vendeur Modal */
+    .seller-profile-hero {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      background: #252525;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .seller-avatar-large {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00C853, #1565C0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .seller-stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .seller-stat-box {
+      background: #232323;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+    }
+
+    .seller-stat-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-white);
+    }
+
+    .seller-stat-lbl {
+      font-size: 11px;
+      color: var(--text-gray);
+    }
+
+    .rating-bars-box {
+      background: #202020;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .bar-progress {
+      height: 100%;
+      background: var(--badge-gold);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Carte de transaction sur la page détail */
+    .detail-transaction-card {
+      background: #222222;
+      border: 1px solid rgba(0, 200, 83, 0.3);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .detail-reviews-container {
+      background: #1a1a1a;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-top: 16px;
+    }
+
+    /* ==========================================================
        10. MODALE PROFIL UTILISATEUR & NOTIFICATIONS TOAST
        ========================================================== */
     .modal-backdrop {
@@ -1705,6 +2064,28 @@
             </select>
           </div>
 
+          <!-- Filtre Localité (14 régions du Sénégal) -->
+          <div class="filter-item">
+            <label for="filter-region">Localité (Région)</label>
+            <select id="filter-region" class="filter-select" onchange="appliquerFiltres()">
+              <option value="toutes">Toutes les régions (14)</option>
+              <option value="Dakar">Dakar</option>
+              <option value="Diourbel">Diourbel</option>
+              <option value="Fatick">Fatick</option>
+              <option value="Kaffrine">Kaffrine</option>
+              <option value="Kaolack">Kaolack</option>
+              <option value="Kédougou">Kédougou</option>
+              <option value="Kolda">Kolda</option>
+              <option value="Louga">Louga</option>
+              <option value="Matam">Matam</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Sédhiou">Sédhiou</option>
+              <option value="Tambacounda">Tambacounda</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Ziguinchor">Ziguinchor</option>
+            </select>
+          </div>
+
           <!-- Tri -->
           <div class="filter-item">
             <label for="filter-sort">Trier par</label>
@@ -1807,20 +2188,47 @@
             </div>
           </div>
 
-          <!-- Numéro WhatsApp -->
-          <div class="form-group">
-            <label for="pub-whatsapp">
-              <span>Numéro WhatsApp <span class="required-star">*</span></span>
-              <small style="color: var(--text-muted); font-weight: 400;">+221XXXXXXXX</small>
-            </label>
-            <input 
-              type="text" 
-              id="pub-whatsapp" 
-              class="form-control" 
-              placeholder="Ex : 221771234567"
-              oninput="validerChamp('pub-whatsapp')"
-            >
-            <div class="error-msg" id="err-pub-whatsapp">Numéro sénégalais invalide (ex: 221771234567 ou +221771234567).</div>
+          <!-- Région & Numéro WhatsApp -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="pub-region">
+                <span>Région / Localité <span class="required-star">*</span></span>
+                <small style="color: var(--text-muted); font-weight: 400;">14 régions</small>
+              </label>
+              <select id="pub-region" class="form-control" onchange="validerChamp('pub-region')">
+                <option value="">Sélectionnez votre région</option>
+                <option value="Dakar">Dakar</option>
+                <option value="Diourbel">Diourbel</option>
+                <option value="Fatick">Fatick</option>
+                <option value="Kaffrine">Kaffrine</option>
+                <option value="Kaolack">Kaolack</option>
+                <option value="Kédougou">Kédougou</option>
+                <option value="Kolda">Kolda</option>
+                <option value="Louga">Louga</option>
+                <option value="Matam">Matam</option>
+                <option value="Saint-Louis">Saint-Louis</option>
+                <option value="Sédhiou">Sédhiou</option>
+                <option value="Tambacounda">Tambacounda</option>
+                <option value="Thiès">Thiès</option>
+                <option value="Ziguinchor">Ziguinchor</option>
+              </select>
+              <div class="error-msg" id="err-pub-region">Veuillez sélectionner votre région au Sénégal.</div>
+            </div>
+
+            <div class="form-group">
+              <label for="pub-whatsapp">
+                <span>Numéro WhatsApp <span class="required-star">*</span></span>
+                <small style="color: var(--text-muted); font-weight: 400;">+221XXXXXXXX</small>
+              </label>
+              <input 
+                type="text" 
+                id="pub-whatsapp" 
+                class="form-control" 
+                placeholder="Ex : 221771234567"
+                oninput="validerChamp('pub-whatsapp')"
+              >
+              <div class="error-msg" id="err-pub-whatsapp">Numéro sénégalais invalide (ex: 221771234567 ou +221771234567).</div>
+            </div>
           </div>
 
           <!-- Puissance d'équipe -->
@@ -1933,6 +2341,11 @@
             </div>
           </div>
 
+          <!-- Bannière de gestion de transaction -->
+          <div class="chat-transaction-banner" id="chat-tx-banner" style="display: none;">
+            <!-- Rendu dynamique -->
+          </div>
+
           <div class="chat-messages-area" id="chat-messages-flow">
             <!-- Messages injectés dynamiquement -->
           </div>
@@ -2009,6 +2422,100 @@
   </div>
 
   <!-- ==========================================================
+       MODALE : LAISSER UN AVIS ÉTOILÉ & COMMENTAIRE SUR LE VENDEUR
+       ========================================================== -->
+  <div class="modal-backdrop" id="review-modal">
+    <div class="modal-card">
+      <div class="modal-header-row">
+        <div class="modal-title" style="margin-bottom: 0;">
+          <span>⭐</span>
+          <span id="review-modal-title">Évaluer le vendeur</span>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="fermerModalAvis()" title="Fermer">✕</button>
+      </div>
+
+      <div style="background: rgba(0, 200, 83, 0.08); border: 1px solid rgba(0, 200, 83, 0.25); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 12.5px;">
+        <div style="font-weight: 600; color: var(--primary);" id="review-modal-account-title">Compte eFootball</div>
+        <div style="color: var(--text-gray); margin-top: 2px;">
+          Transaction marquée comme <strong style="color: var(--primary);">Terminée</strong>. Évaluez votre expérience pour aider les autres joueurs.
+        </div>
+      </div>
+
+      <!-- Sélecteur d'étoiles interactif (1 à 5) -->
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label>Votre note globale <span class="required-star">*</span></label>
+        <div class="stars-select-box">
+          <div class="stars-row" id="star-picker-row">
+            <span class="star-btn active" data-value="1" onmouseover="survolEtoile(1)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(1)">★</span>
+            <span class="star-btn active" data-value="2" onmouseover="survolEtoile(2)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(2)">★</span>
+            <span class="star-btn active" data-value="3" onmouseover="survolEtoile(3)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(3)">★</span>
+            <span class="star-btn active" data-value="4" onmouseover="survolEtoile(4)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(4)">★</span>
+            <span class="star-btn active" data-value="5" onmouseover="survolEtoile(5)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(5)">★</span>
+          </div>
+          <div class="star-feedback-label" id="star-rating-feedback">⭐️⭐️⭐️⭐️⭐️ 5.0 - Excellent ! Vendeur très recommandé</div>
+        </div>
+      </div>
+
+      <!-- Commentaire textuel -->
+      <div class="form-group">
+        <label for="review-comment-text">
+          <span>Votre commentaire textuel <span class="required-star">*</span></span>
+          <span style="font-size: 11px; color: var(--text-muted);" id="review-chars-counter">0/500</span>
+        </label>
+        <textarea 
+          id="review-comment-text" 
+          class="form-control" 
+          rows="4" 
+          placeholder="Ex : Vendeur rapide et honnête, compte Konami ID transféré en 5 min. Équipe et joueurs conformes, paiement Wave sécurisé. Je recommande !" 
+          maxlength="500"
+          oninput="gererSaisieCommentaire(this.value)"
+        ></textarea>
+        <div class="error-msg" id="err-review-comment">Veuillez rédiger un commentaire d'au moins 6 caractères pour valider votre avis.</div>
+
+        <!-- Mots-clés rapides -->
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Idées de commentaires en 1 clic :</div>
+        <div class="review-tags-row">
+          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('⚡ Transfert Konami ID très rapide')">⚡ Transfert rapide</button>
+          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('🤝 Vendeur honnête et disponible')">🤝 Vendeur honnête</button>
+          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('⚽ Effectif conforme aux captures')">⚽ Effectif conforme</button>
+          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('🌊 Paiement Wave fluide')">🌊 Paiement Wave fluide</button>
+          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('⭐️ Je recommande fort')">⭐️ Je recommande</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button type="button" class="btn-secondary" style="flex: 1;" onclick="fermerModalAvis()">
+          Annuler
+        </button>
+        <button type="button" id="btn-submit-review" class="btn-primary" style="flex: 2;" onclick="confirmerEnvoiAvis()" disabled>
+          <span>⭐</span> Publier mon avis
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALE : PROFIL COMPLET DU VENDEUR (AVIS & STATISTIQUES)
+       ========================================================== -->
+  <div class="modal-backdrop" id="seller-profile-modal">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header-row">
+        <div class="modal-title" style="margin-bottom: 0;">
+          <span>👤</span>
+          <span>Profil du vendeur</span>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="fermerProfilVendeur()" title="Fermer">✕</button>
+      </div>
+
+      <!-- Contenu injecté dynamiquement via JavaScript -->
+      <div id="seller-profile-modal-content">
+        <!-- Rendu dynamique -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
        NOTIFICATION TOAST GLOBALE
        ========================================================== -->
   <div class="toast-box" id="global-toast">
@@ -2029,10 +2536,19 @@
     let uploadedImageBase64 = null;
     let pendingActionCallback = null;
 
+    // État spécifique aux transactions & avis
+    let currentReviewTransactionId = null;
+    let currentReviewVendeurNom = null;
+    let currentReviewAnnonceId = null;
+    let currentReviewTitreAnnonce = null;
+    let currentRatingSelected = 5;
+
     // Constantes de stockage local
     const STORAGE_ANNONCES = 'efoot_annonces';
     const STORAGE_MESSAGES = 'efoot_messages';
     const STORAGE_PROFIL = 'efoot_profil';
+    const STORAGE_TRANSACTIONS = 'efoot_transactions';
+    const STORAGE_AVIS = 'efoot_avis';
 
     /* ==========================================================
        SECTION 2 : UTILITAIRES & NOTIFICATIONS
@@ -2181,7 +2697,22 @@
     function getAnnonces() {
       try {
         const raw = localStorage.getItem(STORAGE_ANNONCES);
-        return raw ? JSON.parse(raw) : [];
+        const liste = raw ? JSON.parse(raw) : [];
+        let modifie = false;
+        const mapped = liste.map(item => {
+          if (!item.region) {
+            modifie = true;
+            if (item.id === 'efoot_demo_1') item.region = 'Dakar';
+            else if (item.id === 'efoot_demo_2') item.region = 'Thiès';
+            else if (item.id === 'efoot_demo_3') item.region = 'Saint-Louis';
+            else item.region = 'Dakar';
+          }
+          return item;
+        });
+        if (modifie) {
+          localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(mapped));
+        }
+        return mapped;
       } catch (e) {
         console.error("Erreur de lecture des annonces", e);
         return [];
@@ -2299,6 +2830,9 @@
       }
       document.querySelectorAll('.power-chip').forEach(c => c.classList.remove('active'));
       document.getElementById('filter-platform').value = "toutes";
+      if (document.getElementById('filter-region')) {
+        document.getElementById('filter-region').value = "toutes";
+      }
       document.getElementById('filter-sort').value = "date-desc";
       appliquerFiltres();
       afficherNotification("Filtres réinitialisés");
@@ -2314,6 +2848,7 @@
       const prixMaxVal = document.getElementById('filter-price-max').value;
       const prixMax = prixMaxVal ? parseFloat(prixMaxVal) : Infinity;
       const plateforme = document.getElementById('filter-platform').value;
+      const region = document.getElementById('filter-region') ? document.getElementById('filter-region').value : 'toutes';
       const tri = document.getElementById('filter-sort').value;
 
       // Puissance d'équipe recherchée
@@ -2323,12 +2858,13 @@
       const powerMode = powerModeEl ? powerModeEl.value : 'min';
 
       let resultats = annonces.filter(item => {
-        // Recherche sur titre et description
+        // Recherche sur titre, description, vendeur et région
         if (motCle) {
           const dansTitre = item.titre && item.titre.toLowerCase().includes(motCle);
           const dansDesc = item.description && item.description.toLowerCase().includes(motCle);
           const dansVendeur = item.vendeur && item.vendeur.toLowerCase().includes(motCle);
-          if (!dansTitre && !dansDesc && !dansVendeur) return false;
+          const dansRegion = item.region && item.region.toLowerCase().includes(motCle);
+          if (!dansTitre && !dansDesc && !dansVendeur && !dansRegion) return false;
         }
 
         // Filtre de prix
@@ -2337,6 +2873,12 @@
 
         // Filtre Plateforme
         if (plateforme !== 'toutes' && item.plateforme !== plateforme) return false;
+
+        // Filtre Localité (Région parmi les 14 régions du Sénégal)
+        if (region !== 'toutes') {
+          const itemRegion = item.region || 'Dakar';
+          if (itemRegion !== region) return false;
+        }
 
         // Filtre Puissance d'équipe personnalisée
         if (powerVal !== null && !isNaN(powerVal)) {
@@ -2401,7 +2943,9 @@
              <span class="placeholder-label">eFootball</span>
            </div>`;
 
-        const noteAffichage = ad.note ? ad.note.toFixed(1) : "5.0";
+        const statsVendeur = getNoteEtAvisVendeur(ad.vendeur);
+        const noteAffichage = statsVendeur.noteMoyenne.toFixed(1);
+        const totalAvis = statsVendeur.totalAvis;
 
         return `
           <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
@@ -2419,15 +2963,23 @@
                 <div class="card-price">${formaterPrix(ad.prix)}</div>
                 ${ad.puissance ? `<div class="card-power-badge">💪 ${ad.puissance}</div>` : ''}
               </div>
-              <div class="card-seller-row">
+              <div class="card-location-row" style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin: 6px 0 8px 0;">
+                <span style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-gray); font-weight: 500;">
+                  <span>📍</span>
+                  <span>${ad.region || 'Sénégal'}</span>
+                </span>
+                <span style="font-size: 11px;">Publié le ${formaterDate(ad.date)}</span>
+              </div>
+              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')" style="cursor: pointer;" title="Voir le profil et les avis de ${ad.vendeur}">
                 <div class="card-seller-info">
                   <span>👤</span>
                   <span class="card-seller-name">${ad.vendeur}</span>
                   ${ad.verifie ? '<span style="color: var(--primary);" title="Vendeur vérifié">✅</span>' : ''}
                 </div>
-                <div class="card-seller-rating">
+                <div class="card-seller-rating" style="display: inline-flex; align-items: center; gap: 3px;">
                   <span>★</span>
                   <span>${noteAffichage}</span>
+                  <span style="font-size: 10px; color: var(--text-muted);">(${totalAvis})</span>
                 </div>
               </div>
             </div>
@@ -2468,12 +3020,14 @@
       const titreInput = document.getElementById('pub-title');
       const descInput = document.getElementById('pub-desc');
       const prixInput = document.getElementById('pub-price');
+      const regionInput = document.getElementById('pub-region');
       const whatsappInput = document.getElementById('pub-whatsapp');
       const powerInput = document.getElementById('pub-power');
 
       let titreValide = titreInput.value.trim().length >= 5;
       let descValide = descInput.value.trim().length >= 10;
       let prixValide = !isNaN(prixInput.value) && parseFloat(prixInput.value) > 0;
+      let regionValide = !regionInput || (regionInput.value.trim() !== "");
       let whatsappValide = validerFormatWhatsApp(whatsappInput.value.trim());
       let powerValide = false;
       if (powerInput) {
@@ -2498,6 +3052,11 @@
       if (fieldId === 'pub-title') toggleError('err-pub-title', titreValide);
       if (fieldId === 'pub-desc') toggleError('err-pub-desc', descValide);
       if (fieldId === 'pub-price') toggleError('err-pub-price', prixValide);
+      if (fieldId === 'pub-region') {
+        const errEl = document.getElementById('err-pub-region');
+        if (errEl) errEl.classList.toggle('visible', !regionValide);
+        if (regionInput) regionInput.classList.toggle('invalid', !regionValide);
+      }
       if (fieldId === 'pub-whatsapp') toggleError('err-pub-whatsapp', whatsappValide);
       if (fieldId === 'pub-power') {
         const errEl = document.getElementById('err-pub-power');
@@ -2513,7 +3072,7 @@
 
       // Activation dynamique du bouton de soumission
       const boutonPublier = document.getElementById('btn-submit-publish');
-      const formulaireCompletValide = titreValide && descValide && prixValide && whatsappValide && powerValide && imageValide;
+      const formulaireCompletValide = titreValide && descValide && prixValide && regionValide && whatsappValide && powerValide && imageValide;
       boutonPublier.disabled = !formulaireCompletValide;
 
       return formulaireCompletValide;
@@ -2567,6 +3126,12 @@
           if (errImg) errImg.classList.add('visible');
           if (dropzone) dropzone.classList.add('invalid');
         }
+        const errReg = document.getElementById('err-pub-region');
+        const regInput = document.getElementById('pub-region');
+        if (regInput && !regInput.value) {
+          if (errReg) errReg.classList.add('visible');
+          regInput.classList.add('invalid');
+        }
         afficherNotification("Veuillez remplir tous les champs obligatoires et ajouter une image du compte", "⚠️");
         return;
       }
@@ -2576,6 +3141,7 @@
         const description = document.getElementById('pub-desc').value.trim();
         const prix = parseFloat(document.getElementById('pub-price').value);
         const plateforme = document.getElementById('pub-platform').value;
+        const region = document.getElementById('pub-region') ? document.getElementById('pub-region').value : 'Dakar';
         let puissance = document.getElementById('pub-power').value;
         if (puissance === 'custom') {
           const exactVal = document.getElementById('pub-power-exact').value.trim();
@@ -2590,6 +3156,7 @@
           description: description,
           prix: prix,
           plateforme: plateforme,
+          region: region,
           puissance: puissance,
           telephoneWhatsApp: telephone,
           image: uploadedImageBase64 || null,
@@ -2613,6 +3180,10 @@
         if (dropzone) dropzone.classList.remove('invalid');
         const errImg = document.getElementById('err-pub-image');
         if (errImg) errImg.classList.remove('visible');
+        const errReg = document.getElementById('err-pub-region');
+        if (errReg) errReg.classList.remove('visible');
+        const regField = document.getElementById('pub-region');
+        if (regField) regField.classList.remove('invalid');
         document.getElementById('btn-submit-publish').disabled = true;
 
         afficherNotification("Compte eFootball publié avec succès !", "🚀");
@@ -2652,7 +3223,25 @@
            <span class="placeholder-label">eFootball Sénégal</span>
          </div>`;
 
-      const noteText = ad.note ? ad.note.toFixed(1) : "5.0";
+      const statsVendeur = getNoteEtAvisVendeur(ad.vendeur);
+      const noteText = statsVendeur.noteMoyenne.toFixed(1);
+      const totalAvis = statsVendeur.totalAvis;
+      const listeAvis = statsVendeur.avis;
+
+      const profil = getProfilUtilisateur();
+      const monNom = profil ? profil.nom : "";
+      const estMonAnnonce = ad.vendeur === monNom;
+
+      // Chercher si une transaction existe pour cette annonce avec cet utilisateur
+      const transactions = getTransactions();
+      const maTx = transactions.find(t => t.annonceId === ad.id && t.acheteurNom === monNom);
+      const convs = getConversations();
+      const maConv = convs.find(c => c.annonceId === ad.id && c.acheteurNom === monNom);
+      const estTerminee = (maTx && maTx.statut === 'terminee') || (maConv && maConv.statutTransaction === 'terminee');
+
+      const tousAvis = getAvis();
+      const monAvis = tousAvis.find(a => (maTx && a.transactionId === maTx.id) || (a.vendeurNom === ad.vendeur && a.acheteurNom === monNom && a.annonceId === ad.id));
+
       const messageWA = encodeURIComponent(`Bonjour ${ad.vendeur}, je vous contacte depuis EFoot Market SN pour votre compte "${ad.titre}" affiché à ${formaterPrix(ad.prix)}.`);
       const lienWhatsApp = `https://wa.me/${ad.telephoneWhatsApp}?text=${messageWA}`;
 
@@ -2671,6 +3260,7 @@
         <div class="detail-content">
           <div class="detail-badges-row">
             <span class="badge-pill primary">🎮 ${ad.plateforme}</span>
+            <span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.12); border: 1px solid rgba(33, 150, 243, 0.25);">📍 ${ad.region || 'Sénégal'}</span>
             ${ad.puissance ? `<span class="badge-pill" style="color: var(--primary); background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">💪 ${ad.puissance}</span>` : ''}
             ${ad.typeCompte ? `<span class="badge-pill">💎 ${ad.typeCompte}</span>` : ''}
           </div>
@@ -2697,8 +3287,8 @@
             <p>${ad.description}</p>
           </div>
 
-          <!-- Section Vendeur -->
-          <div class="detail-seller-box">
+          <!-- Section Vendeur avec lien vers son profil & avis -->
+          <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${ad.vendeur}')" title="Voir le profil complet et les avis de ${ad.vendeur}">
             <div class="seller-left">
               <div class="seller-avatar">👤</div>
               <div>
@@ -2707,12 +3297,14 @@
                   ${ad.verifie ? '<span class="verified-chip">✅ Vérifié</span>' : ''}
                 </div>
                 <div class="seller-meta-sub">
-                  ★ ${noteText} sur 5.0 (Vendeur certifié)
+                  ★ <strong style="color: var(--badge-gold);">${noteText}</strong> sur 5.0 (${totalAvis} avis vérifié${totalAvis > 1 ? 's' : ''}) • 📍 ${ad.region || 'Sénégal'}
                 </div>
               </div>
             </div>
-            <div style="font-size: 12px; color: var(--text-muted); text-align: right;">
-              Tel : +${ad.telephoneWhatsApp}
+            <div>
+              <button class="btn-secondary" style="font-size: 11.5px; padding: 4px 10px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')">
+                Voir profil & avis (${totalAvis}) →
+              </button>
             </div>
           </div>
 
@@ -2725,8 +3317,772 @@
               <span>✉️</span> Message au vendeur
             </button>
           </div>
+
+          <!-- Carte de Suivi de Transaction & Avis -->
+          <div class="detail-transaction-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+              <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                <span>🤝</span>
+                <span>Statut de transaction eFootball</span>
+              </div>
+              <span class="tx-status-badge ${estTerminee ? 'completed' : 'ongoing'}">
+                ${estTerminee ? '✅ Transaction Terminée' : '🟡 Transaction en cours'}
+              </span>
+            </div>
+
+            ${estMonAnnonce ? `
+              <div style="font-size: 12.5px; color: var(--text-gray);">
+                Vous êtes le vendeur de ce compte. Les acheteurs peuvent marquer la transaction comme terminée et vous laisser un avis étoilé.
+              </div>
+            ` : (estTerminee ? `
+              <div style="font-size: 12.5px; color: #00E676; margin-bottom: 8px;">
+                Transaction marquée comme terminée pour ce compte eFootball.
+              </div>
+              ${monAvis ? `
+                <div style="background: rgba(255, 214, 0, 0.1); border: 1px solid rgba(255, 214, 0, 0.25); border-radius: 6px; padding: 8px 12px; font-size: 12.5px;">
+                  <div style="color: var(--badge-gold); font-weight: 600;">⭐ Votre avis : ${monAvis.note}/5.0</div>
+                  <div style="color: var(--text-gray); margin-top: 3px;">« ${monAvis.commentaire} »</div>
+                </div>
+                <button class="btn-secondary" style="font-size: 11.5px; margin-top: 8px;" onclick="ouvrirModalAvisPourAnnonce('${ad.id}')">
+                  ✏️ Modifier mon avis
+                </button>
+              ` : `
+                <div style="font-size: 12px; color: var(--text-gray); margin-bottom: 8px;">
+                  Vous n'avez pas encore laissé d'avis sur ${ad.vendeur}. Partagez votre expérience avec la communauté !
+                </div>
+                <button class="btn-tx-review" onclick="ouvrirModalAvisPourAnnonce('${ad.id}')">
+                  ⭐ Laisser un avis sur le profil de ${ad.vendeur}
+                </button>
+              `}
+            ` : `
+              <div style="font-size: 12.5px; color: var(--text-gray); margin-bottom: 10px;">
+                Vous achetez ce compte ? Dès réception des identifiants Konami ID et finalisation du paiement Wave/OM, marquez la transaction comme terminée pour laisser une note et un commentaire sur le profil du vendeur.
+              </div>
+              <button class="btn-tx-complete" onclick="marquerTransactionTermineePourAnnonce('${ad.id}')">
+                ✅ Marquer la transaction comme 'Terminée'
+              </button>
+            `)}
+          </div>
+
+          <!-- Section Avis & Commentaires sur le Vendeur -->
+          <div class="detail-reviews-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <h3 style="font-size: 15px; font-weight: 700; margin: 0;">
+                ⭐ Avis vérifiés sur ${ad.vendeur} (${totalAvis})
+              </h3>
+              <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="ouvrirProfilVendeur('${ad.vendeur}')">
+                Voir tout le profil →
+              </button>
+            </div>
+
+            ${listeAvis.length === 0 ? `
+              <div style="padding: 18px; text-align: center; color: var(--text-muted); font-size: 12.5px; background: #222; border-radius: 8px;">
+                Aucun avis pour ce vendeur pour l'instant. Marquez une transaction comme terminée pour déposer le premier avis !
+              </div>
+            ` : `
+              <div class="reviews-list">
+                ${listeAvis.slice(0, 3).map(a => `
+                  <div class="review-card">
+                    <div class="review-header">
+                      <div class="review-author-info">
+                        <span style="font-size: 16px;">👤</span>
+                        <div>
+                          <div class="review-author-name">${a.acheteurNom}</div>
+                          <div class="review-date">${formaterDate(a.date)}</div>
+                        </div>
+                      </div>
+                      <div class="review-stars-gold">
+                        ${'★'.repeat(Math.min(5, Math.max(1, Math.round(Number(a.note) || 5))))}${'☆'.repeat(5 - Math.min(5, Math.max(1, Math.round(Number(a.note) || 5))))}
+                        <span style="font-size: 12px; font-weight: 700; margin-left: 3px; color: var(--badge-gold);">${Number(a.note).toFixed(1)}</span>
+                      </div>
+                    </div>
+                    <div class="review-comment-text">« ${a.commentaire} »</div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
         </div>
       `;
+    }
+
+    /* ==========================================================
+       SECTION 7bis : GESTION DES TRANSACTIONS, AVIS ÉTOILÉS & PROFIL VENDEUR
+       ========================================================== */
+
+    /**
+     * Récupère la liste des avis depuis le localStorage
+     */
+    function getAvis() {
+      try {
+        const raw = localStorage.getItem(STORAGE_AVIS);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    /**
+     * Enregistre la liste des avis
+     */
+    function setAvis(liste) {
+      localStorage.setItem(STORAGE_AVIS, JSON.stringify(liste));
+    }
+
+    /**
+     * Récupère la liste des transactions
+     */
+    function getTransactions() {
+      try {
+        const raw = localStorage.getItem(STORAGE_TRANSACTIONS);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    /**
+     * Enregistre la liste des transactions
+     */
+    function setTransactions(liste) {
+      localStorage.setItem(STORAGE_TRANSACTIONS, JSON.stringify(liste));
+    }
+
+    /**
+     * Calcule la note moyenne, le nombre total d'avis et la distribution pour un vendeur donné
+     */
+    function getNoteEtAvisVendeur(vendeurNom) {
+      const tousAvis = getAvis();
+      const avisVendeur = tousAvis.filter(a => a.vendeurNom === vendeurNom);
+
+      const statsEtoiles = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      avisVendeur.forEach(a => {
+        const n = Math.min(5, Math.max(1, Math.round(Number(a.note) || 5)));
+        statsEtoiles[n] = (statsEtoiles[n] || 0) + 1;
+      });
+
+      if (avisVendeur.length === 0) {
+        return {
+          noteMoyenne: 5.0,
+          totalAvis: 0,
+          avis: [],
+          statsEtoiles
+        };
+      }
+
+      const somme = avisVendeur.reduce((acc, a) => acc + (Number(a.note) || 5), 0);
+      const moyenne = Number((somme / avisVendeur.length).toFixed(1));
+
+      return {
+        noteMoyenne: moyenne,
+        totalAvis: avisVendeur.length,
+        avis: avisVendeur.sort((a, b) => new Date(b.date) - new Date(a.date)),
+        statsEtoiles
+      };
+    }
+
+    /**
+     * Met à jour la note statique de toutes les annonces de ce vendeur
+     */
+    function mettreAJourNoteVendeurDansAnnonces(vendeurNom) {
+      const { noteMoyenne } = getNoteEtAvisVendeur(vendeurNom);
+      const annonces = getAnnonces();
+      let modifie = false;
+      annonces.forEach(a => {
+        if (a.vendeur === vendeurNom) {
+          a.note = noteMoyenne;
+          modifie = true;
+        }
+      });
+      if (modifie) {
+        setAnnonces(annonces);
+      }
+    }
+
+    /**
+     * Marque la transaction active comme 'Terminée' depuis l'interface de chat
+     */
+    function marquerTransactionTermineeDepuisChat(convId) {
+      const convs = getConversations();
+      const conv = convs.find(c => c.id === convId);
+      if (!conv) return;
+
+      const profil = getProfilUtilisateur();
+      if (!profil) {
+        demanderNomUtilisateur(() => marquerTransactionTermineeDepuisChat(convId));
+        return;
+      }
+
+      if (!confirm(`Confirmez-vous que la transaction pour "${conv.titreAnnonce}" est terminée ? Vous pourrez ensuite laisser un avis et un commentaire sur le vendeur ${conv.vendeurNom}.`)) {
+        return;
+      }
+
+      conv.statutTransaction = 'terminee';
+      conv.dateTerminee = new Date().toISOString();
+
+      // Message système dans la discussion
+      const msgSys = {
+        id: 'msg_' + Date.now(),
+        expediteur: 'Système',
+        destinataire: 'Tous',
+        contenu: `🎉 Transaction marquée comme 'Terminée' par l'acheteur ${profil.nom}. Félicitations pour cette vente réussie !`,
+        date: new Date().toISOString(),
+        isSystem: true
+      };
+      conv.messages.push(msgSys);
+      setConversations(convs);
+
+      // Enregistrer/mettre à jour dans la liste des transactions
+      const txs = getTransactions();
+      const existIndex = txs.findIndex(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && t.acheteurNom === profil.nom));
+      const txId = existIndex >= 0 ? txs[existIndex].id : ('tx_' + Date.now());
+      if (existIndex >= 0) {
+        txs[existIndex].statut = 'terminee';
+        txs[existIndex].dateTerminee = new Date().toISOString();
+      } else {
+        txs.push({
+          id: txId,
+          conversationId: conv.id,
+          annonceId: conv.annonceId,
+          titreAnnonce: conv.titreAnnonce,
+          prixAnnonce: conv.prixAnnonce,
+          vendeurNom: conv.vendeurNom,
+          acheteurNom: profil.nom,
+          statut: 'terminee',
+          dateCreation: new Date().toISOString(),
+          dateTerminee: new Date().toISOString()
+        });
+      }
+      setTransactions(txs);
+
+      afficherNotification("Transaction marquée comme 'Terminée' !", "🎉");
+      afficherConversations(conv.id);
+
+      // Ouvre immédiatement la modale d'avis
+      ouvrirModalAvis({
+        transactionId: txId,
+        vendeurNom: conv.vendeurNom,
+        annonceId: conv.annonceId,
+        titreAnnonce: conv.titreAnnonce
+      });
+    }
+
+    /**
+     * Marque la transaction comme 'Terminée' depuis la page détail de l'annonce
+     */
+    function marquerTransactionTermineePourAnnonce(annonceId) {
+      verifierProfilOuDemander(profil => {
+        const annonces = getAnnonces();
+        const ad = annonces.find(a => a.id === annonceId);
+        if (!ad) return;
+
+        if (ad.vendeur === profil.nom) {
+          afficherNotification("Vous êtes le vendeur de cette annonce.", "ℹ️");
+          return;
+        }
+
+        if (!confirm(`Confirmez-vous que vous avez reçu le compte "${ad.titre}" et effectué le paiement ? Cette action marque la transaction comme 'Terminée'.`)) {
+          return;
+        }
+
+        const txs = getTransactions();
+        let tx = txs.find(t => t.annonceId === annonceId && t.acheteurNom === profil.nom);
+        const txId = tx ? tx.id : ('tx_' + Date.now());
+
+        if (tx) {
+          tx.statut = 'terminee';
+          tx.dateTerminee = new Date().toISOString();
+        } else {
+          tx = {
+            id: txId,
+            annonceId: ad.id,
+            titreAnnonce: ad.titre,
+            prixAnnonce: ad.prix,
+            vendeurNom: ad.vendeur,
+            acheteurNom: profil.nom,
+            statut: 'terminee',
+            dateCreation: new Date().toISOString(),
+            dateTerminee: new Date().toISOString()
+          };
+          txs.push(tx);
+        }
+        setTransactions(txs);
+
+        // Mettre à jour la conversation correspondante si elle existe
+        const convs = getConversations();
+        const conv = convs.find(c => c.annonceId === annonceId && c.acheteurNom === profil.nom);
+        if (conv) {
+          conv.statutTransaction = 'terminee';
+          conv.messages.push({
+            id: 'msg_' + Date.now(),
+            expediteur: 'Système',
+            destinataire: 'Tous',
+            contenu: `🎉 Transaction marquée comme 'Terminée' par ${profil.nom}.`,
+            date: new Date().toISOString(),
+            isSystem: true
+          });
+          setConversations(convs);
+        }
+
+        afficherNotification("Transaction marquée comme 'Terminée' !", "🎉");
+        afficherDetailAnnonce(annonceId);
+
+        // Ouvrir la modale d'évaluation
+        ouvrirModalAvis({
+          transactionId: txId,
+          vendeurNom: ad.vendeur,
+          annonceId: ad.id,
+          titreAnnonce: ad.titre
+        });
+      });
+    }
+
+    /**
+     * Ouvre la modale de dépôt d'avis depuis le chat
+     */
+    function ouvrirModalAvisDepuisChat(convId) {
+      const convs = getConversations();
+      const conv = convs.find(c => c.id === convId);
+      if (!conv) return;
+
+      const txs = getTransactions();
+      const tx = txs.find(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && t.acheteurNom === conv.acheteurNom));
+      const txId = tx ? tx.id : conv.id;
+
+      ouvrirModalAvis({
+        transactionId: txId,
+        vendeurNom: conv.vendeurNom,
+        annonceId: conv.annonceId,
+        titreAnnonce: conv.titreAnnonce
+      });
+    }
+
+    /**
+     * Ouvre la modale de dépôt d'avis pour une annonce donnée
+     */
+    function ouvrirModalAvisPourAnnonce(annonceId) {
+      const annonces = getAnnonces();
+      const ad = annonces.find(a => a.id === annonceId);
+      if (!ad) return;
+
+      const profil = getProfilUtilisateur();
+      const monNom = profil ? profil.nom : "";
+      const txs = getTransactions();
+      const tx = txs.find(t => t.annonceId === annonceId && t.acheteurNom === monNom);
+      const txId = tx ? tx.id : ('tx_' + Date.now());
+
+      ouvrirModalAvis({
+        transactionId: txId,
+        vendeurNom: ad.vendeur,
+        annonceId: ad.id,
+        titreAnnonce: ad.titre
+      });
+    }
+
+    /**
+     * Ouvre la modale de notation étoilée et commentaire
+     */
+    function ouvrirModalAvis(params = {}) {
+      const profil = getProfilUtilisateur();
+      if (!profil) {
+        demanderNomUtilisateur(() => ouvrirModalAvis(params));
+        return;
+      }
+
+      currentReviewTransactionId = params.transactionId || ('tx_' + Date.now());
+      currentReviewVendeurNom = params.vendeurNom || "Vendeur";
+      currentReviewAnnonceId = params.annonceId || null;
+      currentReviewTitreAnnonce = params.titreAnnonce || "Compte eFootball";
+
+      const titleEl = document.getElementById('review-modal-title');
+      const accountEl = document.getElementById('review-modal-account-title');
+      if (titleEl) titleEl.textContent = `Évaluer ${currentReviewVendeurNom}`;
+      if (accountEl) accountEl.textContent = `⚽ Transaction terminée : ${currentReviewTitreAnnonce}`;
+
+      // Vérifier si un avis existe déjà
+      const avisListe = getAvis();
+      const avisExistant = avisListe.find(a => 
+        (a.transactionId && a.transactionId === currentReviewTransactionId) ||
+        (a.vendeurNom === currentReviewVendeurNom && a.acheteurNom === profil.nom && a.annonceId === currentReviewAnnonceId)
+      );
+
+      const textarea = document.getElementById('review-comment-text');
+      if (avisExistant) {
+        currentRatingSelected = Number(avisExistant.note) || 5;
+        if (textarea) textarea.value = avisExistant.commentaire;
+      } else {
+        currentRatingSelected = 5;
+        if (textarea) textarea.value = "";
+      }
+
+      actualiserAffichageEtoiles(currentRatingSelected);
+      gererSaisieCommentaire(textarea ? textarea.value : "");
+
+      const modal = document.getElementById('review-modal');
+      if (modal) modal.classList.add('active');
+    }
+
+    /**
+     * Ferme la modale d'avis
+     */
+    function fermerModalAvis() {
+      const modal = document.getElementById('review-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    /**
+     * Gestion du choix d'une étoile
+     */
+    function choisirEtoile(note) {
+      currentRatingSelected = note;
+      actualiserAffichageEtoiles(note);
+      validerFormulaireAvis();
+    }
+
+    /**
+     * Prévisualisation au survol
+     */
+    function survolEtoile(note) {
+      actualiserAffichageEtoiles(note);
+    }
+
+    /**
+     * Restauration à la fin du survol
+     */
+    function quitterEtoiles() {
+      actualiserAffichageEtoiles(currentRatingSelected);
+    }
+
+    /**
+     * Actualise l'état visuel des 5 étoiles et le texte explicatif
+     */
+    function actualiserAffichageEtoiles(note) {
+      const container = document.getElementById('star-picker-row');
+      if (!container) return;
+      const etoiles = container.querySelectorAll('.star-btn');
+      etoiles.forEach(star => {
+        const val = parseInt(star.getAttribute('data-value'), 10);
+        if (val <= note) {
+          star.classList.add('active');
+        } else {
+          star.classList.remove('active');
+        }
+      });
+
+      const feedback = document.getElementById('star-rating-feedback');
+      if (!feedback) return;
+      const descriptions = {
+        1: "⭐️ 1.0 - Décevant / Transaction non conforme",
+        2: "⭐️⭐️ 2.0 - Passable / Retard ou difficulté",
+        3: "⭐️⭐️⭐️ 3.0 - Correct / Compte bien reçu",
+        4: "⭐️⭐️⭐️⭐️ 4.0 - Très bon vendeur / Réactif",
+        5: "⭐️⭐️⭐️⭐️⭐️ 5.0 - Excellent ! Vendeur très recommandé"
+      };
+      feedback.textContent = descriptions[note] || "Attribuez une note";
+    }
+
+    /**
+     * Gère la saisie dans le textarea de commentaire
+     */
+    function gererSaisieCommentaire(valeur) {
+      const counter = document.getElementById('review-chars-counter');
+      if (counter) counter.textContent = `${valeur.length}/500`;
+      validerFormulaireAvis();
+    }
+
+    /**
+     * Ajoute un mot-clé rapide au commentaire
+     */
+    function ajouterTagCommentaire(tagText) {
+      const textarea = document.getElementById('review-comment-text');
+      if (!textarea) return;
+      const current = textarea.value.trim();
+      if (!current) {
+        textarea.value = tagText + ". ";
+      } else if (!current.includes(tagText)) {
+        textarea.value = current + " " + tagText + ". ";
+      }
+      gererSaisieCommentaire(textarea.value);
+      textarea.focus();
+    }
+
+    /**
+     * Valide le formulaire pour débloquer le bouton d'envoi
+     */
+    function validerFormulaireAvis() {
+      const textarea = document.getElementById('review-comment-text');
+      const btnSubmit = document.getElementById('btn-submit-review');
+      const err = document.getElementById('err-review-comment');
+      if (!textarea || !btnSubmit) return;
+
+      const texte = textarea.value.trim();
+      const isValid = currentRatingSelected >= 1 && texte.length >= 6;
+
+      if (texte.length > 0 && texte.length < 6) {
+        if (err) err.style.display = 'block';
+      } else {
+        if (err) err.style.display = 'none';
+      }
+
+      btnSubmit.disabled = !isValid;
+    }
+
+    /**
+     * Enregistre l'avis étoilé et le commentaire dans localStorage
+     */
+    function confirmerEnvoiAvis() {
+      const profil = getProfilUtilisateur();
+      if (!profil) {
+        demanderNomUtilisateur();
+        return;
+      }
+
+      const textarea = document.getElementById('review-comment-text');
+      const commentaire = textarea ? textarea.value.trim() : "";
+      if (commentaire.length < 6) {
+        afficherNotification("Le commentaire doit faire au moins 6 caractères.", "⚠️");
+        return;
+      }
+
+      const avisListe = getAvis();
+
+      const indexExistant = avisListe.findIndex(a => 
+        (a.transactionId && a.transactionId === currentReviewTransactionId) ||
+        (a.vendeurNom === currentReviewVendeurNom && a.acheteurNom === profil.nom && a.annonceId === currentReviewAnnonceId)
+      );
+
+      const reviewId = indexExistant >= 0 ? avisListe[indexExistant].id : ('rev_' + Date.now());
+
+      const reviewData = {
+        id: reviewId,
+        transactionId: currentReviewTransactionId || ('tx_' + Date.now()),
+        vendeurNom: currentReviewVendeurNom,
+        acheteurNom: profil.nom,
+        annonceId: currentReviewAnnonceId,
+        titreAnnonce: currentReviewTitreAnnonce || "Compte eFootball",
+        note: currentRatingSelected,
+        commentaire: commentaire,
+        date: new Date().toISOString()
+      };
+
+      if (indexExistant >= 0) {
+        avisListe[indexExistant] = reviewData;
+      } else {
+        avisListe.unshift(reviewData);
+      }
+      setAvis(avisListe);
+
+      mettreAJourNoteVendeurDansAnnonces(currentReviewVendeurNom);
+
+      fermerModalAvis();
+      afficherNotification(`Votre avis (${currentRatingSelected}★) a été publié sur le profil de ${currentReviewVendeurNom} !`, "⭐️");
+
+      // Actualiser la vue en cours
+      if (currentPage === 'messages' && activeConversationId) {
+        afficherConversations(activeConversationId);
+      } else if (currentPage === 'detail' && currentDetailAdId) {
+        afficherDetailAnnonce(currentDetailAdId);
+      } else if (currentPage === 'accueil') {
+        appliquerFiltres();
+      }
+
+      // Afficher le profil du vendeur pour visualiser l'avis nouvellement publié
+      setTimeout(() => {
+        ouvrirProfilVendeur(currentReviewVendeurNom);
+      }, 400);
+    }
+
+    /**
+     * Ouvre la modale avec le profil complet du vendeur (note, stats, distribution et tous les avis textuels)
+     */
+    function ouvrirProfilVendeur(vendeurNom) {
+      const stats = getNoteEtAvisVendeur(vendeurNom);
+      const annonces = getAnnonces().filter(a => a.vendeur === vendeurNom);
+      const profil = getProfilUtilisateur();
+      const monNom = profil ? profil.nom : "";
+
+      const txs = getTransactions().filter(t => t.vendeurNom === vendeurNom && t.statut === 'terminee');
+      const totalTransactions = Math.max(txs.length, stats.totalAvis);
+
+      const maTransaction = txs.find(t => t.acheteurNom === monNom);
+      const monAvis = stats.avis.find(a => a.acheteurNom === monNom);
+
+      const modal = document.getElementById('seller-profile-modal');
+      const container = document.getElementById('seller-profile-modal-content');
+      if (!modal || !container) return;
+
+      const totalNotes = stats.totalAvis || 1;
+      const bar5 = Math.round(((stats.statsEtoiles[5] || 0) / totalNotes) * 100);
+      const bar4 = Math.round(((stats.statsEtoiles[4] || 0) / totalNotes) * 100);
+      const bar3 = Math.round(((stats.statsEtoiles[3] || 0) / totalNotes) * 100);
+      const bar2 = Math.round(((stats.statsEtoiles[2] || 0) / totalNotes) * 100);
+      const bar1 = Math.round(((stats.statsEtoiles[1] || 0) / totalNotes) * 100);
+
+      const regionVendeur = annonces.length > 0 && annonces[0].region ? annonces[0].region : 'Dakar';
+      const telVendeur = annonces.length > 0 && annonces[0].telephoneWhatsApp ? annonces[0].telephoneWhatsApp : '221770000000';
+
+      let boutonAvisHtml = '';
+      if (monNom && monNom !== vendeurNom) {
+        if (maTransaction) {
+          if (monAvis) {
+            boutonAvisHtml = `
+              <div style="background: rgba(255, 214, 0, 0.1); border: 1px solid rgba(255, 214, 0, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--badge-gold);">⭐ Vous avez déjà noté ce vendeur (${monAvis.note}/5)</div>
+                  <div style="font-size: 11.5px; color: var(--text-gray); margin-top: 2px;">« ${monAvis.commentaire.substring(0, 70)}${monAvis.commentaire.length > 70 ? '...' : ''} »</div>
+                </div>
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 5px 12px;" onclick="ouvrirModalAvis({ transactionId: '${maTransaction.id}', vendeurNom: '${vendeurNom}', annonceId: '${maTransaction.annonceId}', titreAnnonce: '${maTransaction.titreAnnonce}' })">
+                  ✏️ Modifier mon avis
+                </button>
+              </div>
+            `;
+          } else {
+            boutonAvisHtml = `
+              <div style="background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-size: 13px; font-weight: 700; color: #00E676;">🤝 Transaction terminée avec ${vendeurNom}</div>
+                  <div style="font-size: 11.5px; color: var(--text-gray); margin-top: 2px;">Partagez votre avis étoilé et commentaire sur le compte "${maTransaction.titreAnnonce}".</div>
+                </div>
+                <button class="btn-tx-review" onclick="ouvrirModalAvis({ transactionId: '${maTransaction.id}', vendeurNom: '${vendeurNom}', annonceId: '${maTransaction.annonceId}', titreAnnonce: '${maTransaction.titreAnnonce}' })">
+                  ⭐ Laisser mon avis
+                </button>
+              </div>
+            `;
+          }
+        }
+      }
+
+      container.innerHTML = `
+        <div class="seller-profile-hero">
+          <div class="seller-avatar-large">⚽</div>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <h2 style="font-size: 20px; font-weight: 700; color: var(--text-white); margin: 0;">${vendeurNom}</h2>
+              <span style="background: rgba(0, 200, 83, 0.15); color: #00E676; border: 1px solid rgba(0, 200, 83, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">
+                ✅ Vendeur Vérifié
+              </span>
+              <span style="background: rgba(33, 150, 243, 0.15); color: #64b5f6; border: 1px solid rgba(33, 150, 243, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 12px;">
+                📍 ${regionVendeur}
+              </span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-gray); margin-top: 4px;">
+              Membre actif de la communauté eFootball Sénégal • Tel : +${telVendeur}
+            </div>
+          </div>
+        </div>
+
+        <div class="seller-stats-strip">
+          <div class="seller-stat-box">
+            <div class="seller-stat-val" style="color: var(--badge-gold);">★ ${stats.noteMoyenne.toFixed(1)}</div>
+            <div class="seller-stat-lbl">Note moyenne (/5.0)</div>
+          </div>
+          <div class="seller-stat-box">
+            <div class="seller-stat-val" style="color: #64b5f6;">${stats.totalAvis}</div>
+            <div class="seller-stat-lbl">Avis clients vérifiés</div>
+          </div>
+          <div class="seller-stat-box">
+            <div class="seller-stat-val" style="color: #00E676;">${totalTransactions}</div>
+            <div class="seller-stat-lbl">Ventes terminées</div>
+          </div>
+        </div>
+
+        <div class="rating-bars-box">
+          <div style="font-size: 12.5px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>Distribution des notes</span>
+            <span style="color: var(--badge-gold);">${stats.totalAvis} avis vérifié(s)</span>
+          </div>
+          <div class="bar-row">
+            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">5 ★</span>
+            <div class="bar-track"><div class="bar-progress" style="width: ${bar5}%;"></div></div>
+            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[5] || 0}</span>
+          </div>
+          <div class="bar-row">
+            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">4 ★</span>
+            <div class="bar-track"><div class="bar-progress" style="width: ${bar4}%;"></div></div>
+            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[4] || 0}</span>
+          </div>
+          <div class="bar-row">
+            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">3 ★</span>
+            <div class="bar-track"><div class="bar-progress" style="width: ${bar3}%;"></div></div>
+            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[3] || 0}</span>
+          </div>
+          <div class="bar-row">
+            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">2 ★</span>
+            <div class="bar-track"><div class="bar-progress" style="width: ${bar2}%;"></div></div>
+            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[2] || 0}</span>
+          </div>
+          <div class="bar-row">
+            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">1 ★</span>
+            <div class="bar-track"><div class="bar-progress" style="width: ${bar1}%;"></div></div>
+            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[1] || 0}</span>
+          </div>
+        </div>
+
+        ${boutonAvisHtml}
+
+        <div style="margin-bottom: 20px;">
+          <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">
+            💬 Avis et commentaires des acheteurs (${stats.totalAvis})
+          </h3>
+
+          <div class="reviews-list">
+            ${stats.avis.length === 0 ? `
+              <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; background: #202020; border-radius: 8px;">
+                Aucun avis pour l'instant. Marquez une transaction comme terminée pour laisser votre avis !
+              </div>
+            ` : stats.avis.map(a => `
+              <div class="review-card">
+                <div class="review-header">
+                  <div class="review-author-info">
+                    <span style="font-size: 18px;">👤</span>
+                    <div>
+                      <div class="review-author-name">${a.acheteurNom}</div>
+                      <div class="review-date">${formaterDate(a.date)}</div>
+                    </div>
+                  </div>
+                  <div class="review-stars-gold">
+                    ${'★'.repeat(Math.min(5, Math.max(1, Math.round(Number(a.note) || 5))))}${'☆'.repeat(5 - Math.min(5, Math.max(1, Math.round(Number(a.note) || 5))))}
+                    <span style="font-size: 12px; font-weight: 700; margin-left: 4px; color: var(--badge-gold);">${Number(a.note).toFixed(1)}</span>
+                  </div>
+                </div>
+                ${a.titreAnnonce ? `
+                  <div>
+                    <span class="review-verified-pill">
+                      <span>✅</span> Achat vérifié : ${a.titreAnnonce}
+                    </span>
+                  </div>
+                ` : ''}
+                <div class="review-comment-text">« ${a.commentaire} »</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">
+            ⚽ Comptes publiés par ${vendeurNom} (${annonces.length})
+          </h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+            ${annonces.map(ad => `
+              <div style="background: #202020; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; cursor: pointer; transition: transform 0.15s ease;" onclick="fermerProfilVendeur(); changerPage('detail', { annonceId: '${ad.id}' })">
+                <div style="font-size: 12px; font-weight: 700; color: var(--text-white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${ad.titre}</div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--primary); margin-top: 4px;">${formaterPrix(ad.prix)}</div>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">🎮 ${ad.plateforme} • 📍 ${ad.region || 'Dakar'}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    /**
+     * Ferme la modale du profil vendeur
+     */
+    function fermerProfilVendeur() {
+      const modal = document.getElementById('seller-profile-modal');
+      if (modal) modal.classList.remove('active');
     }
 
     /* ==========================================================
@@ -2775,6 +4131,9 @@
     /**
      * Démarre une discussion avec le vendeur d'une annonce spécifique
      */
+    /**
+     * Démarre une discussion avec le vendeur d'une annonce spécifique
+     */
     function initierDiscussion(annonceId) {
       verifierProfilOuDemander(function(profil) {
         const annonces = getAnnonces();
@@ -2792,6 +4151,7 @@
             prixAnnonce: ad.prix,
             vendeurNom: ad.vendeur,
             acheteurNom: profil.nom,
+            statutTransaction: 'en_cours',
             messages: [
               {
                 id: 'msg_' + Date.now(),
@@ -2804,6 +4164,23 @@
           };
           convs.unshift(conv);
           setConversations(convs);
+
+          // Synchroniser aussi dans la table des transactions
+          const txs = getTransactions();
+          if (!txs.some(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && t.acheteurNom === profil.nom))) {
+            txs.unshift({
+              id: 'tx_' + Date.now(),
+              conversationId: conv.id,
+              annonceId: ad.id,
+              titreAnnonce: ad.titre,
+              prixAnnonce: ad.prix,
+              vendeurNom: ad.vendeur,
+              acheteurNom: profil.nom,
+              statut: 'en_cours',
+              dateCreation: new Date().toISOString()
+            });
+            setTransactions(txs);
+          }
         }
 
         changerPage('messages', { conversationId: conv.id });
@@ -2818,8 +4195,10 @@
       const listContainer = document.getElementById('conversations-list-container');
       const chatInput = document.getElementById('chat-message-input');
       const chatSendBtn = document.getElementById('chat-send-btn');
+      const banner = document.getElementById('chat-tx-banner');
 
       if (convs.length === 0) {
+        if (banner) banner.style.display = 'none';
         listContainer.innerHTML = `
           <div style="padding: 30px 16px; text-align: center; color: var(--text-muted);">
             <div style="font-size: 24px; margin-bottom: 6px;">💬</div>
@@ -2854,13 +4233,17 @@
         const estMoiAcheteur = c.acheteurNom === monNom;
         const interlocuteur = estMoiAcheteur ? c.vendeurNom : c.acheteurNom;
         const dernierMsg = c.messages && c.messages.length > 0 ? c.messages[c.messages.length - 1] : null;
+        const estTerminee = c.statutTransaction === 'terminee';
 
         return `
           <div class="conv-item ${c.id === activeConversationId ? 'active' : ''}" onclick="selectionnerConversation('${c.id}')">
             <div style="font-size: 20px;">👤</div>
             <div class="conv-info">
               <div class="conv-name-row">
-                <span>${interlocuteur}</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span>${interlocuteur}</span>
+                  ${estTerminee ? '<span style="font-size: 10px; color: #00E676;" title="Transaction terminée">✅</span>' : ''}
+                </span>
                 <span style="font-size: 10px; color: var(--text-muted);">${dernierMsg ? formaterHeure(dernierMsg.date) : ''}</span>
               </div>
               <div class="conv-item-title">${c.titreAnnonce || 'Compte eFootball'}</div>
@@ -2882,7 +4265,7 @@
     }
 
     /**
-     * Affiche le flux de messages pour la conversation choisie
+     * Affiche le flux de messages pour la conversation choisie et la bannière transactionnelle
      */
     function afficherMessagesConversation(convId) {
       const convs = getConversations();
@@ -2897,6 +4280,120 @@
       document.getElementById('chat-recipient-name').textContent = interlocuteur;
       document.getElementById('chat-ad-title').textContent = `${conv.titreAnnonce} (${formaterPrix(conv.prixAnnonce)})`;
 
+      // Synchronisation du statut de transaction
+      const txs = getTransactions();
+      const maTx = txs.find(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && t.acheteurNom === conv.acheteurNom));
+      if (maTx && maTx.statut === 'terminee') {
+        conv.statutTransaction = 'terminee';
+      }
+
+      const estTerminee = conv.statutTransaction === 'terminee';
+      const tousAvis = getAvis();
+      const avisExistant = tousAvis.find(a => 
+        (maTx && a.transactionId === maTx.id) ||
+        (a.vendeurNom === conv.vendeurNom && a.acheteurNom === conv.acheteurNom && a.annonceId === conv.annonceId)
+      );
+
+      // Mise à jour de la bannière transactionnelle
+      const banner = document.getElementById('chat-tx-banner');
+      if (banner) {
+        banner.style.display = 'flex';
+
+        if (estTerminee) {
+          if (estAcheteur) {
+            if (avisExistant) {
+              banner.innerHTML = `
+                <div class="tx-banner-left">
+                  <span class="tx-status-badge completed">✅ Terminée</span>
+                  <div class="tx-banner-info">
+                    <div class="tx-banner-title">Avis étoilé enregistré (${avisExistant.note}/5 ★) sur le profil de ${conv.vendeurNom}</div>
+                    <div class="tx-banner-sub">« ${avisExistant.commentaire.substring(0, 55)}${avisExistant.commentaire.length > 55 ? '...' : ''} »</div>
+                  </div>
+                </div>
+                <div class="tx-banner-actions">
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                    👤 Voir profil & avis
+                  </button>
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirModalAvisDepuisChat('${conv.id}')">
+                    ✏️ Modifier mon avis
+                  </button>
+                </div>
+              `;
+            } else {
+              banner.innerHTML = `
+                <div class="tx-banner-left">
+                  <span class="tx-status-badge completed">✅ Terminée</span>
+                  <div class="tx-banner-info">
+                    <div class="tx-banner-title">Transaction finalisée ! Laissez un avis sur ${conv.vendeurNom}</div>
+                    <div class="tx-banner-sub">Attribuez vos étoiles et votre commentaire textuel sur le profil du vendeur.</div>
+                  </div>
+                </div>
+                <div class="tx-banner-actions">
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                    👤 Profil vendeur
+                  </button>
+                  <button class="btn-tx-review" onclick="ouvrirModalAvisDepuisChat('${conv.id}')">
+                    ⭐ Laisser un avis et commentaire
+                  </button>
+                </div>
+              `;
+            }
+          } else {
+            // Vue pour le vendeur
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge completed">✅ Terminée</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">L'acheteur a marqué cette vente comme terminée</div>
+                  <div class="tx-banner-sub">${avisExistant ? `Avis reçu : ${avisExistant.note}★ - « ${avisExistant.commentaire} »` : `En attente du commentaire et de la note de l'acheteur.`}</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                  👤 Voir mon profil vendeur
+                </button>
+              </div>
+            `;
+          }
+        } else {
+          // Transaction encore en cours
+          if (estAcheteur) {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge ongoing">🟡 En cours</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">Achat de : ${conv.titreAnnonce}</div>
+                  <div class="tx-banner-sub">Identifiants Konami reçus et paiement fait ? Marquez la transaction comme terminée pour évaluer le vendeur.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                  👤 Profil de ${conv.vendeurNom}
+                </button>
+                <button class="btn-tx-complete" onclick="marquerTransactionTermineeDepuisChat('${conv.id}')">
+                  ✅ Marquer comme 'Terminée'
+                </button>
+              </div>
+            `;
+          } else {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge ongoing">🟡 En cours</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">Vente en cours : ${conv.titreAnnonce} (${formaterPrix(conv.prixAnnonce)})</div>
+                  <div class="tx-banner-sub">L'acheteur pourra marquer la transaction comme 'Terminée' et vous laisser un avis étoilé.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                  👤 Mon profil vendeur
+                </button>
+              </div>
+            `;
+          }
+        }
+      }
+
       const chatInput = document.getElementById('chat-message-input');
       const chatSendBtn = document.getElementById('chat-send-btn');
       chatInput.disabled = false;
@@ -2904,6 +4401,15 @@
 
       const flow = document.getElementById('chat-messages-flow');
       flow.innerHTML = conv.messages.map(m => {
+        if (m.isSystem) {
+          return `
+            <div class="chat-bubble" style="background: rgba(0, 200, 83, 0.15); border: 1px solid rgba(0, 200, 83, 0.4); color: #00E676; align-self: center; text-align: center; max-width: 90%; font-size: 12px; margin: 8px auto;">
+              <div>${m.contenu}</div>
+              <div class="bubble-meta" style="color: #69F0AE; font-size: 10px; text-align: center; margin-top: 3px;">Système • ${formaterHeure(m.date)}</div>
+            </div>
+          `;
+        }
+
         const estMonMessage = m.expediteur === monNom;
         return `
           <div class="chat-bubble ${estMonMessage ? 'mine' : 'theirs'}">
@@ -3002,7 +4508,7 @@
               <div class="my-ad-thumb">${mediaHtml}</div>
               <div class="my-ad-details">
                 <div class="my-ad-title">${item.titre}</div>
-                <div class="my-ad-meta">${item.plateforme}${item.puissance ? ' • 💪 ' + item.puissance : ''}${item.typeCompte ? ' • ' + item.typeCompte : ''} • Publié le ${formaterDate(item.date)}</div>
+                <div class="my-ad-meta">${item.plateforme}${item.region ? ' • 📍 ' + item.region : ''}${item.puissance ? ' • 💪 ' + item.puissance : ''}${item.typeCompte ? ' • ' + item.typeCompte : ''} • Publié le ${formaterDate(item.date)}</div>
                 <div class="my-ad-price">${formaterPrix(item.prix)}</div>
               </div>
             </div>
@@ -3048,6 +4554,7 @@
             description: "Équipe complète avec Messi Big Time 103, Neymar Showtime, Mbappé booster, Vieira et Ronaldinho. 2800 pièces eFootball et 3.5M GP disponibles.",
             prix: 35000,
             plateforme: "Mobile",
+            region: "Dakar",
             puissance: "3100 - 3300",
             telephoneWhatsApp: "221778901234",
             image: null,
@@ -3063,6 +4570,7 @@
             description: "Effectif premium avec Rummenigge, Cruyff, Gullit et Maldini maxés. Idéal pour Division 1 compétitive.",
             prix: 50000,
             plateforme: "PS5",
+            region: "Thiès",
             puissance: "Plus de 3300",
             telephoneWhatsApp: "221781234567",
             image: null,
@@ -3078,6 +4586,7 @@
             description: "Très bon compte pour débuter avec plusieurs joueurs phares et managers de haut niveau. Transfert rapide Konami ID.",
             prix: 18000,
             plateforme: "Mobile",
+            region: "Saint-Louis",
             puissance: "2700 - 2900",
             telephoneWhatsApp: "221762345678",
             image: null,
@@ -3092,6 +4601,41 @@
       }
       if (!localStorage.getItem(STORAGE_MESSAGES)) {
         localStorage.setItem(STORAGE_MESSAGES, JSON.stringify([]));
+      }
+      if (!localStorage.getItem(STORAGE_TRANSACTIONS)) {
+        localStorage.setItem(STORAGE_TRANSACTIONS, JSON.stringify([]));
+      }
+      if (!localStorage.getItem(STORAGE_AVIS)) {
+        const avisInitiaux = [
+          {
+            id: 'avis_init_1',
+            vendeurNom: 'Sadio_Efoot',
+            acheteurNom: 'Ibrahima Fall',
+            note: 5,
+            commentaire: 'Vendeur très sérieux et rapide ! Le compte Konami ID avec Messi Big Time m\'a été transféré sans encombre via Wave. Recommandé !',
+            titreAnnonce: 'Compte Mobile Légendes & Big Time 103 OVR',
+            date: new Date(Date.now() - 3600000 * 72).toISOString()
+          },
+          {
+            id: 'avis_init_2',
+            vendeurNom: 'Sadio_Efoot',
+            acheteurNom: 'Mamadou Ndiaye',
+            note: 5,
+            commentaire: 'Excellente transaction, compte propre sans aucun souci de liaison eFootball.',
+            titreAnnonce: 'Compte Mobile Légendes & Big Time 103 OVR',
+            date: new Date(Date.now() - 3600000 * 120).toISOString()
+          },
+          {
+            id: 'avis_init_3',
+            vendeurNom: 'DakarGamer221',
+            acheteurNom: 'Cheikh Sarr',
+            note: 5,
+            commentaire: 'Transaction parfaite pour mon compte PS5. Équipe de haut niveau avec Cruyff et Rummenigge.',
+            titreAnnonce: 'Compte PS5 Full Epics & Show Time',
+            date: new Date(Date.now() - 3600000 * 96).toISOString()
+          }
+        ];
+        localStorage.setItem(STORAGE_AVIS, JSON.stringify(avisInitiaux));
       }
 
       // Mettre à jour les badges de messages
