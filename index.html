@@ -1,0 +1,3105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XY7D9HSC9J"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-XY7D9HSC9J');
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EFoot Market SN - Marketplace de Comptes eFootball au Sénégal</title>
+  <meta name="description" content="Achetez et vendez des comptes eFootball au Sénégal en toute sécurité avec EFoot Market SN.">
+
+  <!-- Police Google Fonts : Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================
+       1. VARIABLES CSS ET RÉINITIALISATION GÉNÉRALE
+       ========================================================== */
+    :root {
+      --bg-dark: #121212;
+      --bg-card: #1E1E1E;
+      --bg-input: #2A2A2A;
+      --border-color: #333333;
+      --border-focus: #00C853;
+      --primary: #00C853;
+      --primary-hover: #00E676;
+      --primary-active: #009624;
+      --text-white: #FFFFFF;
+      --text-gray: #AAAAAA;
+      --text-muted: #777777;
+      --danger: #FF5252;
+      --danger-hover: #FF1744;
+      --badge-gold: #FFD600;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.2s ease-in-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+    }
+
+    /* ==========================================================
+       2. BARRE DE NAVIGATION FIXE (DESKTOP & MOBILE)
+       ========================================================== */
+    .header-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(18, 18, 18, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text-white);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .logo-brand .logo-icon {
+      font-size: 22px;
+    }
+
+    .logo-brand .logo-accent {
+      color: var(--primary);
+    }
+
+    .nav-search-desktop {
+      display: none;
+      position: relative;
+      width: 280px;
+    }
+
+    .nav-search-desktop input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px 8px 34px;
+      color: var(--text-white);
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .nav-search-desktop input:focus {
+      border-color: var(--primary);
+    }
+
+    .nav-search-desktop .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .nav-links-desktop {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-link-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-gray);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .nav-link-btn:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-link-btn.active {
+      color: var(--primary);
+      background: rgba(0, 200, 83, 0.1);
+      font-weight: 600;
+    }
+
+    .btn-publish-header {
+      background: var(--primary);
+      color: var(--text-white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-publish-header:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-publish-header:active {
+      background: var(--primary-active);
+      transform: translateY(0);
+    }
+
+    .unread-bubble {
+      background: var(--primary);
+      color: #000;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 2px;
+    }
+
+    /* Barre de navigation mobile en bas (Tabs) */
+    .mobile-dock {
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(18, 18, 18, 0.98);
+      border-top: 1px solid var(--border-color);
+      z-index: 1000;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .dock-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      gap: 3px;
+      cursor: pointer;
+      height: 100%;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .dock-btn .dock-icon {
+      font-size: 18px;
+    }
+
+    .dock-btn.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .dock-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ==========================================================
+       3. CONTENEUR PRINCIPAL ET GESTION DES VUES (SPA)
+       ========================================================== */
+    .main-container {
+      margin-top: 64px;
+      margin-bottom: 70px;
+      padding: 20px 16px;
+      max-width: 1100px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      flex: 1;
+    }
+
+    .page-view {
+      display: none;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .page-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================
+       4. PAGE 1 : ACCUEIL (BANNIÈRE, FILTRES ET GRILLE)
+       ========================================================== */
+    .home-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .banner-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .banner-subtitle {
+      font-size: 13px;
+      color: var(--text-gray);
+      max-width: 650px;
+    }
+
+    .banner-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .banner-tag {
+      font-size: 11px;
+      background: rgba(0, 200, 83, 0.12);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+      border: 1px solid rgba(0, 200, 83, 0.25);
+    }
+
+    /* Section filtres */
+    .filters-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .filters-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .filters-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-reset-filters {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-gray);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-reset-filters:hover {
+      color: var(--text-white);
+      border-color: var(--text-muted);
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-item label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-gray);
+    }
+
+    .filter-input, .filter-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      color: var(--text-white);
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+      width: 100%;
+    }
+
+    .filter-input:focus, .filter-select:focus {
+      border-color: var(--primary);
+    }
+
+    .price-range-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .price-range-row span {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Filtre Puissance personnalisée */
+    .power-custom-filter-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .power-mode-select {
+      max-width: 95px;
+      padding: 9px 6px;
+      font-size: 11.5px;
+      flex-shrink: 0;
+      background: var(--bg-card);
+    }
+
+    .power-quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .power-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      color: var(--text-gray);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .power-chip:hover {
+      border-color: var(--primary);
+      color: var(--text-white);
+      background: rgba(0, 200, 83, 0.12);
+    }
+
+    .power-chip.active {
+      background: var(--primary);
+      color: var(--bg-dark);
+      border-color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* Grille des annonces */
+    .ads-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .ads-count-text {
+      font-size: 14px;
+      color: var(--text-gray);
+      font-weight: 500;
+    }
+
+    .ads-count-text strong {
+      color: var(--primary);
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    /* Carte produit eFootball */
+    .ad-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .ad-card:hover {
+      border-color: rgba(0, 200, 83, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .card-media {
+      height: 180px;
+      background: #151b24;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .card-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      background: linear-gradient(135deg, #18241f 0%, #111a15 100%);
+      width: 100%;
+      height: 100%;
+      user-select: none;
+    }
+
+    .card-placeholder .placeholder-ball {
+      font-size: 40px;
+    }
+
+    .card-placeholder .placeholder-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .card-platform-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(18, 18, 18, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-white);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card-type-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 200, 83, 0.9);
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-white);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    .card-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2px;
+      gap: 8px;
+    }
+
+    .card-power-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--primary);
+      background: rgba(0, 200, 83, 0.12);
+      border: 1px solid rgba(0, 200, 83, 0.3);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
+
+    .detail-power-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .detail-power-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-gray);
+    }
+
+    .card-seller-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      color: var(--text-gray);
+    }
+
+    .card-seller-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-seller-name {
+      font-weight: 500;
+      color: var(--text-white);
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-seller-rating {
+      color: var(--badge-gold);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* État vide */
+    .empty-state {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 48px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 0;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-white);
+    }
+
+    .empty-desc {
+      font-size: 13px;
+      color: var(--text-gray);
+      max-width: 400px;
+      margin-bottom: 6px;
+    }
+
+    /* ==========================================================
+       5. BOUTONS GENERIQUES
+       ========================================================== */
+    .btn-primary {
+      background: var(--primary);
+      color: var(--text-white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      background: var(--primary-active);
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-secondary {
+      background: #2A2A2A;
+      color: var(--text-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .btn-secondary:hover {
+      background: #333333;
+      border-color: #444444;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: var(--text-white);
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: #012b12;
+      font-weight: 700;
+    }
+
+    .btn-whatsapp:hover {
+      background: #20BA5A;
+      color: #000;
+    }
+
+    /* ==========================================================
+       6. PAGE 2 : PUBLIER UNE ANNONCE
+       ========================================================== */
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .form-header {
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
+    }
+
+    .form-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-header p {
+      font-size: 13px;
+      color: var(--text-gray);
+      margin-top: 4px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-white);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .form-group label .required-star {
+      color: var(--primary);
+    }
+
+    .form-group .form-control {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      color: var(--text-white);
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition);
+      width: 100%;
+    }
+
+    .form-group .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    .form-group .form-control.invalid {
+      border-color: var(--danger);
+    }
+
+    .form-group textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .error-msg {
+      font-size: 11.5px;
+      color: var(--danger);
+      display: none;
+      margin-top: 2px;
+    }
+
+    .error-msg.visible {
+      display: block;
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    /* Zone de téléversement d'image */
+    .image-upload-zone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .image-upload-zone:hover {
+      border-color: var(--primary);
+      background: rgba(0, 200, 83, 0.04);
+    }
+
+    .image-upload-zone.invalid {
+      border-color: var(--danger);
+      background: rgba(255, 59, 48, 0.06);
+    }
+
+    .image-preview-wrapper {
+      position: relative;
+      margin-top: 10px;
+      display: none;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      max-height: 220px;
+    }
+
+    .image-preview-wrapper img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+    }
+
+    .btn-remove-image {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    /* ==========================================================
+       7. PAGE 3 : DÉTAIL D'UNE ANNONCE
+       ========================================================== */
+    .detail-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      overflow: hidden;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .detail-top-nav {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .detail-image-box {
+      width: 100%;
+      max-height: 380px;
+      background: #151b24;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .detail-image-box img {
+      width: 100%;
+      height: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      background: #0d1219;
+    }
+
+    .detail-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .detail-badges-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-white);
+    }
+
+    .badge-pill.primary {
+      background: rgba(0, 200, 83, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(0, 200, 83, 0.3);
+    }
+
+    .detail-title {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .detail-price-box {
+      background: rgba(0, 200, 83, 0.08);
+      border: 1px solid rgba(0, 200, 83, 0.25);
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-price-label {
+      font-size: 12px;
+      color: var(--text-gray);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .detail-price-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .detail-desc-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+
+    .detail-desc-box h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-gray);
+    }
+
+    .detail-desc-box p {
+      font-size: 14px;
+      color: var(--text-white);
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+
+    .detail-seller-box {
+      border: 1px solid var(--border-color);
+      background: #181818;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .seller-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .seller-avatar {
+      width: 46px;
+      height: 46px;
+      background: var(--bg-input);
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .seller-meta-name {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .verified-chip {
+      font-size: 10px;
+      background: rgba(0, 200, 83, 0.2);
+      color: var(--primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .seller-meta-sub {
+      font-size: 12px;
+      color: var(--badge-gold);
+      font-weight: 500;
+    }
+
+    .detail-actions-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    /* ==========================================================
+       8. PAGE 4 : MESSAGERIE LOCALE
+       ========================================================== */
+    .messaging-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 520px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .conv-list-pane {
+      border-bottom: 1px solid var(--border-color);
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .conv-list-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .conv-items-scroll {
+      overflow-y: auto;
+      max-height: 220px;
+    }
+
+    .conv-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .conv-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .conv-item.active {
+      background: rgba(0, 200, 83, 0.1);
+      border-left: 3px solid var(--primary);
+    }
+
+    .conv-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .conv-name-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .conv-item-title {
+      font-size: 11.5px;
+      color: var(--primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .conv-last-msg {
+      font-size: 11.5px;
+      color: var(--text-gray);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .chat-pane {
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+    }
+
+    .chat-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #181818;
+    }
+
+    .chat-header-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chat-messages-area {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #141414;
+    }
+
+    .chat-bubble {
+      max-width: 78%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .chat-bubble.mine {
+      align-self: flex-end;
+      background: var(--primary);
+      color: #000;
+      font-weight: 500;
+      border-bottom-right-radius: 2px;
+    }
+
+    .chat-bubble.theirs {
+      align-self: flex-start;
+      background: var(--bg-input);
+      color: var(--text-white);
+      border-bottom-left-radius: 2px;
+      border: 1px solid var(--border-color);
+    }
+
+    .bubble-meta {
+      font-size: 10px;
+      margin-top: 4px;
+      opacity: 0.75;
+      text-align: right;
+    }
+
+    .chat-input-bar {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 10px;
+      background: #1a1a1a;
+    }
+
+    .chat-input-bar input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: var(--text-white);
+      font-size: 13.5px;
+      outline: none;
+    }
+
+    .chat-input-bar input:focus {
+      border-color: var(--primary);
+    }
+
+    /* ==========================================================
+       9. PAGE 5 : MES ANNONCES
+       ========================================================== */
+    .my-ads-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .my-ad-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .my-ad-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .my-ad-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-sm);
+      background: #16201b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .my-ad-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .my-ad-details {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .my-ad-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text-white);
+    }
+
+    .my-ad-meta {
+      font-size: 12px;
+      color: var(--text-gray);
+    }
+
+    .my-ad-price {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .my-ad-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ==========================================================
+       10. MODALE PROFIL UTILISATEUR & NOTIFICATIONS TOAST
+       ========================================================== */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+      animation: modalPop 0.2s ease-out;
+    }
+
+    @keyframes modalPop {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-gray);
+      margin-bottom: 16px;
+    }
+
+    /* Toast Notification */
+    .toast-box {
+      position: fixed;
+      bottom: 74px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: #1F2937;
+      border: 1px solid var(--primary);
+      color: var(--text-white);
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 13.5px;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 3000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s ease-in-out;
+      pointer-events: none;
+    }
+
+    .toast-box.active {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* ==========================================================
+       11. RESPONSIVE MEDIA QUERIES (DESKTOP)
+       ========================================================== */
+    @media (min-width: 768px) {
+      .header-nav {
+        padding: 0 32px;
+      }
+
+      .nav-search-desktop {
+        display: block;
+      }
+
+      .nav-links-desktop {
+        display: flex;
+      }
+
+      .mobile-dock {
+        display: none;
+      }
+
+      .main-container {
+        margin-bottom: 30px;
+        padding: 24px 32px;
+      }
+
+      .filters-grid {
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      }
+
+      .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .form-row-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .detail-actions-row {
+        flex-direction: row;
+      }
+
+      .messaging-container {
+        grid-template-columns: 320px 1fr;
+        height: 560px;
+      }
+
+      .conv-list-pane {
+        border-bottom: none;
+        border-right: 1px solid var(--border-color);
+      }
+
+      .conv-items-scroll {
+        max-height: none;
+        flex: 1;
+      }
+
+      .chat-pane {
+        height: 560px;
+      }
+
+      .toast-box {
+        bottom: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================
+       BARRE DE NAVIGATION SUPÉRIEURE FIXE
+       ========================================================== -->
+  <header class="header-nav">
+    <div class="nav-left">
+      <div class="logo-brand" onclick="changerPage('accueil')">
+        <span class="logo-icon">⚽</span>
+        <span>EFoot Market <span class="logo-accent">SN</span></span>
+      </div>
+
+      <!-- Recherche temps réel desktop -->
+      <div class="nav-search-desktop">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="search-input-desktop" 
+          placeholder="Rechercher un compte (Messi, 105 OVR...)"
+          oninput="gererRecherche(this.value)"
+        >
+      </div>
+    </div>
+
+    <!-- Liens desktop -->
+    <nav class="nav-links-desktop">
+      <button class="nav-link-btn active" id="nav-btn-accueil" onclick="changerPage('accueil')">
+        <span>🏠</span> Accueil
+      </button>
+      <button class="nav-link-btn" id="nav-btn-messages" onclick="changerPage('messages')">
+        <span>💬</span> Messages
+        <span class="unread-bubble" id="unread-count-desktop" style="display: none;">0</span>
+      </button>
+      <button class="nav-link-btn" id="nav-btn-mes-annonces" onclick="changerPage('mes-annonces')">
+        <span>📋</span> Mes annonces
+      </button>
+      <button class="btn-publish-header" onclick="changerPage('publier')">
+        <span>➕</span> Publier
+      </button>
+    </nav>
+  </header>
+
+  <!-- ==========================================================
+       NAVIGATION PAR ONGLETS EN BAS SUR MOBILE (DOCK)
+       ========================================================== -->
+  <nav class="mobile-dock">
+    <button class="dock-btn active" id="dock-btn-accueil" onclick="changerPage('accueil')">
+      <span class="dock-icon">🏠</span>
+      <span>Accueil</span>
+    </button>
+    <button class="dock-btn" id="dock-btn-publier" onclick="changerPage('publier')">
+      <span class="dock-icon">➕</span>
+      <span>Publier</span>
+    </button>
+    <button class="dock-btn" id="dock-btn-messages" onclick="changerPage('messages')">
+      <span class="dock-icon">💬</span>
+      <span>Messages</span>
+      <span class="unread-bubble" id="unread-count-mobile" style="display: none; position: absolute; top: 4px; right: 24%;">0</span>
+    </button>
+    <button class="dock-btn" id="dock-btn-mes-annonces" onclick="changerPage('mes-annonces')">
+      <span class="dock-icon">📋</span>
+      <span>Mes annonces</span>
+    </button>
+  </nav>
+
+  <!-- ==========================================================
+       CONTENEUR PRINCIPAL DES VUES (SPA)
+       ========================================================== -->
+  <main class="main-container">
+
+    <!-- --------------------------------------------------------
+         PAGE 1 : ACCUEIL
+         -------------------------------------------------------- -->
+    <section id="page-accueil" class="page-view active">
+      
+      <!-- Bannière des meilleures offres -->
+      <div class="home-banner">
+        <div class="banner-title">
+          <span>🔥</span>
+          <span>Meilleures offres du moment</span>
+        </div>
+        <div class="banner-subtitle">
+          La marketplace n°1 pour acheter et vendre des comptes eFootball au Sénégal en toute sécurité (Wave & Orange Money).
+        </div>
+        <div class="banner-badges">
+          <span class="banner-tag">🇸🇳 100% Sénégal</span>
+          <span class="banner-tag">💎 Comptes Iconiques & Epics</span>
+          <span class="banner-tag">⚡ Transfert Konami ID direct</span>
+        </div>
+      </div>
+
+      <!-- Filtres et Recherche mobile -->
+      <div class="filters-card">
+        <div class="filters-title-row">
+          <div class="filters-title">
+            <span>⚙️</span>
+            <span>Filtres de recherche</span>
+          </div>
+          <button class="btn-reset-filters" onclick="reinitialiserFiltres()">
+            ↺ Réinitialiser
+          </button>
+        </div>
+
+        <!-- Recherche textuelle intégrée (très pratique sur mobile) -->
+        <div class="filter-item">
+          <label for="search-input-mobile">Recherche par mot-clé</label>
+          <input 
+            type="text" 
+            id="search-input-mobile" 
+            class="filter-input" 
+            placeholder="Ex : Messi, Neymar, 102 OVR, GP, Mobile..."
+            oninput="gererRecherche(this.value)"
+          >
+        </div>
+
+        <div class="filters-grid">
+          <!-- Filtre Prix Min & Max -->
+          <div class="filter-item">
+            <label>Fourchette de prix (FCFA)</label>
+            <div class="price-range-row">
+              <input 
+                type="number" 
+                id="filter-price-min" 
+                class="filter-input" 
+                placeholder="Min" 
+                min="0" 
+                step="1000"
+                oninput="appliquerFiltres()"
+              >
+              <span>-</span>
+              <input 
+                type="number" 
+                id="filter-price-max" 
+                class="filter-input" 
+                placeholder="Max" 
+                min="0" 
+                step="1000"
+                oninput="appliquerFiltres()"
+              >
+            </div>
+          </div>
+
+          <!-- Filtre Puissance d'équipe personnalisée -->
+          <div class="filter-item">
+            <label for="filter-power-custom">
+              <span>Puissance recherchée 💪</span>
+            </label>
+            <div class="power-custom-filter-row">
+              <input 
+                type="number" 
+                id="filter-power-custom" 
+                class="filter-input" 
+                placeholder="Ex : 3000, 3150..." 
+                min="1000" 
+                max="4000" 
+                step="50"
+                oninput="surSaisiePuissanceFiltre(this.value)"
+              >
+              <select id="filter-power-mode" class="filter-select power-mode-select" onchange="appliquerFiltres()" title="Mode de filtrage de la puissance">
+                <option value="min">≥ Min</option>
+                <option value="exact">Tranche</option>
+              </select>
+            </div>
+            <div class="power-quick-chips">
+              <button type="button" class="power-chip" onclick="choisirPuissanceRapide(2700, this)" title="Rechercher puissance 2700">2700</button>
+              <button type="button" class="power-chip" onclick="choisirPuissanceRapide(2900, this)" title="Rechercher puissance 2900">2900</button>
+              <button type="button" class="power-chip" onclick="choisirPuissanceRapide(3000, this)" title="Rechercher puissance 3000">3000</button>
+              <button type="button" class="power-chip" onclick="choisirPuissanceRapide(3150, this)" title="Rechercher puissance 3150">3150</button>
+              <button type="button" class="power-chip" onclick="choisirPuissanceRapide(3300, this)" title="Rechercher puissance 3300+">3300+</button>
+            </div>
+          </div>
+
+          <!-- Filtre Plateforme -->
+          <div class="filter-item">
+            <label for="filter-platform">Plateforme</label>
+            <select id="filter-platform" class="filter-select" onchange="appliquerFiltres()">
+              <option value="toutes">Toutes les plateformes</option>
+              <option value="Mobile">Mobile (Android / iOS)</option>
+              <option value="PS4">PlayStation 4</option>
+              <option value="PS5">PlayStation 5</option>
+              <option value="Xbox">Xbox One / Series</option>
+            </select>
+          </div>
+
+          <!-- Tri -->
+          <div class="filter-item">
+            <label for="filter-sort">Trier par</label>
+            <select id="filter-sort" class="filter-select" onchange="appliquerFiltres()">
+              <option value="date-desc">Plus récent en premier</option>
+              <option value="price-asc">Prix croissant</option>
+              <option value="price-desc">Prix décroissant</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- En-tête de la grille -->
+      <div class="ads-header-row">
+        <div class="ads-count-text">
+          <span id="ads-counter">0</span> annonce(s) disponible(s)
+        </div>
+        <button class="btn-primary" style="padding: 6px 12px; font-size: 13px;" onclick="changerPage('publier')">
+          ➕ Déposer une annonce
+        </button>
+      </div>
+
+      <!-- Grille des cartes de comptes eFootball -->
+      <div class="products-grid" id="products-grid-container">
+        <!-- Rendu dynamique via JavaScript -->
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
+         PAGE 2 : PUBLIER UNE ANNONCE
+         -------------------------------------------------------- -->
+    <section id="page-publier" class="page-view">
+      <div class="form-card">
+        <div class="form-header">
+          <h2><span>➕</span> Publier un compte eFootball</h2>
+          <p>Remplissez le formulaire ci-dessous pour mettre votre compte en vente sur EFoot Market SN.</p>
+        </div>
+
+        <form id="publish-ad-form" onsubmit="publierAnnonce(event)">
+          <!-- Titre -->
+          <div class="form-group">
+            <label for="pub-title">
+              <span>Titre de l'annonce <span class="required-star">*</span></span>
+              <small style="color: var(--text-muted); font-weight: 400;">Min. 5 caractères</small>
+            </label>
+            <input 
+              type="text" 
+              id="pub-title" 
+              class="form-control" 
+              placeholder="Ex : Compte Messi Iconic + 104 OVR + 3000 pièces"
+              oninput="validerChamp('pub-title')"
+            >
+            <div class="error-msg" id="err-pub-title">Le titre doit comporter au moins 5 caractères.</div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label for="pub-desc">
+              <span>Description détaillée <span class="required-star">*</span></span>
+              <small style="color: var(--text-muted); font-weight: 400;">Min. 10 caractères</small>
+            </label>
+            <textarea 
+              id="pub-desc" 
+              class="form-control" 
+              placeholder="Détaillez les joueurs phares (Big Time, Epics, Show Time), le nombre de GP, les pièces et l'état du Konami ID..."
+              oninput="validerChamp('pub-desc')"
+            ></textarea>
+            <div class="error-msg" id="err-pub-desc">La description doit comporter au moins 10 caractères.</div>
+          </div>
+
+          <!-- Prix & Plateforme -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="pub-price">
+                <span>Prix en FCFA <span class="required-star">*</span></span>
+                <small style="color: var(--text-muted); font-weight: 400;">Chiffres uniquement</small>
+              </label>
+              <input 
+                type="number" 
+                id="pub-price" 
+                class="form-control" 
+                placeholder="Ex : 25000" 
+                min="500" 
+                step="500"
+                oninput="validerChamp('pub-price')"
+              >
+              <div class="error-msg" id="err-pub-price">Veuillez indiquer un prix valide supérieur à 0 FCFA.</div>
+            </div>
+
+            <div class="form-group">
+              <label for="pub-platform">
+                <span>Plateforme <span class="required-star">*</span></span>
+              </label>
+              <select id="pub-platform" class="form-control" onchange="validerChamp('pub-platform')">
+                <option value="Mobile">Mobile (Android / iOS)</option>
+                <option value="PS4">PS4</option>
+                <option value="PS5">PS5</option>
+                <option value="Xbox">Xbox</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Numéro WhatsApp -->
+          <div class="form-group">
+            <label for="pub-whatsapp">
+              <span>Numéro WhatsApp <span class="required-star">*</span></span>
+              <small style="color: var(--text-muted); font-weight: 400;">+221XXXXXXXX</small>
+            </label>
+            <input 
+              type="text" 
+              id="pub-whatsapp" 
+              class="form-control" 
+              placeholder="Ex : 221771234567"
+              oninput="validerChamp('pub-whatsapp')"
+            >
+            <div class="error-msg" id="err-pub-whatsapp">Numéro sénégalais invalide (ex: 221771234567 ou +221771234567).</div>
+          </div>
+
+          <!-- Puissance d'équipe -->
+          <div class="form-group">
+            <label for="pub-power">
+              <span>Puissance d'équipe <span class="required-star">*</span></span>
+              <small style="color: var(--text-muted); font-weight: 400;">Force globale de l'effectif</small>
+            </label>
+            <select id="pub-power" class="form-control" onchange="gererChangementPuissancePub(this.value)">
+              <option value="">Sélectionnez la puissance d'équipe</option>
+              <option value="Moins de 2500">Moins de 2500</option>
+              <option value="2500 - 2700">2500 - 2700</option>
+              <option value="2700 - 2900">2700 - 2900</option>
+              <option value="2900 - 3100">2900 - 3100</option>
+              <option value="3100 - 3300">3100 - 3300</option>
+              <option value="Plus de 3300">Plus de 3300</option>
+              <option value="custom">✏️ Saisir une valeur exacte (ex : 3140)...</option>
+            </select>
+            <div id="pub-power-custom-wrap" style="display: none; margin-top: 8px;">
+              <input 
+                type="number" 
+                id="pub-power-exact" 
+                class="form-control" 
+                placeholder="Ex : 3140" 
+                min="1000" 
+                max="4000" 
+                oninput="validerChamp('pub-power')"
+              >
+              <small style="color: var(--text-muted); font-size: 11.5px; display: block; margin-top: 3px;">Indiquez la puissance exacte de votre équipe eFootball.</small>
+            </div>
+            <div class="error-msg" id="err-pub-power">Veuillez sélectionner ou saisir la puissance d'équipe (au moins 1000).</div>
+          </div>
+
+          <!-- Upload d'image (Obligatoire) -->
+          <div class="form-group">
+            <label for="file-upload-input">
+              <span>Image du compte (effectif / joueurs) <span class="required-star">*</span></span>
+              <small style="color: var(--text-muted); font-weight: 400;">Capture d'écran obligatoire</small>
+            </label>
+            <div class="image-upload-zone" id="pub-image-dropzone" onclick="document.getElementById('file-upload-input').click()">
+              <div style="font-size: 28px; margin-bottom: 6px;">📸</div>
+              <div style="font-size: 13.5px; font-weight: 600; color: var(--text-white);">Cliquez pour choisir une photo <span class="required-star">*</span></div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Format PNG, JPG ou WEBP (obligatoire)</div>
+              <input 
+                type="file" 
+                id="file-upload-input" 
+                accept="image/*" 
+                style="display: none;" 
+                onchange="gererSelectionImage(event)"
+              >
+            </div>
+
+            <!-- Aperçu de l'image -->
+            <div class="image-preview-wrapper" id="image-preview-wrapper">
+              <img id="image-preview-element" src="" alt="Aperçu du compte">
+              <button type="button" class="btn-remove-image" onclick="supprimerImageApercu()" title="Supprimer cette image">✕</button>
+            </div>
+            <div class="error-msg" id="err-pub-image">Veuillez ajouter une photo ou capture d'écran de votre compte eFootball.</div>
+          </div>
+
+          <!-- Actions de soumission -->
+          <div style="display: flex; gap: 10px; margin-top: 24px;">
+            <button type="submit" id="btn-submit-publish" class="btn-primary" style="flex: 1;" disabled>
+              <span>🚀</span> Publier mon annonce
+            </button>
+            <button type="button" class="btn-secondary" onclick="changerPage('accueil')">
+              Annuler
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
+         PAGE 3 : DÉTAIL D'UNE ANNONCE
+         -------------------------------------------------------- -->
+    <section id="page-detail" class="page-view">
+      <div class="detail-card" id="detail-card-container">
+        <!-- Rendu dynamique via JavaScript -->
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
+         PAGE 4 : MESSAGERIE LOCALE
+         -------------------------------------------------------- -->
+    <section id="page-messages" class="page-view">
+      <div class="messaging-container">
+        <!-- Volet des conversations -->
+        <div class="conv-list-pane">
+          <div class="conv-list-header">
+            <span>💬 Vos conversations</span>
+            <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="changerPage('accueil')">
+              ← Annonces
+            </button>
+          </div>
+          <div class="conv-items-scroll" id="conversations-list-container">
+            <!-- Rendu dynamique via JavaScript -->
+          </div>
+        </div>
+
+        <!-- Volet du chat actif -->
+        <div class="chat-pane" id="chat-pane-area">
+          <div class="chat-header" id="chat-header-info">
+            <div class="chat-header-user">
+              <div style="font-size: 20px;">👤</div>
+              <div>
+                <div style="font-size: 14px; font-weight: 700;" id="chat-recipient-name">Sélectionnez une conversation</div>
+                <div style="font-size: 11px; color: var(--primary);" id="chat-ad-title">EFoot Market SN</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-messages-area" id="chat-messages-flow">
+            <!-- Messages injectés dynamiquement -->
+          </div>
+
+          <form class="chat-input-bar" id="chat-form" onsubmit="envoyerMessage(event)">
+            <input 
+              type="text" 
+              id="chat-message-input" 
+              placeholder="Écrivez votre message..." 
+              autocomplete="off"
+              disabled
+            >
+            <button type="submit" id="chat-send-btn" class="btn-primary" disabled>
+              <span>Envoyer</span> ➔
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
+         PAGE 5 : MES ANNONCES
+         -------------------------------------------------------- -->
+    <section id="page-mes-annonces" class="page-view">
+      <div style="max-width: 800px; margin: 0 auto 16px auto; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 700;">📋 Mes annonces en vente</h2>
+          <p style="font-size: 13px; color: var(--text-gray);">Gérez et supprimez vos comptes eFootball publiés.</p>
+        </div>
+        <button class="btn-secondary" onclick="changerPage('accueil')">
+          ← Retour accueil
+        </button>
+      </div>
+
+      <div class="my-ads-list" id="my-ads-container">
+        <!-- Rendu dynamique via JavaScript -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================
+       MODALE SIMPLE : NOM D'UTILISATEUR (PREMIÈRE ACTION)
+       ========================================================== -->
+  <div class="modal-backdrop" id="user-profile-modal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>⚽</span>
+        <span>Bienvenue sur EFoot Market SN</span>
+      </div>
+      <p class="modal-desc">
+        Veuillez entrer votre prénom ou pseudo pour publier des annonces et échanger avec les autres joueurs au Sénégal.
+      </p>
+      <form onsubmit="enregistrerProfil(event)">
+        <div class="form-group">
+          <label for="modal-user-name">Votre prénom ou pseudo <span class="required-star">*</span></label>
+          <input 
+            type="text" 
+            id="modal-user-name" 
+            class="form-control" 
+            placeholder="Ex : Moussa_Dakar ou FootGamer221" 
+            required 
+            minlength="3"
+            maxlength="25"
+          >
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 14px;">
+          <button type="submit" class="btn-primary" style="flex: 1;">
+            Enregistrer mon profil
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       NOTIFICATION TOAST GLOBALE
+       ========================================================== -->
+  <div class="toast-box" id="global-toast">
+    <span id="toast-icon">✅</span>
+    <span id="toast-text">Action effectuée avec succès</span>
+  </div>
+
+  <!-- ==========================================================
+       SCRIPTS JAVASCRIPT PUR : LOGIQUE, STOCKAGE & INTERACTION
+       ========================================================== -->
+  <script>
+    /* ==========================================================
+       SECTION 1 : ÉTAT GLOBAL DE L'APPLICATION
+       ========================================================== */
+    let currentPage = 'accueil';
+    let currentDetailAdId = null;
+    let activeConversationId = null;
+    let uploadedImageBase64 = null;
+    let pendingActionCallback = null;
+
+    // Constantes de stockage local
+    const STORAGE_ANNONCES = 'efoot_annonces';
+    const STORAGE_MESSAGES = 'efoot_messages';
+    const STORAGE_PROFIL = 'efoot_profil';
+
+    /* ==========================================================
+       SECTION 2 : UTILITAIRES & NOTIFICATIONS
+       ========================================================== */
+
+    /**
+     * Formate un montant numérique en FCFA lisible
+     */
+    function formaterPrix(nombre) {
+      if (!nombre || isNaN(nombre)) return "0 FCFA";
+      return new Intl.NumberFormat('fr-FR').format(nombre) + " FCFA";
+    }
+
+    /**
+     * Formate une date ISO en chaîne lisible au format sénégalais/français
+     */
+    function formaterDate(isoStr) {
+      if (!isoStr) return "";
+      const d = new Date(isoStr);
+      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    /**
+     * Affiche un message d'information Toast temporaire
+     */
+    function afficherNotification(message, icon = "✅") {
+      const toast = document.getElementById('global-toast');
+      document.getElementById('toast-icon').textContent = icon;
+      document.getElementById('toast-text').textContent = message;
+      toast.classList.add('active');
+
+      setTimeout(() => {
+        toast.classList.remove('active');
+      }, 3200);
+    }
+
+    /* ==========================================================
+       SECTION 3 : GESTION DU PROFIL UTILISATEUR
+       ========================================================== */
+
+    /**
+     * Récupère le profil local de l'utilisateur ou null
+     */
+    function getProfilUtilisateur() {
+      try {
+        const p = localStorage.getItem(STORAGE_PROFIL);
+        return p ? JSON.parse(p) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    /**
+     * Vérifie la présence d'un nom d'utilisateur. Si absent, ouvre la modale
+     */
+    function verifierProfilOuDemander(callbackApres) {
+      const profil = getProfilUtilisateur();
+      if (profil && profil.nom) {
+        if (callbackApres) callbackApres(profil);
+        return true;
+      }
+
+      pendingActionCallback = callbackApres;
+      document.getElementById('user-profile-modal').classList.add('active');
+      document.getElementById('modal-user-name').focus();
+      return false;
+    }
+
+    /**
+     * Enregistre le nom d'utilisateur dans localStorage
+     */
+    function enregistrerProfil(event) {
+      event.preventDefault();
+      const nom = document.getElementById('modal-user-name').value.trim();
+      if (!nom || nom.length < 3) return;
+
+      const nouveauProfil = {
+        id: 'usr_' + Date.now(),
+        nom: nom,
+        creeLe: new Date().toISOString()
+      };
+
+      localStorage.setItem(STORAGE_PROFIL, JSON.stringify(nouveauProfil));
+      document.getElementById('user-profile-modal').classList.remove('active');
+      afficherNotification(`Ravi de vous rencontrer, ${nom} !`, "⚽");
+
+      if (pendingActionCallback) {
+        const cb = pendingActionCallback;
+        pendingActionCallback = null;
+        cb(nouveauProfil);
+      }
+    }
+
+    /* ==========================================================
+       SECTION 4 : NAVIGATION ENTRE LES ONGLETS (SPA)
+       ========================================================== */
+
+    /**
+     * Change la page active et met à jour les indicateurs visuels des menus
+     */
+    function changerPage(pageId, params = {}) {
+      // Masquer toutes les vues
+      document.querySelectorAll('.page-view').forEach(view => {
+        view.classList.remove('active');
+      });
+
+      // Mettre à jour l'onglet actif
+      const targetView = document.getElementById('page-' + pageId);
+      if (targetView) {
+        targetView.classList.add('active');
+        currentPage = pageId;
+      }
+
+      // Mettre à jour les boutons de navigation Desktop
+      document.querySelectorAll('.nav-link-btn').forEach(btn => btn.classList.remove('active'));
+      const desktopBtn = document.getElementById('nav-btn-' + pageId);
+      if (desktopBtn) desktopBtn.classList.add('active');
+
+      // Mettre à jour les boutons de navigation Mobile Dock
+      document.querySelectorAll('.dock-btn').forEach(btn => btn.classList.remove('active'));
+      const mobileBtn = document.getElementById('dock-btn-' + pageId);
+      if (mobileBtn) mobileBtn.classList.add('active');
+
+      // Défilement fluide vers le haut
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Actions spécifiques selon la page demandée
+      if (pageId === 'accueil') {
+        appliquerFiltres();
+      } else if (pageId === 'mes-annonces') {
+        afficherMesAnnonces();
+      } else if (pageId === 'messages') {
+        afficherConversations(params.conversationId);
+      } else if (pageId === 'detail' && params.annonceId) {
+        afficherDetailAnnonce(params.annonceId);
+      }
+    }
+
+    /* ==========================================================
+       SECTION 5 : GESTION DES ANNONCES (CRUD & FILTRES)
+       ========================================================== */
+
+    /**
+     * Récupère la liste brute des annonces depuis localStorage
+     */
+    function getAnnonces() {
+      try {
+        const raw = localStorage.getItem(STORAGE_ANNONCES);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error("Erreur de lecture des annonces", e);
+        return [];
+      }
+    }
+
+    /**
+     * Sauvegarde la liste complète des annonces dans localStorage
+     */
+    function setAnnonces(liste) {
+      localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(liste));
+    }
+
+    /**
+     * Gère la saisie dans les barres de recherche desktop et mobile
+     */
+    function gererRecherche(valeur) {
+      const desktop = document.getElementById('search-input-desktop');
+      const mobile = document.getElementById('search-input-mobile');
+      if (desktop && desktop.value !== valeur) desktop.value = valeur;
+      if (mobile && mobile.value !== valeur) mobile.value = valeur;
+
+      if (currentPage !== 'accueil') {
+        changerPage('accueil');
+      } else {
+        appliquerFiltres();
+      }
+    }
+
+    /**
+     * Extrait les bornes numériques (min, max) à partir d'une chaîne de puissance
+     * Exemples : "2900 - 3100" -> { min: 2900, max: 3100 }
+     *            "Moins de 2500" -> { min: 0, max: 2500 }
+     *            "Plus de 3300" -> { min: 3300, max: 99999 }
+     *            "3150" -> { min: 3150, max: 3150 }
+     */
+    function extraireBornesPuissance(val) {
+      if (!val) return { min: 0, max: 99999 };
+      const str = String(val).trim().toLowerCase();
+      const nums = str.match(/\d+/g);
+      if (!nums || nums.length === 0) return { min: 0, max: 99999 };
+
+      if (str.includes('moins')) {
+        return { min: 0, max: parseInt(nums[0], 10) };
+      }
+      if (str.includes('plus')) {
+        return { min: parseInt(nums[0], 10), max: 99999 };
+      }
+      if (nums.length >= 2) {
+        return { min: parseInt(nums[0], 10), max: parseInt(nums[1], 10) };
+      }
+      const n = parseInt(nums[0], 10);
+      return { min: n, max: n };
+    }
+
+    /**
+     * Sélectionne ou désélectionne une suggestion de puissance en un clic
+     */
+    function choisirPuissanceRapide(valeur, btnElement) {
+      const input = document.getElementById('filter-power-custom');
+      const allChips = document.querySelectorAll('.power-chip');
+
+      if (input && input.value == valeur) {
+        input.value = "";
+        allChips.forEach(c => c.classList.remove('active'));
+      } else {
+        if (input) input.value = valeur;
+        allChips.forEach(c => c.classList.remove('active'));
+        if (btnElement) btnElement.classList.add('active');
+      }
+      appliquerFiltres();
+    }
+
+    /**
+     * Synchronise l'état visuel des boutons lors de la saisie manuelle libre
+     */
+    function surSaisiePuissanceFiltre(valeur) {
+      const allChips = document.querySelectorAll('.power-chip');
+      const valStr = String(valeur).trim();
+      allChips.forEach(c => {
+        const chipVal = c.textContent.replace('+', '').trim();
+        c.classList.toggle('active', chipVal === valStr);
+      });
+      appliquerFiltres();
+    }
+
+    /**
+     * Gère le basculement entre fourchette prédéfinie et saisie libre dans le formulaire de publication
+     */
+    function gererChangementPuissancePub(valeur) {
+      const customWrap = document.getElementById('pub-power-custom-wrap');
+      if (customWrap) {
+        customWrap.style.display = valeur === 'custom' ? 'block' : 'none';
+        if (valeur === 'custom') {
+          const exactInput = document.getElementById('pub-power-exact');
+          if (exactInput) exactInput.focus();
+        }
+      }
+      validerChamp('pub-power');
+    }
+
+    /**
+     * Réinitialise l'ensemble des filtres de la page d'accueil
+     */
+    function reinitialiserFiltres() {
+      document.getElementById('search-input-desktop').value = "";
+      document.getElementById('search-input-mobile').value = "";
+      document.getElementById('filter-price-min').value = "";
+      document.getElementById('filter-price-max').value = "";
+      if (document.getElementById('filter-power-custom')) {
+        document.getElementById('filter-power-custom').value = "";
+      }
+      if (document.getElementById('filter-power-mode')) {
+        document.getElementById('filter-power-mode').value = "min";
+      }
+      document.querySelectorAll('.power-chip').forEach(c => c.classList.remove('active'));
+      document.getElementById('filter-platform').value = "toutes";
+      document.getElementById('filter-sort').value = "date-desc";
+      appliquerFiltres();
+      afficherNotification("Filtres réinitialisés");
+    }
+
+    /**
+     * Filtre et trie les annonces en fonction des critères sélectionnés
+     */
+    function appliquerFiltres() {
+      const annonces = getAnnonces();
+      const motCle = (document.getElementById('search-input-desktop').value || document.getElementById('search-input-mobile').value || "").toLowerCase().trim();
+      const prixMin = parseFloat(document.getElementById('filter-price-min').value) || 0;
+      const prixMaxVal = document.getElementById('filter-price-max').value;
+      const prixMax = prixMaxVal ? parseFloat(prixMaxVal) : Infinity;
+      const plateforme = document.getElementById('filter-platform').value;
+      const tri = document.getElementById('filter-sort').value;
+
+      // Puissance d'équipe recherchée
+      const powerInput = document.getElementById('filter-power-custom');
+      const powerModeEl = document.getElementById('filter-power-mode');
+      const powerVal = powerInput && powerInput.value.trim() !== "" ? parseFloat(powerInput.value) : null;
+      const powerMode = powerModeEl ? powerModeEl.value : 'min';
+
+      let resultats = annonces.filter(item => {
+        // Recherche sur titre et description
+        if (motCle) {
+          const dansTitre = item.titre && item.titre.toLowerCase().includes(motCle);
+          const dansDesc = item.description && item.description.toLowerCase().includes(motCle);
+          const dansVendeur = item.vendeur && item.vendeur.toLowerCase().includes(motCle);
+          if (!dansTitre && !dansDesc && !dansVendeur) return false;
+        }
+
+        // Filtre de prix
+        if (item.prix < prixMin) return false;
+        if (item.prix > prixMax) return false;
+
+        // Filtre Plateforme
+        if (plateforme !== 'toutes' && item.plateforme !== plateforme) return false;
+
+        // Filtre Puissance d'équipe personnalisée
+        if (powerVal !== null && !isNaN(powerVal)) {
+          if (!item.puissance) return false;
+          const bornes = extraireBornesPuissance(item.puissance);
+          if (powerMode === 'min') {
+            // Mode "≥ Min" : l'équipe doit pouvoir atteindre ou dépasser la puissance recherchée
+            if (bornes.max < powerVal) return false;
+          } else {
+            // Mode "Tranche" : la puissance recherchée doit être comprise dans la tranche de l'équipe
+            if (powerVal < bornes.min || powerVal > bornes.max) return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Tri des annonces
+      if (tri === 'price-asc') {
+        resultats.sort((a, b) => a.prix - b.prix);
+      } else if (tri === 'price-desc') {
+        resultats.sort((a, b) => b.prix - a.prix);
+      } else {
+        // Par date décroissante (plus récent d'abord)
+        resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
+      }
+
+      afficherAnnonces(resultats);
+    }
+
+    /**
+     * Génère le rendu HTML des cartes dans la grille d'accueil
+     */
+    function afficherAnnonces(liste) {
+      const container = document.getElementById('products-grid-container');
+      const counter = document.getElementById('ads-counter');
+      if (counter) counter.textContent = liste.length;
+
+      // Si aucune annonce ne correspond
+      if (!liste || liste.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <div class="empty-icon">⚽🔍</div>
+            <div class="empty-title">Aucune annonce pour le moment</div>
+            <div class="empty-desc">
+              Soyez le premier à vendre ou chercher un compte eFootball au Sénégal !
+            </div>
+            <button class="btn-primary" onclick="changerPage('publier')">
+              ➕ Publier une annonce
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // Rendu des cartes de compte
+      container.innerHTML = liste.map(ad => {
+        const mediaHtml = ad.image ? 
+          `<img src="${ad.image}" alt="${ad.titre}" loading="lazy">` : 
+          `<div class="card-placeholder">
+             <span class="placeholder-ball">⚽</span>
+             <span class="placeholder-label">eFootball</span>
+           </div>`;
+
+        const noteAffichage = ad.note ? ad.note.toFixed(1) : "5.0";
+
+        return `
+          <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
+            <div class="card-media">
+              ${mediaHtml}
+              <div class="card-platform-badge">
+                <span>🎮</span>
+                <span>${ad.plateforme}</span>
+              </div>
+              ${ad.typeCompte ? `<div class="card-type-badge">${ad.typeCompte}</div>` : ''}
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">${ad.titre}</h3>
+              <div class="card-price-row">
+                <div class="card-price">${formaterPrix(ad.prix)}</div>
+                ${ad.puissance ? `<div class="card-power-badge">💪 ${ad.puissance}</div>` : ''}
+              </div>
+              <div class="card-seller-row">
+                <div class="card-seller-info">
+                  <span>👤</span>
+                  <span class="card-seller-name">${ad.vendeur}</span>
+                  ${ad.verifie ? '<span style="color: var(--primary);" title="Vendeur vérifié">✅</span>' : ''}
+                </div>
+                <div class="card-seller-rating">
+                  <span>★</span>
+                  <span>${noteAffichage}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    /* ==========================================================
+       SECTION 6 : VALIDATION ET PUBLICATION D'UNE ANNONCE
+       ========================================================== */
+
+    /**
+     * Valide le format d'un numéro de téléphone sénégalais (+221 ou 221)
+     */
+    function validerFormatWhatsApp(numero) {
+      if (!numero) return false;
+      const nettoye = numero.replace(/\s+/g, '').replace(/-/g, '');
+      // Format +2217XXXXXXXX, 2217XXXXXXXX ou 7XXXXXXXX
+      return /^(\+?221)?[7][05678][0-9]{7}$/.test(nettoye);
+    }
+
+    /**
+     * Nettoie le numéro WhatsApp pour les liens wa.me
+     */
+    function nettoyerNumeroWhatsApp(numero) {
+      let nettoye = numero.replace(/\s+/g, '').replace(/-/g, '').replace('+', '');
+      if (!nettoye.startsWith('221')) {
+        nettoye = '221' + nettoye;
+      }
+      return nettoye;
+    }
+
+    /**
+     * Valide individuellement un champ du formulaire de publication
+     */
+    function validerChamp(fieldId) {
+      const titreInput = document.getElementById('pub-title');
+      const descInput = document.getElementById('pub-desc');
+      const prixInput = document.getElementById('pub-price');
+      const whatsappInput = document.getElementById('pub-whatsapp');
+      const powerInput = document.getElementById('pub-power');
+
+      let titreValide = titreInput.value.trim().length >= 5;
+      let descValide = descInput.value.trim().length >= 10;
+      let prixValide = !isNaN(prixInput.value) && parseFloat(prixInput.value) > 0;
+      let whatsappValide = validerFormatWhatsApp(whatsappInput.value.trim());
+      let powerValide = false;
+      if (powerInput) {
+        if (powerInput.value === 'custom') {
+          const exactInput = document.getElementById('pub-power-exact');
+          const exactVal = exactInput ? parseFloat(exactInput.value) : 0;
+          powerValide = !isNaN(exactVal) && exactVal >= 1000 && exactVal <= 5000;
+        } else {
+          powerValide = powerInput.value !== "";
+        }
+      }
+      let imageValide = Boolean(uploadedImageBase64);
+
+      // Afficher / masquer messages d'erreur spécifiques
+      const toggleError = (id, isValid) => {
+        const el = document.getElementById(id);
+        const input = document.getElementById(id.replace('err-', ''));
+        if (el) el.classList.toggle('visible', !isValid && input && input.value.trim().length > 0);
+        if (input) input.classList.toggle('invalid', !isValid && input.value.trim().length > 0);
+      };
+
+      if (fieldId === 'pub-title') toggleError('err-pub-title', titreValide);
+      if (fieldId === 'pub-desc') toggleError('err-pub-desc', descValide);
+      if (fieldId === 'pub-price') toggleError('err-pub-price', prixValide);
+      if (fieldId === 'pub-whatsapp') toggleError('err-pub-whatsapp', whatsappValide);
+      if (fieldId === 'pub-power') {
+        const errEl = document.getElementById('err-pub-power');
+        if (errEl) errEl.classList.toggle('visible', !powerValide);
+        if (powerInput) powerInput.classList.toggle('invalid', !powerValide);
+      }
+      if (fieldId === 'pub-image') {
+        const errImg = document.getElementById('err-pub-image');
+        const dropzone = document.getElementById('pub-image-dropzone');
+        if (errImg) errImg.classList.toggle('visible', !imageValide);
+        if (dropzone) dropzone.classList.toggle('invalid', !imageValide);
+      }
+
+      // Activation dynamique du bouton de soumission
+      const boutonPublier = document.getElementById('btn-submit-publish');
+      const formulaireCompletValide = titreValide && descValide && prixValide && whatsappValide && powerValide && imageValide;
+      boutonPublier.disabled = !formulaireCompletValide;
+
+      return formulaireCompletValide;
+    }
+
+    /**
+     * Gère la sélection locale de l'image (upload FileReader en base64)
+     */
+    function gererSelectionImage(event) {
+      const fichier = event.target.files[0];
+      if (!fichier) return;
+
+      if (!fichier.type.startsWith('image/')) {
+        alert("Veuillez sélectionner un fichier image valide.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        uploadedImageBase64 = e.target.result;
+        const preview = document.getElementById('image-preview-element');
+        const wrapper = document.getElementById('image-preview-wrapper');
+        preview.src = uploadedImageBase64;
+        wrapper.style.display = 'block';
+        validerChamp('pub-image');
+      };
+      reader.readAsDataURL(fichier);
+    }
+
+    /**
+     * Supprime l'image prévisualisée
+     */
+    function supprimerImageApercu() {
+      uploadedImageBase64 = null;
+      document.getElementById('file-upload-input').value = "";
+      document.getElementById('image-preview-element').src = "";
+      document.getElementById('image-preview-wrapper').style.display = 'none';
+      validerChamp('pub-image');
+    }
+
+    /**
+     * Enregistre l'annonce dans le localStorage et redirige vers l'accueil
+     */
+    function publierAnnonce(event) {
+      event.preventDefault();
+
+      if (!validerChamp()) {
+        const errImg = document.getElementById('err-pub-image');
+        const dropzone = document.getElementById('pub-image-dropzone');
+        if (!uploadedImageBase64) {
+          if (errImg) errImg.classList.add('visible');
+          if (dropzone) dropzone.classList.add('invalid');
+        }
+        afficherNotification("Veuillez remplir tous les champs obligatoires et ajouter une image du compte", "⚠️");
+        return;
+      }
+
+      verifierProfilOuDemander(function(profil) {
+        const titre = document.getElementById('pub-title').value.trim();
+        const description = document.getElementById('pub-desc').value.trim();
+        const prix = parseFloat(document.getElementById('pub-price').value);
+        const plateforme = document.getElementById('pub-platform').value;
+        let puissance = document.getElementById('pub-power').value;
+        if (puissance === 'custom') {
+          const exactVal = document.getElementById('pub-power-exact').value.trim();
+          puissance = exactVal ? exactVal : '';
+        }
+        const telephoneBrut = document.getElementById('pub-whatsapp').value.trim();
+        const telephone = nettoyerNumeroWhatsApp(telephoneBrut);
+
+        const nouvelleAnnonce = {
+          id: 'efoot_' + Date.now(),
+          titre: titre,
+          description: description,
+          prix: prix,
+          plateforme: plateforme,
+          puissance: puissance,
+          telephoneWhatsApp: telephone,
+          image: uploadedImageBase64 || null,
+          vendeur: profil.nom,
+          vendeurId: profil.id,
+          note: 4.8 + (Math.random() * 0.2), // Note aléatoire 4.8 - 5.0
+          verifie: Math.random() > 0.3,       // Badge vérifié pour la démo
+          date: new Date().toISOString()
+        };
+
+        const liste = getAnnonces();
+        liste.unshift(nouvelleAnnonce);
+        setAnnonces(liste);
+
+        // Réinitialiser le formulaire
+        document.getElementById('publish-ad-form').reset();
+        const customWrap = document.getElementById('pub-power-custom-wrap');
+        if (customWrap) customWrap.style.display = 'none';
+        supprimerImageApercu();
+        const dropzone = document.getElementById('pub-image-dropzone');
+        if (dropzone) dropzone.classList.remove('invalid');
+        const errImg = document.getElementById('err-pub-image');
+        if (errImg) errImg.classList.remove('visible');
+        document.getElementById('btn-submit-publish').disabled = true;
+
+        afficherNotification("Compte eFootball publié avec succès !", "🚀");
+        changerPage('accueil');
+      });
+    }
+
+    /* ==========================================================
+       SECTION 7 : PAGE 3 : DÉTAIL D'UNE ANNONCE
+       ========================================================== */
+
+    /**
+     * Affiche les informations complètes d'un compte eFootball
+     */
+    function afficherDetailAnnonce(id) {
+      currentDetailAdId = id;
+      const annonces = getAnnonces();
+      const ad = annonces.find(item => item.id === id);
+      const container = document.getElementById('detail-card-container');
+
+      if (!ad) {
+        container.innerHTML = `
+          <div style="padding: 40px; text-align: center;">
+            <h3>Cette annonce n'existe plus ou a été retirée.</h3>
+            <button class="btn-primary" style="margin-top: 14px;" onclick="changerPage('accueil')">
+              ← Retour à l'accueil
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const mediaHtml = ad.image ? 
+        `<img src="${ad.image}" alt="${ad.titre}">` : 
+        `<div class="card-placeholder" style="height: 280px;">
+           <span class="placeholder-ball" style="font-size: 56px;">⚽</span>
+           <span class="placeholder-label">eFootball Sénégal</span>
+         </div>`;
+
+      const noteText = ad.note ? ad.note.toFixed(1) : "5.0";
+      const messageWA = encodeURIComponent(`Bonjour ${ad.vendeur}, je vous contacte depuis EFoot Market SN pour votre compte "${ad.titre}" affiché à ${formaterPrix(ad.prix)}.`);
+      const lienWhatsApp = `https://wa.me/${ad.telephoneWhatsApp}?text=${messageWA}`;
+
+      container.innerHTML = `
+        <div class="detail-top-nav">
+          <button class="btn-secondary" onclick="changerPage('accueil')">
+            ← Retour à l'accueil
+          </button>
+          <span style="font-size: 12px; color: var(--text-muted);">Publié le ${formaterDate(ad.date)}</span>
+        </div>
+
+        <div class="detail-image-box">
+          ${mediaHtml}
+        </div>
+
+        <div class="detail-content">
+          <div class="detail-badges-row">
+            <span class="badge-pill primary">🎮 ${ad.plateforme}</span>
+            ${ad.puissance ? `<span class="badge-pill" style="color: var(--primary); background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">💪 ${ad.puissance}</span>` : ''}
+            ${ad.typeCompte ? `<span class="badge-pill">💎 ${ad.typeCompte}</span>` : ''}
+          </div>
+
+          <h1 class="detail-title">${ad.titre}</h1>
+
+          <div class="detail-price-box">
+            <div>
+              <div class="detail-price-label">Prix de vente vérifié</div>
+              <div class="detail-price-value">${formaterPrix(ad.prix)}</div>
+            </div>
+            <div style="text-align: right; font-size: 12px; color: var(--primary);">
+              Dispo immédiate • Wave/OM
+            </div>
+          </div>
+
+          <div class="detail-desc-box">
+            ${ad.puissance ? `
+            <div class="detail-power-box">
+              <span class="detail-power-title">Puissance d'équipe :</span>
+              <span class="card-power-badge" style="font-size: 13.5px; padding: 4px 10px;">💪 ${ad.puissance}</span>
+            </div>` : ''}
+            <h4>Description du compte :</h4>
+            <p>${ad.description}</p>
+          </div>
+
+          <!-- Section Vendeur -->
+          <div class="detail-seller-box">
+            <div class="seller-left">
+              <div class="seller-avatar">👤</div>
+              <div>
+                <div class="seller-meta-name">
+                  <span>${ad.vendeur}</span>
+                  ${ad.verifie ? '<span class="verified-chip">✅ Vérifié</span>' : ''}
+                </div>
+                <div class="seller-meta-sub">
+                  ★ ${noteText} sur 5.0 (Vendeur certifié)
+                </div>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); text-align: right;">
+              Tel : +${ad.telephoneWhatsApp}
+            </div>
+          </div>
+
+          <!-- Actions de contact -->
+          <div class="detail-actions-row">
+            <a href="${lienWhatsApp}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-whatsapp" style="flex: 1;">
+              <span>💬</span> Contacter sur WhatsApp
+            </a>
+            <button class="btn-primary" style="flex: 1;" onclick="initierDiscussion('${ad.id}')">
+              <span>✉️</span> Message au vendeur
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================
+       SECTION 8 : PAGE 4 : MESSAGERIE LOCALE
+       ========================================================== */
+
+    /**
+     * Récupère la liste de toutes les conversations depuis localStorage
+     */
+    function getConversations() {
+      try {
+        const c = localStorage.getItem(STORAGE_MESSAGES);
+        return c ? JSON.parse(c) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    /**
+     * Sauvegarde les conversations dans localStorage
+     */
+    function setConversations(liste) {
+      localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(liste));
+      mettreAJourBadgeMessages();
+    }
+
+    /**
+     * Calcule et affiche le badge de messages non lus
+     */
+    function mettreAJourBadgeMessages() {
+      const convs = getConversations();
+      const nonLus = convs.reduce((total, c) => total + (c.messages ? c.messages.length : 0), 0);
+      
+      const badgeDesktop = document.getElementById('unread-count-desktop');
+      const badgeMobile = document.getElementById('unread-count-mobile');
+
+      if (nonLus > 0) {
+        if (badgeDesktop) { badgeDesktop.textContent = nonLus; badgeDesktop.style.display = 'inline-block'; }
+        if (badgeMobile) { badgeMobile.textContent = nonLus; badgeMobile.style.display = 'block'; }
+      } else {
+        if (badgeDesktop) badgeDesktop.style.display = 'none';
+        if (badgeMobile) badgeMobile.style.display = 'none';
+      }
+    }
+
+    /**
+     * Démarre une discussion avec le vendeur d'une annonce spécifique
+     */
+    function initierDiscussion(annonceId) {
+      verifierProfilOuDemander(function(profil) {
+        const annonces = getAnnonces();
+        const ad = annonces.find(a => a.id === annonceId);
+        if (!ad) return;
+
+        let convs = getConversations();
+        let conv = convs.find(c => c.annonceId === annonceId && c.acheteurNom === profil.nom);
+
+        if (!conv) {
+          conv = {
+            id: 'conv_' + Date.now(),
+            annonceId: ad.id,
+            titreAnnonce: ad.titre,
+            prixAnnonce: ad.prix,
+            vendeurNom: ad.vendeur,
+            acheteurNom: profil.nom,
+            messages: [
+              {
+                id: 'msg_' + Date.now(),
+                expediteur: profil.nom,
+                destinataire: ad.vendeur,
+                contenu: `Bonjour ${ad.vendeur}, votre compte "${ad.titre}" m'intéresse. Est-il toujours disponible ?`,
+                date: new Date().toISOString()
+              }
+            ]
+          };
+          convs.unshift(conv);
+          setConversations(convs);
+        }
+
+        changerPage('messages', { conversationId: conv.id });
+      });
+    }
+
+    /**
+     * Affiche la liste des conversations et charge celle sélectionnée
+     */
+    function afficherConversations(selectionId = null) {
+      const convs = getConversations();
+      const listContainer = document.getElementById('conversations-list-container');
+      const chatInput = document.getElementById('chat-message-input');
+      const chatSendBtn = document.getElementById('chat-send-btn');
+
+      if (convs.length === 0) {
+        listContainer.innerHTML = `
+          <div style="padding: 30px 16px; text-align: center; color: var(--text-muted);">
+            <div style="font-size: 24px; margin-bottom: 6px;">💬</div>
+            <div style="font-size: 13px;">Aucune conversation pour le moment</div>
+            <button class="btn-secondary" style="margin-top: 10px; font-size: 11.5px;" onclick="changerPage('accueil')">
+              Parcourir les annonces
+            </button>
+          </div>
+        `;
+        document.getElementById('chat-messages-flow').innerHTML = `
+          <div style="margin: auto; text-align: center; color: var(--text-muted); font-size: 13px;">
+            Vos messages avec les vendeurs s'afficheront ici.
+          </div>
+        `;
+        chatInput.disabled = true;
+        chatSendBtn.disabled = true;
+        return;
+      }
+
+      // Si aucun ID spécifié, prendre la première conversation
+      if (!selectionId || !convs.some(c => c.id === selectionId)) {
+        activeConversationId = convs[0].id;
+      } else {
+        activeConversationId = selectionId;
+      }
+
+      const profil = getProfilUtilisateur();
+      const monNom = profil ? profil.nom : "";
+
+      // Rendu de la liste de gauche
+      listContainer.innerHTML = convs.map(c => {
+        const estMoiAcheteur = c.acheteurNom === monNom;
+        const interlocuteur = estMoiAcheteur ? c.vendeurNom : c.acheteurNom;
+        const dernierMsg = c.messages && c.messages.length > 0 ? c.messages[c.messages.length - 1] : null;
+
+        return `
+          <div class="conv-item ${c.id === activeConversationId ? 'active' : ''}" onclick="selectionnerConversation('${c.id}')">
+            <div style="font-size: 20px;">👤</div>
+            <div class="conv-info">
+              <div class="conv-name-row">
+                <span>${interlocuteur}</span>
+                <span style="font-size: 10px; color: var(--text-muted);">${dernierMsg ? formaterHeure(dernierMsg.date) : ''}</span>
+              </div>
+              <div class="conv-item-title">${c.titreAnnonce || 'Compte eFootball'}</div>
+              <div class="conv-last-msg">${dernierMsg ? dernierMsg.contenu : 'Nouvelle conversation'}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      afficherMessagesConversation(activeConversationId);
+    }
+
+    /**
+     * Bascule la conversation active
+     */
+    function selectionnerConversation(convId) {
+      activeConversationId = convId;
+      afficherConversations(convId);
+    }
+
+    /**
+     * Affiche le flux de messages pour la conversation choisie
+     */
+    function afficherMessagesConversation(convId) {
+      const convs = getConversations();
+      const conv = convs.find(c => c.id === convId);
+      if (!conv) return;
+
+      const profil = getProfilUtilisateur();
+      const monNom = profil ? profil.nom : "";
+      const estAcheteur = conv.acheteurNom === monNom;
+      const interlocuteur = estAcheteur ? conv.vendeurNom : conv.acheteurNom;
+
+      document.getElementById('chat-recipient-name').textContent = interlocuteur;
+      document.getElementById('chat-ad-title').textContent = `${conv.titreAnnonce} (${formaterPrix(conv.prixAnnonce)})`;
+
+      const chatInput = document.getElementById('chat-message-input');
+      const chatSendBtn = document.getElementById('chat-send-btn');
+      chatInput.disabled = false;
+      chatSendBtn.disabled = false;
+
+      const flow = document.getElementById('chat-messages-flow');
+      flow.innerHTML = conv.messages.map(m => {
+        const estMonMessage = m.expediteur === monNom;
+        return `
+          <div class="chat-bubble ${estMonMessage ? 'mine' : 'theirs'}">
+            <div>${m.contenu}</div>
+            <div class="bubble-meta">${m.expediteur} • ${formaterHeure(m.date)}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Défilement automatique vers le bas du chat
+      flow.scrollTop = flow.scrollHeight;
+    }
+
+    /**
+     * Formate l'heure d'un message (HH:mm)
+     */
+    function formaterHeure(isoStr) {
+      if (!isoStr) return "";
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /**
+     * Envoie un nouveau message dans la conversation sélectionnée
+     */
+    function envoyerMessage(event) {
+      event.preventDefault();
+      const input = document.getElementById('chat-message-input');
+      const contenu = input.value.trim();
+      if (!contenu || !activeConversationId) return;
+
+      verifierProfilOuDemander(function(profil) {
+        let convs = getConversations();
+        let conv = convs.find(c => c.id === activeConversationId);
+        if (!conv) return;
+
+        const estMoiAcheteur = conv.acheteurNom === profil.nom;
+        const destinataire = estMoiAcheteur ? conv.vendeurNom : conv.acheteurNom;
+
+        const nouveauMessage = {
+          id: 'msg_' + Date.now(),
+          expediteur: profil.nom,
+          destinataire: destinataire,
+          contenu: contenu,
+          date: new Date().toISOString()
+        };
+
+        conv.messages.push(nouveauMessage);
+        setConversations(convs);
+
+        input.value = "";
+        afficherConversations(activeConversationId);
+        afficherNotification("Message envoyé", "✉️");
+      });
+    }
+
+    /* ==========================================================
+       SECTION 9 : PAGE 5 : MES ANNONCES & SUPPRESSION
+       ========================================================== */
+
+    /**
+     * Affiche les annonces enregistrées de l'utilisateur actuel
+     */
+    function afficherMesAnnonces() {
+      const container = document.getElementById('my-ads-container');
+      const profil = getProfilUtilisateur();
+      const annonces = getAnnonces();
+
+      // Filtrer les annonces par le nom/ID du vendeur
+      const mesAnnonces = profil ? annonces.filter(a => a.vendeurId === profil.id || a.vendeur === profil.nom) : [];
+
+      if (mesAnnonces.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">Vous n'avez pas encore publié d'annonce</div>
+            <div class="empty-desc">
+              Tous vos comptes eFootball mis en vente apparaîtront ici avec la possibilité de les supprimer en un clic.
+            </div>
+            <button class="btn-primary" onclick="changerPage('publier')">
+              ➕ Publier ma première annonce
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = mesAnnonces.map(item => {
+        const mediaHtml = item.image ? 
+          `<img src="${item.image}" alt="${item.titre}">` : 
+          `<span>⚽</span>`;
+
+        return `
+          <div class="my-ad-item">
+            <div class="my-ad-info">
+              <div class="my-ad-thumb">${mediaHtml}</div>
+              <div class="my-ad-details">
+                <div class="my-ad-title">${item.titre}</div>
+                <div class="my-ad-meta">${item.plateforme}${item.puissance ? ' • 💪 ' + item.puissance : ''}${item.typeCompte ? ' • ' + item.typeCompte : ''} • Publié le ${formaterDate(item.date)}</div>
+                <div class="my-ad-price">${formaterPrix(item.prix)}</div>
+              </div>
+            </div>
+            <div class="my-ad-actions">
+              <button class="btn-secondary" onclick="changerPage('detail', { annonceId: '${item.id}' })">
+                👁️ Voir
+              </button>
+              <button class="btn-danger" onclick="supprimerAnnonce('${item.id}')">
+                🗑️ Supprimer
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * Supprime une annonce avec confirmation explicite
+     */
+    function supprimerAnnonce(id) {
+      if (!confirm("Êtes-vous sûr de vouloir supprimer définitivement cette annonce ?")) {
+        return;
+      }
+
+      let annonces = getAnnonces();
+      annonces = annonces.filter(item => item.id !== id);
+      setAnnonces(annonces);
+
+      afficherMesAnnonces();
+      afficherNotification("Annonce supprimée avec succès", "🗑️");
+    }
+
+    /* ==========================================================
+       SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
+       ========================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Vérifier et initialiser les clés localStorage nécessaires
+      if (!localStorage.getItem(STORAGE_ANNONCES)) {
+        const exemplesInitiaux = [
+          {
+            id: 'efoot_demo_1',
+            titre: "Compte Mobile Légendes & Big Time 103 OVR",
+            description: "Équipe complète avec Messi Big Time 103, Neymar Showtime, Mbappé booster, Vieira et Ronaldinho. 2800 pièces eFootball et 3.5M GP disponibles.",
+            prix: 35000,
+            plateforme: "Mobile",
+            puissance: "3100 - 3300",
+            telephoneWhatsApp: "221778901234",
+            image: null,
+            vendeur: "Sadio_Efoot",
+            vendeurId: "usr_demo_1",
+            note: 4.9,
+            verifie: true,
+            date: new Date(Date.now() - 3600000 * 4).toISOString()
+          },
+          {
+            id: 'efoot_demo_2',
+            titre: "Compte PS5 Full Epics & Show Time",
+            description: "Effectif premium avec Rummenigge, Cruyff, Gullit et Maldini maxés. Idéal pour Division 1 compétitive.",
+            prix: 50000,
+            plateforme: "PS5",
+            puissance: "Plus de 3300",
+            telephoneWhatsApp: "221781234567",
+            image: null,
+            vendeur: "DakarGamer221",
+            vendeurId: "usr_demo_2",
+            note: 5.0,
+            verifie: true,
+            date: new Date(Date.now() - 3600000 * 24).toISOString()
+          },
+          {
+            id: 'efoot_demo_3',
+            titre: "Compte Starter Mobile Division 2",
+            description: "Très bon compte pour débuter avec plusieurs joueurs phares et managers de haut niveau. Transfert rapide Konami ID.",
+            prix: 18000,
+            plateforme: "Mobile",
+            puissance: "2700 - 2900",
+            telephoneWhatsApp: "221762345678",
+            image: null,
+            vendeur: "Modou_Pro",
+            vendeurId: "usr_demo_3",
+            note: 4.8,
+            verifie: false,
+            date: new Date(Date.now() - 3600000 * 48).toISOString()
+          }
+        ];
+        localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(exemplesInitiaux));
+      }
+      if (!localStorage.getItem(STORAGE_MESSAGES)) {
+        localStorage.setItem(STORAGE_MESSAGES, JSON.stringify([]));
+      }
+
+      // Mettre à jour les badges de messages
+      mettreAJourBadgeMessages();
+
+      // Affichage initial de la page d'accueil
+      changerPage('accueil');
+    });
+  </script>
+</body>
+</html>
