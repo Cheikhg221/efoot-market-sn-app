@@ -1764,6 +1764,374 @@
       margin-top: 16px;
     }
 
+    /* Bouton d'intention d'achat sécurisé */
+    .btn-buy-intent {
+      background: linear-gradient(135deg, #00C853, #009624);
+      color: #000;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(0, 200, 83, 0.35);
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .btn-buy-intent:hover {
+      background: linear-gradient(135deg, #00E676, #00C853);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 200, 83, 0.5);
+    }
+
+    .btn-buy-intent:active {
+      transform: translateY(0);
+    }
+
+    /* Badges des 6 états de transaction */
+    .tx-status-badge.DEMANDE_ENVOYEE {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .tx-status-badge.ACCEPTEE {
+      background: rgba(33, 150, 243, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(33, 150, 243, 0.4);
+    }
+
+    .tx-status-badge.REFUSEE {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .tx-status-badge.LIVRAISON_CONFIRMEE {
+      background: rgba(249, 115, 22, 0.15);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.4);
+    }
+
+    .tx-status-badge.TERMINEE {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .tx-status-badge.LITIGE {
+      background: rgba(220, 38, 38, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(220, 38, 38, 0.5);
+    }
+
+    /* Stepper visuel à 4 étapes */
+    .tx-stepper-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 16px 0;
+      position: relative;
+      padding: 0 10px;
+    }
+
+    .tx-step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      text-align: center;
+    }
+
+    .tx-step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      border: 2px solid #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-gray);
+      transition: var(--transition);
+      margin-bottom: 6px;
+    }
+
+    .tx-step-item.active .tx-step-circle {
+      border-color: #60a5fa;
+      background: rgba(33, 150, 243, 0.2);
+      color: #90caf9;
+      box-shadow: 0 0 10px rgba(33, 150, 243, 0.4);
+    }
+
+    .tx-step-item.completed .tx-step-circle {
+      border-color: #00C853;
+      background: #00C853;
+      color: #000;
+    }
+
+    .tx-step-item.refused .tx-step-circle {
+      border-color: #ef4444;
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .tx-step-label {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+      max-width: 80px;
+      line-height: 1.2;
+    }
+
+    .tx-step-item.active .tx-step-label {
+      color: var(--text-white);
+      font-weight: 600;
+    }
+
+    .tx-step-item.completed .tx-step-label {
+      color: #00E676;
+    }
+
+    .tx-step-line {
+      position: absolute;
+      top: 14px;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: #333;
+      z-index: 1;
+    }
+
+    .tx-step-line-progress {
+      height: 100%;
+      background: #00C853;
+      transition: width 0.3s ease;
+    }
+
+    /* Section d'action transactionnelle */
+    .tx-action-box {
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-top: 14px;
+      border: 1px solid var(--border-color);
+      background: #1e1e1e;
+    }
+
+    .tx-action-box.box-demande {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .tx-action-box.box-acceptee {
+      background: rgba(33, 150, 243, 0.08);
+      border-color: rgba(33, 150, 243, 0.3);
+    }
+
+    .tx-action-box.box-livraison {
+      background: rgba(249, 115, 22, 0.08);
+      border-color: rgba(249, 115, 22, 0.3);
+    }
+
+    .tx-action-box.box-terminee {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .tx-action-box.box-litige {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    /* Page Mes Transactions */
+    .transactions-page-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .transactions-hero {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .transactions-stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .transactions-stats-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .transactions-stat-item {
+      background: #232323;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .transactions-stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-white);
+    }
+
+    .transactions-stat-lbl {
+      font-size: 11px;
+      color: var(--text-gray);
+      margin-top: 2px;
+    }
+
+    .tx-filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tx-filter-btn {
+      background: #222;
+      border: 1px solid var(--border-color);
+      color: var(--text-gray);
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .tx-filter-btn:hover {
+      border-color: var(--text-muted);
+      color: var(--text-white);
+    }
+
+    .tx-filter-btn.active {
+      background: rgba(0, 200, 83, 0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tx-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .tx-card:hover {
+      border-color: #444;
+    }
+
+    .tx-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tx-card-main {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 550px) {
+      .tx-card-main {
+        flex-direction: column;
+      }
+    }
+
+    .tx-card-thumb {
+      width: 100px;
+      height: 75px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #252525;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid #333;
+    }
+
+    .tx-card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .tx-card-info {
+      flex: 1;
+    }
+
+    .tx-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-white);
+      margin-bottom: 4px;
+    }
+
+    .tx-card-price {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .tx-party-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      background: #252525;
+      border: 1px solid #3d3d3d;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      color: var(--text-white);
+      margin-top: 4px;
+    }
+
+    /* Animation pulse pour les badges d'action requise */
+    @keyframes badgePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .unread-bubble.pulse {
+      animation: badgePulse 2s infinite ease-in-out;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
+
     /* ==========================================================
        10. MODALE PROFIL UTILISATEUR & NOTIFICATIONS TOAST
        ========================================================== */
@@ -2392,6 +2760,10 @@
         <button class="nav-link-btn active" id="nav-btn-accueil" onclick="changerPage('accueil')">
           <span>🏠</span> Accueil
         </button>
+        <button class="nav-link-btn" id="nav-btn-transactions" onclick="changerPage('transactions')">
+          <span>🤝</span> Transactions
+          <span class="unread-bubble pulse" id="tx-count-desktop" style="display: none;">0</span>
+        </button>
         <button class="nav-link-btn" id="nav-btn-messages" onclick="changerPage('messages')">
           <span>💬</span> Messages
           <span class="unread-bubble" id="unread-count-desktop" style="display: none;">0</span>
@@ -2426,18 +2798,23 @@
       <span class="dock-icon">🏠</span>
       <span>Accueil</span>
     </button>
+    <button class="dock-btn" id="dock-btn-transactions" onclick="changerPage('transactions')" style="position: relative;">
+      <span class="dock-icon">🤝</span>
+      <span>Transactions</span>
+      <span class="unread-bubble pulse" id="tx-count-mobile" style="display: none; position: absolute; top: 4px; right: 18%;">0</span>
+    </button>
     <button class="dock-btn" id="dock-btn-publier" onclick="changerPage('publier')">
       <span class="dock-icon">➕</span>
       <span>Publier</span>
     </button>
-    <button class="dock-btn" id="dock-btn-messages" onclick="changerPage('messages')">
+    <button class="dock-btn" id="dock-btn-messages" onclick="changerPage('messages')" style="position: relative;">
       <span class="dock-icon">💬</span>
       <span>Messages</span>
-      <span class="unread-bubble" id="unread-count-mobile" style="display: none; position: absolute; top: 4px; right: 24%;">0</span>
+      <span class="unread-bubble" id="unread-count-mobile" style="display: none; position: absolute; top: 4px; right: 18%;">0</span>
     </button>
     <button class="dock-btn" id="dock-btn-mes-annonces" onclick="changerPage('mes-annonces')">
       <span class="dock-icon">📋</span>
-      <span>Mes annonces</span>
+      <span>Annonces</span>
     </button>
     <button class="dock-btn" id="dock-btn-profil" onclick="changerPage('profil')">
       <span class="dock-icon">👤</span>
@@ -2894,6 +3271,16 @@
       </div>
     </section>
 
+    <!-- --------------------------------------------------------
+         PAGE 7 : MES TRANSACTIONS (SYSTÈME SÉCURISÉ DOUBLE CONFIRMATION)
+         -------------------------------------------------------- -->
+    <section id="page-transactions" class="page-view">
+      <div class="transactions-page-container">
+        <!-- Rendu dynamique via afficherPageTransactions() -->
+        <div id="transactions-content-wrapper"></div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ==========================================================
@@ -3000,6 +3387,110 @@
       <div style="display:flex; justify-content:center; gap:10px;">
         <button type="button" onclick="annulerDeconnexion()" style="background:#333; color:white; padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px;">Annuler</button>
         <button type="button" onclick="confirmerDeconnexion()" style="background:#00C853; color:white; padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px;">Oui, déconnecter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALE 1 : INTENTION D'ACHAT SÉCURISÉE (ÉTAPE 1 ACHETEUR)
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-intention-achat" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-title" style="color: #00E676; margin-bottom: 12px;">
+        <span>🔒</span>
+        <span>CONFIRMATION D'ACHAT</span>
+      </div>
+      <p style="font-size: 13.5px; color: var(--text-gray); margin-bottom: 16px; line-height: 1.5;">
+        Vous allez demander à acheter ce compte eFootball :
+      </p>
+      <div style="background: #202020; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+        <div id="modal-achat-titre" style="font-weight: 700; font-size: 15px; color: var(--text-white); margin-bottom: 6px;">
+          Compte eFootball
+        </div>
+        <div id="modal-achat-prix" style="font-size: 18px; font-weight: 800; color: var(--primary);">
+          0 FCFA
+        </div>
+        <div id="modal-achat-vendeur" style="font-size: 12px; color: var(--text-gray); margin-top: 6px;">
+          Vendeur : -
+        </div>
+      </div>
+      <div style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3); border-radius: var(--radius-sm); padding: 12px; font-size: 12.5px; color: #90caf9; margin-bottom: 20px; line-height: 1.5;">
+        ℹ️ <strong>Le vendeur devra accepter votre demande.</strong><br>
+        L'annonce restera active jusqu'à ce que le vendeur valide votre demande. Une fois acceptée, elle sera réservée et vous procéderez à la vérification.
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="fermerModalIntentionAchat()">Annuler</button>
+        <button type="button" class="btn-primary" id="btn-confirmer-demande-achat" onclick="executerDemandeAchat()">
+          🔒 Confirmer la demande
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALE 2 : DOUBLE CONFIRMATION DE CLÔTURE (ÉTAPE 4 VENDEUR)
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-double-confirmation-terminer" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-title" style="color: #00E676; margin-bottom: 12px;">
+        <span>✅</span>
+        <span>FINALISATION DÉFINITIVE DE LA TRANSACTION</span>
+      </div>
+      <p style="font-size: 14px; color: var(--text-white); font-weight: 600; margin-bottom: 12px;">
+        Voulez-vous vraiment terminer cette transaction ?
+      </p>
+      <div style="background: #202020; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+        <div id="modal-terminer-titre" style="font-weight: 700; font-size: 14px; color: var(--text-white); margin-bottom: 4px;">
+          Compte eFootball
+        </div>
+        <div id="modal-terminer-acheteur" style="font-size: 12.5px; color: var(--text-gray);">
+          Acheteur : -
+        </div>
+      </div>
+      <div style="background: rgba(0, 200, 83, 0.1); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: #b9f6ca; margin-bottom: 20px; line-height: 1.5;">
+        ⚠️ <strong>Attention, cette action est irréversible :</strong><br>
+        • Vous confirmez avoir reçu le paiement Wave ou Orange Money<br>
+        • L'acheteur a confirmé avoir reçu le Konami ID et mot de passe<br>
+        • L'annonce sera définitivement marquée comme <strong>"VENDU"</strong>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="fermerModalTerminerTransaction()">Annuler</button>
+        <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700;" onclick="executerTerminerTransaction()">
+          Oui, terminer définitivement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALE 3 : SIGNALER UN PROBLÈME / LITIGE (ÉTAPE 4)
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-signaler-litige" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-title" style="color: #ef4444; margin-bottom: 12px;">
+        <span>🚨</span>
+        <span>SIGNALER UN PROBLÈME / LITIGE</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 14px;">
+        Indiquez la raison du litige. La transaction sera mise en attente de vérification :
+      </p>
+      <div class="form-group" style="margin-bottom: 14px; text-align: left;">
+        <label for="litige-motif-select" style="font-size: 12.5px; color: var(--text-white); display: block; margin-bottom: 6px;">Motif principal <span class="required-star">*</span></label>
+        <select id="litige-motif-select" class="form-control" style="width: 100%; margin-bottom: 12px;">
+          <option value="Paiement non reçu">Paiement non reçu (Wave / Orange Money)</option>
+          <option value="Montant reçu incorrect">Montant reçu incomplet ou incorrect</option>
+          <option value="Identifiants non valides">Identifiants Konami ID incorrects ou non reçus</option>
+          <option value="Compte bloqué ou lié">Compte eFootball bloqué ou déjà lié à un tiers</option>
+          <option value="Autre litige">Autre litige ou désaccord</option>
+        </select>
+        <label for="litige-details-input" style="font-size: 12.5px; color: var(--text-white); display: block; margin-bottom: 6px;">Détails explicatifs (optionnel) :</label>
+        <textarea id="litige-details-input" class="form-control" rows="3" placeholder="Expliquez brièvement le problème..." style="width: 100%; resize: vertical;"></textarea>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="fermerModalLitige()">Annuler</button>
+        <button type="button" class="btn-danger" style="background: #ef4444; color: #fff; font-weight: 700; border: none; border-radius: var(--radius-sm); padding: 10px 16px; cursor: pointer;" onclick="executerSignalerLitige()">
+          🚨 Signaler le litige
+        </button>
       </div>
     </div>
   </div>
@@ -3550,6 +4041,9 @@
     let currentReviewAnnonceId = null;
     let currentReviewTitreAnnonce = null;
     let currentRatingSelected = 5;
+    let currentModalAdId = null;
+    let currentModalTxId = null;
+    let currentTransactionsTab = 'toutes';
 
     // Constantes de stockage local
     const STORAGE_ANNONCES = 'efoot_annonces';
@@ -4150,7 +4644,12 @@
       } else if (pageId === 'publier') {
         nettoyerHashAnnonce();
         preRemplirFormulairePublication();
+      } else if (pageId === 'transactions') {
+        nettoyerHashAnnonce();
+        afficherPageTransactions((params && params.filtre) || currentTransactionsTab || 'toutes');
       }
+
+      mettreAJourBadgeTransactions();
     }
 
     /**
@@ -4352,6 +4851,11 @@
       const powerMode = powerModeEl ? powerModeEl.value : 'min';
 
       let resultats = annonces.filter(item => {
+        // Masquer du catalogue public les annonces en cours de transaction ou vendues
+        if (item.statut === 'EN_COURS' || item.statut === 'VENDU' || item.statut === 'vendue') {
+          return false;
+        }
+
         // Recherche sur titre, description, vendeur et région
         if (motCle) {
           const dansTitre = item.titre && item.titre.toLowerCase().includes(motCle);
@@ -4735,10 +5239,11 @@
 
       // Chercher si une transaction existe pour cette annonce avec cet utilisateur
       const transactions = getTransactions();
-      const maTx = transactions.find(t => t.annonceId === ad.id && t.acheteurNom === monNom);
-      const convs = getConversations();
-      const maConv = convs.find(c => c.annonceId === ad.id && c.acheteurNom === monNom);
-      const estTerminee = (maTx && maTx.statut === 'terminee') || (maConv && maConv.statutTransaction === 'terminee');
+      const maTx = transactions.find(t => t.annonceId === ad.id && (
+        (profil && profil.id && t.acheteurId === profil.id) ||
+        t.acheteur === monNom || t.acheteurNom === monNom || t.acheteur === monNomFormate
+      ));
+      const txsVendeur = transactions.filter(t => t.annonceId === ad.id);
 
       const tousAvis = getAvis();
       const monAvis = tousAvis.find(a => (maTx && a.transactionId === maTx.id) || (a.vendeurNom === ad.vendeur && a.acheteurNom === monNom && a.annonceId === ad.id));
@@ -4833,51 +5338,8 @@
             </button>
           </div>
 
-          <!-- Carte de Suivi de Transaction & Avis -->
-          <div class="detail-transaction-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-              <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                <span>🤝</span>
-                <span>Statut de transaction eFootball</span>
-              </div>
-              <span class="tx-status-badge ${estTerminee ? 'completed' : 'ongoing'}">
-                ${estTerminee ? '✅ Transaction Terminée' : '🟡 Transaction en cours'}
-              </span>
-            </div>
-
-            ${estMonAnnonce ? `
-              <div style="font-size: 12.5px; color: var(--text-gray);">
-                Vous êtes le vendeur de ce compte. Les acheteurs peuvent marquer la transaction comme terminée et vous laisser un avis étoilé.
-              </div>
-            ` : (estTerminee ? `
-              <div style="font-size: 12.5px; color: #00E676; margin-bottom: 8px;">
-                Transaction marquée comme terminée pour ce compte eFootball.
-              </div>
-              ${monAvis ? `
-                <div style="background: rgba(255, 214, 0, 0.1); border: 1px solid rgba(255, 214, 0, 0.25); border-radius: 6px; padding: 8px 12px; font-size: 12.5px;">
-                  <div style="color: var(--badge-gold); font-weight: 600;">⭐ Votre avis : ${monAvis.note}/5.0</div>
-                  <div style="color: var(--text-gray); margin-top: 3px;">« ${monAvis.commentaire} »</div>
-                </div>
-                <button class="btn-secondary" style="font-size: 11.5px; margin-top: 8px;" onclick="ouvrirModalAvisPourAnnonce('${ad.id}')">
-                  ✏️ Modifier mon avis
-                </button>
-              ` : `
-                <div style="font-size: 12px; color: var(--text-gray); margin-bottom: 8px;">
-                  Vous n'avez pas encore laissé d'avis sur ${ad.vendeur}. Partagez votre expérience avec la communauté !
-                </div>
-                <button class="btn-tx-review" onclick="ouvrirModalAvisPourAnnonce('${ad.id}')">
-                  ⭐ Laisser un avis sur le profil de ${ad.vendeur}
-                </button>
-              `}
-            ` : `
-              <div style="font-size: 12.5px; color: var(--text-gray); margin-bottom: 10px;">
-                Vous achetez ce compte ? Dès réception des identifiants Konami ID et finalisation du paiement Wave/OM, marquez la transaction comme terminée pour laisser une note et un commentaire sur le profil du vendeur.
-              </div>
-              <button class="btn-tx-complete" onclick="marquerTransactionTermineePourAnnonce('${ad.id}')">
-                ✅ Marquer la transaction comme 'Terminée'
-              </button>
-            `)}
-          </div>
+          <!-- Carte de Suivi de Transaction Sécurisée & Double Confirmation -->
+          ${genererCarteTransactionDetail(ad, estMonAnnonce, maTx, txsVendeur, monAvis)}
 
           <!-- Section Avis & Commentaires sur le Vendeur -->
           <div class="detail-reviews-container">
@@ -5128,7 +5590,1255 @@
     }
 
     /**
-     * Marque la transaction active comme 'Terminée' depuis l'interface de chat
+     * Met à jour les badges de notification de transactions sur desktop et mobile
+     */
+    function mettreAJourBadgeTransactions() {
+      const profil = getProfilUtilisateur();
+      const txs = getTransactions();
+      const countDesktop = document.getElementById('tx-count-desktop');
+      const countMobile = document.getElementById('tx-count-mobile');
+
+      if (!profil) {
+        if (countDesktop) countDesktop.style.display = 'none';
+        if (countMobile) countMobile.style.display = 'none';
+        return;
+      }
+
+      const monNom = profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "");
+      const monNomFormate = formaterNomAffichage(profil.prenom, profil.nom);
+
+      let actionsEnAttente = 0;
+      txs.forEach(t => {
+        const estVendeur = (profil.id && t.vendeurId === profil.id) ||
+                           t.vendeur === monNom || t.vendeur === monNomFormate ||
+                           (profil.prenom && t.vendeurPrenom === profil.prenom);
+        const estAcheteur = (profil.id && t.acheteurId === profil.id) ||
+                            t.acheteur === monNom || t.acheteur === monNomFormate ||
+                            t.acheteurNom === monNom;
+
+        if (estVendeur && (t.statut === 'DEMANDE_ENVOYEE' || t.statut === 'LIVRAISON_CONFIRMEE')) {
+          actionsEnAttente++;
+        } else if (estAcheteur && t.statut === 'ACCEPTEE') {
+          actionsEnAttente++;
+        }
+      });
+
+      if (actionsEnAttente > 0) {
+        if (countDesktop) {
+          countDesktop.textContent = actionsEnAttente;
+          countDesktop.style.display = 'inline-block';
+        }
+        if (countMobile) {
+          countMobile.textContent = actionsEnAttente;
+          countMobile.style.display = 'block';
+        }
+      } else {
+        if (countDesktop) countDesktop.style.display = 'none';
+        if (countMobile) countMobile.style.display = 'none';
+      }
+    }
+
+    /**
+     * Libellé lisible pour un statut de transaction
+     */
+    function getLibelleStatut(statut) {
+      switch (statut) {
+        case 'DEMANDE_ENVOYEE':
+          return '🟡 Demande envoyée';
+        case 'ACCEPTEE':
+          return '🔵 Acceptée (En cours)';
+        case 'REFUSEE':
+          return '🔴 Demande refusée';
+        case 'LIVRAISON_CONFIRMEE':
+          return '🟠 Livraison confirmée';
+        case 'TERMINEE':
+          return '🟢 Terminée';
+        case 'LITIGE':
+          return '🚨 Litige';
+        default:
+          return '🟡 En cours';
+      }
+    }
+
+    /**
+     * Génère le HTML du stepper visuel à 4 étapes
+     */
+    function formaterStepperHtml(statut) {
+      let step1Class = 'completed';
+      let step2Class = '';
+      let step3Class = '';
+      let step4Class = '';
+      let progressWidth = '0%';
+
+      if (statut === 'DEMANDE_ENVOYEE') {
+        step1Class = 'active';
+        progressWidth = '12%';
+      } else if (statut === 'REFUSEE') {
+        step1Class = 'completed';
+        step2Class = 'refused';
+        progressWidth = '33%';
+      } else if (statut === 'ACCEPTEE') {
+        step1Class = 'completed';
+        step2Class = 'active';
+        progressWidth = '38%';
+      } else if (statut === 'LIVRAISON_CONFIRMEE') {
+        step1Class = 'completed';
+        step2Class = 'completed';
+        step3Class = 'active';
+        progressWidth = '70%';
+      } else if (statut === 'TERMINEE') {
+        step1Class = 'completed';
+        step2Class = 'completed';
+        step3Class = 'completed';
+        step4Class = 'completed';
+        progressWidth = '100%';
+      } else if (statut === 'LITIGE') {
+        step1Class = 'completed';
+        step2Class = 'completed';
+        step3Class = 'refused';
+        progressWidth = '65%';
+      }
+
+      return `
+        <div class="tx-stepper-container">
+          <div class="tx-step-line">
+            <div class="tx-step-line-progress" style="width: ${progressWidth};"></div>
+          </div>
+          <div class="tx-step-item ${step1Class}">
+            <div class="tx-step-circle">1</div>
+            <div class="tx-step-label">Demande</div>
+          </div>
+          <div class="tx-step-item ${step2Class}">
+            <div class="tx-step-circle">2</div>
+            <div class="tx-step-label">${statut === 'REFUSEE' ? 'Refusée' : 'Acceptée'}</div>
+          </div>
+          <div class="tx-step-item ${step3Class}">
+            <div class="tx-step-circle">3</div>
+            <div class="tx-step-label">${statut === 'LITIGE' ? 'Litige' : 'Reçue'}</div>
+          </div>
+          <div class="tx-step-item ${step4Class}">
+            <div class="tx-step-circle">4</div>
+            <div class="tx-step-label">Terminée</div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================
+       GESTION DES ACTIONS DU CYCLE DE TRANSACTION
+       ========================================================== */
+
+    /**
+     * Ouvre la modale d'intention d'achat (Étape 1 acheteur)
+     */
+    function ouvrirModalIntentionAchat(annonceId) {
+      verifierProfilOuDemander(profil => {
+        const annonces = getAnnonces();
+        const ad = annonces.find(a => a.id === annonceId);
+        if (!ad) return;
+
+        const monNom = profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "");
+        const monNomFormate = formaterNomAffichage(profil.prenom, profil.nom);
+        const estMonAnnonce = (profil.id && ad.vendeurId === profil.id) ||
+                              ad.vendeur === monNom || ad.vendeur === monNomFormate;
+
+        if (estMonAnnonce) {
+          afficherNotification("Vous ne pouvez pas acheter votre propre compte eFootball.", "ℹ️");
+          return;
+        }
+
+        if (ad.statut === 'VENDU' || ad.statut === 'vendue') {
+          afficherNotification("Ce compte eFootball a déjà été vendu.", "ℹ️");
+          return;
+        }
+
+        // Vérifier si une demande est déjà en cours par cet acheteur
+        const txs = getTransactions();
+        const txExistante = txs.find(t => t.annonceId === annonceId && (
+          (profil.id && t.acheteurId === profil.id) ||
+          t.acheteur === monNom || t.acheteurNom === monNom
+        ) && t.statut !== 'REFUSEE' && t.statut !== 'TERMINEE');
+
+        if (txExistante) {
+          afficherNotification("Vous avez déjà une transaction en cours pour ce compte.", "ℹ️");
+          changerPage('transactions');
+          return;
+        }
+
+        currentModalAdId = annonceId;
+        const titreEl = document.getElementById('modal-achat-titre');
+        const prixEl = document.getElementById('modal-achat-prix');
+        const vendEl = document.getElementById('modal-achat-vendeur');
+
+        if (titreEl) titreEl.textContent = ad.titre;
+        if (prixEl) prixEl.textContent = formaterPrix(ad.prix);
+        if (vendEl) vendEl.textContent = `Vendeur : ${ad.vendeur} (Région : ${ad.region || 'Dakar'})`;
+
+        const modal = document.getElementById('modal-intention-achat');
+        if (modal) modal.style.display = 'flex';
+      });
+    }
+
+    /**
+     * Ferme la modale d'intention d'achat
+     */
+    function fermerModalIntentionAchat() {
+      currentModalAdId = null;
+      const modal = document.getElementById('modal-intention-achat');
+      if (modal) modal.style.display = 'none';
+    }
+
+    /**
+     * Exécute la confirmation d'intention d'achat (crée la transaction DEMANDE_ENVOYEE)
+     */
+    function executerDemandeAchat() {
+      if (!currentModalAdId) return;
+
+      const profil = getProfilUtilisateur();
+      if (!profil) return;
+
+      const annonces = getAnnonces();
+      const ad = annonces.find(a => a.id === currentModalAdId);
+      if (!ad) {
+        fermerModalIntentionAchat();
+        return;
+      }
+
+      const monNom = profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "Acheteur eFoot");
+      const txId = 'tx_' + Date.now();
+
+      const nouvelleTx = {
+        id: txId,
+        annonceId: ad.id,
+        titreAnnonce: ad.titre,
+        prixAnnonce: ad.prix,
+        imageAnnonce: ad.image || null,
+        plateforme: ad.plateforme || 'Mobile',
+        region: ad.region || 'Dakar',
+        puissance: ad.puissance || '',
+        telephoneWhatsAppVendeur: ad.telephoneWhatsApp || '',
+        acheteur: monNom,
+        acheteurNom: monNom,
+        acheteurPrenom: profil.prenom,
+        acheteurId: profil.id || ('usr_' + Date.now()),
+        vendeur: ad.vendeur,
+        vendeurNom: ad.vendeur,
+        vendeurPrenom: ad.vendeurPrenom || ad.vendeur,
+        vendeurId: ad.vendeurId || null,
+        statut: 'DEMANDE_ENVOYEE',
+        date: new Date().toISOString(),
+        dateCreation: new Date().toISOString(),
+        dateMiseAJour: new Date().toISOString()
+      };
+
+      const txs = getTransactions();
+      txs.unshift(nouvelleTx);
+      setTransactions(txs);
+
+      // Créer ou alimenter la conversation de chat
+      let convs = getConversations();
+      let conv = convs.find(c => c.annonceId === ad.id && (c.acheteurNom === monNom || c.acheteurId === profil.id));
+      if (!conv) {
+        conv = {
+          id: 'conv_' + Date.now(),
+          annonceId: ad.id,
+          titreAnnonce: ad.titre,
+          prixAnnonce: ad.prix,
+          vendeurNom: ad.vendeur,
+          acheteurNom: monNom,
+          statutTransaction: 'DEMANDE_ENVOYEE',
+          messages: []
+        };
+        convs.unshift(conv);
+      }
+      conv.statutTransaction = 'DEMANDE_ENVOYEE';
+      conv.messages.push({
+        id: 'msg_' + Date.now(),
+        expediteur: 'Système',
+        destinataire: 'Tous',
+        contenu: `🔒 Demande d'achat envoyée par ${monNom} pour "${ad.titre}" (${formaterPrix(ad.prix)}). En attente d'acceptation du vendeur.`,
+        date: new Date().toISOString(),
+        isSystem: true
+      });
+      setConversations(convs);
+
+      fermerModalIntentionAchat();
+      afficherNotification("Demande d'achat envoyée au vendeur !", "🔒");
+      mettreAJourBadgeTransactions();
+
+      if (currentPage === 'detail' && currentDetailAdId === ad.id) {
+        afficherDetailAnnonce(ad.id);
+      } else if (currentPage === 'transactions') {
+        afficherPageTransactions(currentTransactionsTab);
+      }
+    }
+
+    /**
+     * Refus de la demande d'achat par le vendeur
+     */
+    function demanderRefusDemandeVendeur(txId) {
+      if (!confirm("Voulez-vous vraiment refuser cette demande d'achat ? L'annonce restera active pour les autres acheteurs.")) {
+        return;
+      }
+
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === txId);
+      if (!tx) return;
+
+      tx.statut = 'REFUSEE';
+      tx.dateMiseAJour = new Date().toISOString();
+      setTransactions(txs);
+
+      // Notification dans la conversation
+      const convs = getConversations();
+      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
+      if (conv) {
+        conv.statutTransaction = 'REFUSEE';
+        conv.messages.push({
+          id: 'msg_' + Date.now(),
+          expediteur: 'Système',
+          destinataire: 'Tous',
+          contenu: `🔴 Demande d'achat refusée par le vendeur. L'annonce reste disponible.`,
+          date: new Date().toISOString(),
+          isSystem: true
+        });
+        setConversations(convs);
+      }
+
+      afficherNotification("Demande d'achat refusée.", "ℹ️");
+      mettreAJourBadgeTransactions();
+
+      if (currentPage === 'transactions') {
+        afficherPageTransactions(currentTransactionsTab);
+      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
+        afficherDetailAnnonce(tx.annonceId);
+      } else if (currentPage === 'messages' && activeConversationId) {
+        afficherConversations(activeConversationId);
+      }
+    }
+
+    /**
+     * Acceptation de la demande d'achat par le vendeur (Étape 2 vendeur)
+     */
+    function demanderAcceptationVendeur(txId) {
+      if (!confirm("Acceptez-vous cette vente ? L'annonce passera en statut 'En cours de transaction' et ne sera plus visible aux autres acheteurs.")) {
+        return;
+      }
+
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === txId);
+      if (!tx) return;
+
+      tx.statut = 'ACCEPTEE';
+      tx.dateMiseAJour = new Date().toISOString();
+      setTransactions(txs);
+
+      // Mettre l'annonce en statut 'EN_COURS' pour la réserver
+      const annonces = getAnnonces();
+      const ad = annonces.find(a => a.id === tx.annonceId);
+      if (ad) {
+        ad.statut = 'EN_COURS';
+        setAnnonces(annonces);
+      }
+
+      // Notification dans la conversation
+      const convs = getConversations();
+      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
+      if (conv) {
+        conv.statutTransaction = 'ACCEPTEE';
+        conv.messages.push({
+          id: 'msg_' + Date.now(),
+          expediteur: 'Système',
+          destinataire: 'Tous',
+          contenu: `🔵 Le vendeur a accepté la vente ! Le compte est réservé. L'acheteur doit procéder à la vérification et confirmer la réception.`,
+          date: new Date().toISOString(),
+          isSystem: true
+        });
+        setConversations(convs);
+      }
+
+      afficherNotification("Demande acceptée ! Le compte est maintenant réservé pour cet acheteur.", "✅");
+      mettreAJourBadgeTransactions();
+
+      if (currentPage === 'transactions') {
+        afficherPageTransactions(currentTransactionsTab);
+      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
+        afficherDetailAnnonce(tx.annonceId);
+      } else if (currentPage === 'messages' && activeConversationId) {
+        afficherConversations(activeConversationId);
+      }
+    }
+
+    /**
+     * Confirmation de réception du compte par l'acheteur (Étape 3 acheteur)
+     */
+    function demanderConfirmationLivraison(txId) {
+      if (!confirm("Confirmez-vous avoir reçu les identifiants Konami ID (email et mot de passe), vous être connecté au jeu avec succès et avoir vérifié le compte ?")) {
+        return;
+      }
+
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === txId);
+      if (!tx) return;
+
+      tx.statut = 'LIVRAISON_CONFIRMEE';
+      tx.dateMiseAJour = new Date().toISOString();
+      setTransactions(txs);
+
+      // Notification dans la conversation
+      const convs = getConversations();
+      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
+      if (conv) {
+        conv.statutTransaction = 'LIVRAISON_CONFIRMEE';
+        conv.messages.push({
+          id: 'msg_' + Date.now(),
+          expediteur: 'Système',
+          destinataire: 'Tous',
+          contenu: `📦 L'acheteur a confirmé avoir reçu et vérifié le compte eFootball. Le vendeur peut procéder à la clôture définitive après vérification de son paiement.`,
+          date: new Date().toISOString(),
+          isSystem: true
+        });
+        setConversations(convs);
+      }
+
+      afficherNotification("Réception confirmée ! Le vendeur a été notifié pour finaliser la vente.", "📦");
+      mettreAJourBadgeTransactions();
+
+      if (currentPage === 'transactions') {
+        afficherPageTransactions(currentTransactionsTab);
+      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
+        afficherDetailAnnonce(tx.annonceId);
+      } else if (currentPage === 'messages' && activeConversationId) {
+        afficherConversations(activeConversationId);
+      }
+    }
+
+    /**
+     * Rappel des consignes de sécurité si l'acheteur clique "Non, pas encore"
+     */
+    function rappelerAttenteLivraison(txId) {
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === txId);
+      const telVendeur = tx ? (tx.telephoneWhatsAppVendeur || "") : "";
+
+      alert("CONSIGNES DE SÉCURITÉ EFOOT MARKET SN :\n\n" +
+            "1. Ne confirmez JAMAIS la réception avant d'avoir reçu le Konami ID et testé la connexion dans eFootball.\n" +
+            "2. Contactez le vendeur via WhatsApp ou la messagerie pour lui demander l'envoi des identifiants.\n" +
+            "3. Dès réception, liez immédiatement votre propre adresse email et modifiez le mot de passe.\n" +
+            "4. En cas de blocage ou d'absence de réponse, contactez l'assistance.");
+    }
+
+    /**
+     * Annulation de la demande d'achat par l'acheteur avant acceptation
+     */
+    function annulerDemandeAchat(txId) {
+      if (!confirm("Voulez-vous vraiment annuler votre demande d'achat ?")) {
+        return;
+      }
+
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === txId);
+      if (!tx) return;
+
+      tx.statut = 'REFUSEE';
+      tx.dateMiseAJour = new Date().toISOString();
+      setTransactions(txs);
+
+      afficherNotification("Demande d'achat annulée.", "ℹ️");
+      mettreAJourBadgeTransactions();
+
+      if (currentPage === 'transactions') {
+        afficherPageTransactions(currentTransactionsTab);
+      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
+        afficherDetailAnnonce(tx.annonceId);
+      }
+    }
+
+    /**
+     * Ouvre la modale de double confirmation définitive (Étape 4 vendeur)
+     */
+    function ouvrirModalTerminerTransaction(txId) {
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === txId);
+      if (!tx) return;
+
+      currentModalTxId = txId;
+      const titreEl = document.getElementById('modal-terminer-titre');
+      const acheteurEl = document.getElementById('modal-terminer-acheteur');
+
+      if (titreEl) titreEl.textContent = `${tx.titreAnnonce} (${formaterPrix(tx.prixAnnonce)})`;
+      if (acheteurEl) acheteurEl.textContent = `Acheteur : ${tx.acheteur}`;
+
+      const modal = document.getElementById('modal-double-confirmation-terminer');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    /**
+     * Ferme la modale de clôture définitive
+     */
+    function fermerModalTerminerTransaction() {
+      currentModalTxId = null;
+      const modal = document.getElementById('modal-double-confirmation-terminer');
+      if (modal) modal.style.display = 'none';
+    }
+
+    /**
+     * Clôture définitive de la transaction (Étape 4 validée par le vendeur)
+     */
+    function executerTerminerTransaction() {
+      if (!currentModalTxId) return;
+
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === currentModalTxId);
+      if (!tx) {
+        fermerModalTerminerTransaction();
+        return;
+      }
+
+      tx.statut = 'TERMINEE';
+      tx.dateMiseAJour = new Date().toISOString();
+      tx.dateTerminee = new Date().toISOString();
+      setTransactions(txs);
+
+      // Marquer définitivement l'annonce comme "VENDU"
+      const annonces = getAnnonces();
+      const ad = annonces.find(a => a.id === tx.annonceId);
+      if (ad) {
+        ad.statut = 'VENDU';
+        setAnnonces(annonces);
+      }
+
+      // Notification dans la conversation
+      const convs = getConversations();
+      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
+      if (conv) {
+        conv.statutTransaction = 'TERMINEE';
+        conv.messages.push({
+          id: 'msg_' + Date.now(),
+          expediteur: 'Système',
+          destinataire: 'Tous',
+          contenu: `🎉 Transaction finalisée et close par le vendeur ! Le compte est officiellement marqué comme VENDU. Merci de votre confiance sur EFoot Market SN.`,
+          date: new Date().toISOString(),
+          isSystem: true
+        });
+        setConversations(convs);
+      }
+
+      fermerModalTerminerTransaction();
+      afficherNotification("Transaction terminée avec succès ! L'annonce est marquée comme VENDU.", "🎉");
+      mettreAJourBadgeTransactions();
+
+      if (currentPage === 'transactions') {
+        afficherPageTransactions(currentTransactionsTab);
+      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
+        afficherDetailAnnonce(tx.annonceId);
+      } else if (currentPage === 'messages' && activeConversationId) {
+        afficherConversations(activeConversationId);
+      }
+    }
+
+    /**
+     * Ouvre la modale de signalement de litige
+     */
+    function ouvrirModalLitige(txId) {
+      currentModalTxId = txId;
+      const detailsInput = document.getElementById('litige-details-input');
+      if (detailsInput) detailsInput.value = "";
+      const modal = document.getElementById('modal-signaler-litige');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    /**
+     * Ferme la modale de litige
+     */
+    function fermerModalLitige() {
+      currentModalTxId = null;
+      const modal = document.getElementById('modal-signaler-litige');
+      if (modal) modal.style.display = 'none';
+    }
+
+    /**
+     * Enregistre le litige (Étape 5)
+     */
+    function executerSignalerLitige() {
+      if (!currentModalTxId) return;
+
+      const motifSelect = document.getElementById('litige-motif-select');
+      const detailsInput = document.getElementById('litige-details-input');
+      const motif = motifSelect ? motifSelect.value : "Paiement non reçu";
+      const details = detailsInput ? detailsInput.value.trim() : "";
+      const texteLitige = details ? `${motif} (${details})` : motif;
+
+      const txs = getTransactions();
+      const tx = txs.find(t => t.id === currentModalTxId);
+      if (!tx) {
+        fermerModalLitige();
+        return;
+      }
+
+      tx.statut = 'LITIGE';
+      tx.motifLitige = texteLitige;
+      tx.dateMiseAJour = new Date().toISOString();
+      setTransactions(txs);
+
+      // Notification dans la discussion
+      const convs = getConversations();
+      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
+      if (conv) {
+        conv.statutTransaction = 'LITIGE';
+        conv.messages.push({
+          id: 'msg_' + Date.now(),
+          expediteur: 'Système',
+          destinataire: 'Tous',
+          contenu: `🚨 Transaction passée en LITIGE. Motif : ${texteLitige}. La transaction est temporairement suspendue.`,
+          date: new Date().toISOString(),
+          isSystem: true
+        });
+        setConversations(convs);
+      }
+
+      fermerModalLitige();
+      afficherNotification("Litige signalé. La transaction est suspendue.", "🚨");
+      mettreAJourBadgeTransactions();
+
+      if (currentPage === 'transactions') {
+        afficherPageTransactions(currentTransactionsTab);
+      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
+        afficherDetailAnnonce(tx.annonceId);
+      } else if (currentPage === 'messages' && activeConversationId) {
+        afficherConversations(activeConversationId);
+      }
+    }
+
+    /**
+     * Génère la carte d'action transactionnelle sur la page détail d'une annonce
+     */
+    function genererCarteTransactionDetail(ad, estMonAnnonce, maTx, txsVendeur, monAvis) {
+      if (estMonAnnonce) {
+        // Vue vendeur de cette annonce
+        const txActive = txsVendeur.find(t => t.statut !== 'REFUSEE') || txsVendeur[0];
+
+        if (!txActive) {
+          return `
+            <div class="detail-transaction-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>👤</span> <span>Gestion Vendeur de cette annonce</span>
+                </div>
+                <span class="badge-pill" style="color: #00E676; background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">
+                  ${ad.statut === 'VENDU' ? '✅ Vendu' : (ad.statut === 'EN_COURS' ? '🔵 En cours' : '🟢 En vente')}
+                </span>
+              </div>
+              <div style="font-size: 12.5px; color: var(--text-gray); line-height: 1.5;">
+                Vous êtes le vendeur de ce compte eFootball. Dès qu'un joueur formulera une intention d'achat, vous recevrez une demande à valider ici et dans l'onglet <strong>Transactions</strong>.
+              </div>
+            </div>
+          `;
+        }
+
+        const stepper = formaterStepperHtml(txActive.statut);
+        let actionBox = '';
+
+        if (txActive.statut === 'DEMANDE_ENVOYEE') {
+          actionBox = `
+            <div class="tx-action-box box-demande">
+              <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 13.5px;">
+                📥 Demande d'achat reçue de ${escapeHtml(txActive.acheteur)} !
+              </div>
+              <div style="font-size: 12.5px; color: #fff; margin-bottom: 12px; line-height: 1.4;">
+                Cet acheteur souhaite acquérir votre compte pour <strong>${formaterPrix(txActive.prixAnnonce)}</strong>. Acceptez-vous la vente ?
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-danger" style="padding: 8px 14px; font-size: 12.5px;" onclick="demanderRefusDemandeVendeur('${txActive.id}')">
+                  ❌ Refuser
+                </button>
+                <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 18px; font-size: 12.5px;" onclick="demanderAcceptationVendeur('${txActive.id}')">
+                  ✅ Accepter la vente
+                </button>
+              </div>
+            </div>
+          `;
+        } else if (txActive.statut === 'ACCEPTEE') {
+          actionBox = `
+            <div class="tx-action-box box-acceptee">
+              <div style="font-weight: 700; color: #60a5fa; margin-bottom: 6px; font-size: 13.5px;">
+                🔵 Vente acceptée avec ${escapeHtml(txActive.acheteur)}
+              </div>
+              <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
+                L'annonce est réservée. Transmettez les identifiants Konami ID à l'acheteur via WhatsApp ou le chat. En attente de sa confirmation de réception.
+              </div>
+            </div>
+          `;
+        } else if (txActive.statut === 'LIVRAISON_CONFIRMEE') {
+          actionBox = `
+            <div class="tx-action-box box-livraison">
+              <div style="font-weight: 700; color: #fb923c; margin-bottom: 6px; font-size: 13.5px;">
+                ✅ L'acheteur a confirmé avoir reçu le compte !
+              </div>
+              <div style="font-size: 12.5px; color: #fff; margin-bottom: 12px; line-height: 1.4;">
+                Vérifiez que vous avez bien reçu l'intégralité du paiement Wave ou Orange Money, puis finalisez la clôture définitive :
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 18px; font-size: 13px;" onclick="ouvrirModalTerminerTransaction('${txActive.id}')">
+                  ✅ Marquer comme terminée
+                </button>
+                <button type="button" class="btn-danger" style="padding: 10px 14px; font-size: 12.5px;" onclick="ouvrirModalLitige('${txActive.id}')">
+                  🚨 Signaler un problème
+                </button>
+              </div>
+            </div>
+          `;
+        } else if (txActive.statut === 'TERMINEE') {
+          actionBox = `
+            <div class="tx-action-box box-terminee">
+              <div style="font-weight: 700; color: #34d399; font-size: 13.5px;">
+                🟢 Vente terminée avec succès avec ${escapeHtml(txActive.acheteur)}
+              </div>
+              <div style="font-size: 12px; color: var(--text-gray); margin-top: 4px;">
+                Le compte a été marqué comme VENDU.
+              </div>
+            </div>
+          `;
+        } else if (txActive.statut === 'LITIGE') {
+          actionBox = `
+            <div class="tx-action-box box-litige">
+              <div style="font-weight: 700; color: #ef4444; font-size: 13.5px;">
+                🚨 Transaction en litige : ${escapeHtml(txActive.motifLitige || 'Signalé')}
+              </div>
+              <div style="font-size: 12px; color: #fca5a5; margin-top: 4px;">
+                Veuillez échanger avec l'acheteur ou contacter l'assistance pour débloquer la vente.
+              </div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="detail-transaction-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                <span>🤝</span> <span>Suivi de Transaction (Vendeur)</span>
+              </div>
+              <span class="tx-status-badge ${txActive.statut}">
+                ${getLibelleStatut(txActive.statut)}
+              </span>
+            </div>
+            ${stepper}
+            ${actionBox}
+          </div>
+        `;
+      }
+
+      // Vue ACHETEUR
+      if (!maTx) {
+        if (ad.statut === 'VENDU' || ad.statut === 'vendue') {
+          return `
+            <div class="detail-transaction-card">
+              <span class="tx-status-badge TERMINEE">✅ VENDU</span>
+              <p style="margin-top: 8px; font-size: 13px; color: var(--text-gray);">
+                Ce compte eFootball a déjà été vendu et la transaction est clôturée.
+              </p>
+            </div>
+          `;
+        }
+        if (ad.statut === 'EN_COURS') {
+          return `
+            <div class="detail-transaction-card">
+              <span class="tx-status-badge ACCEPTEE">🔵 En cours de transaction</span>
+              <p style="margin-top: 8px; font-size: 13px; color: var(--text-gray);">
+                Ce compte est actuellement réservé avec un autre acheteur. Si la vente ne se finalise pas, il redeviendra disponible.
+              </p>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="detail-transaction-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                <span>🔒</span> <span>Achat Sécurisé eFoot Market SN</span>
+              </div>
+              <span class="badge-pill" style="color: #00E676; background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">
+                Disponible
+              </span>
+            </div>
+            <p style="font-size: 12.5px; color: var(--text-gray); margin-bottom: 14px; line-height: 1.5;">
+              Système à double confirmation : envoyez votre demande d'achat, le vendeur valide, puis vous confirmez la bonne réception du Konami ID avant clôture définitive.
+            </p>
+            <button type="button" class="btn-buy-intent" onclick="ouvrirModalIntentionAchat('${ad.id}')">
+              <span>🔒</span> <span>Je veux acheter ce compte</span>
+            </button>
+          </div>
+        `;
+      }
+
+      // L'acheteur a déjà une transaction sur ce compte
+      const stepper = formaterStepperHtml(maTx.statut);
+      let actionBox = '';
+
+      if (maTx.statut === 'DEMANDE_ENVOYEE') {
+        actionBox = `
+          <div class="tx-action-box box-demande">
+            <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 13.5px;">
+              ⏳ En attente de confirmation du vendeur
+            </div>
+            <div style="font-size: 12.5px; color: #fff; margin-bottom: 12px; line-height: 1.4;">
+              Votre demande d'achat a été transmise à <strong>${escapeHtml(ad.vendeur)}</strong>. L'annonce reste active jusqu'à ce que le vendeur accepte votre demande.
+            </div>
+            <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemandeAchat('${maTx.id}')">
+              Annuler ma demande
+            </button>
+          </div>
+        `;
+      } else if (maTx.statut === 'ACCEPTEE') {
+        actionBox = `
+          <div class="tx-action-box box-acceptee">
+            <div style="font-weight: 700; color: #60a5fa; margin-bottom: 6px; font-size: 13.5px;">
+              🎉 Le vendeur a accepté votre demande !
+            </div>
+            <div style="font-size: 13px; color: #fff; margin-bottom: 14px; line-height: 1.4;">
+              <strong>📦 Avez-vous reçu le compte ?</strong><br>
+              <span style="font-size: 12px; color: #bbb;">Vérifiez que les identifiants Konami ID et le mot de passe fonctionnent bien.</span>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="demanderConfirmationLivraison('${maTx.id}')">
+                📦 Oui, j'ai reçu le compte
+              </button>
+              <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px;" onclick="rappelerAttenteLivraison('${maTx.id}')">
+                Non, pas encore
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (maTx.statut === 'LIVRAISON_CONFIRMEE') {
+        actionBox = `
+          <div class="tx-action-box box-livraison">
+            <div style="font-weight: 700; color: #fb923c; margin-bottom: 4px; font-size: 13.5px;">
+              📦 Réception confirmée !
+            </div>
+            <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
+              Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur après réception de son paiement Wave / Orange Money.
+            </div>
+          </div>
+        `;
+      } else if (maTx.statut === 'TERMINEE') {
+        actionBox = `
+          <div class="tx-action-box box-terminee">
+            <div style="font-weight: 700; color: #34d399; font-size: 13.5px; margin-bottom: 6px;">
+              ✅ Transaction terminée avec succès !
+            </div>
+            ${monAvis ? `
+              <div style="background: rgba(255, 214, 0, 0.1); border: 1px solid rgba(255, 214, 0, 0.25); border-radius: 6px; padding: 8px 12px; font-size: 12.5px; margin-top: 8px;">
+                <div style="color: var(--badge-gold); font-weight: 600;">⭐ Votre avis : ${monAvis.note}/5.0</div>
+                <div style="color: var(--text-gray); margin-top: 3px;">« ${escapeHtml(monAvis.commentaire)} »</div>
+              </div>
+              <button type="button" class="btn-secondary" style="font-size: 11.5px; margin-top: 8px;" onclick="ouvrirModalAvisPourAnnonce('${ad.id}')">
+                ✏️ Modifier mon avis
+              </button>
+            ` : `
+              <div style="font-size: 12px; color: var(--text-gray); margin-bottom: 8px;">
+                Laissez un avis sur le profil de ${escapeHtml(ad.vendeur)} pour aider la communauté sénégalaise.
+              </div>
+              <button type="button" class="btn-tx-review" onclick="ouvrirModalAvisPourAnnonce('${ad.id}')">
+                ⭐ Laisser un avis sur le vendeur
+              </button>
+            `}
+          </div>
+        `;
+      } else if (maTx.statut === 'REFUSEE') {
+        actionBox = `
+          <div class="tx-action-box box-litige">
+            <div style="font-weight: 700; color: #f87171; font-size: 13px;">
+              🔴 Demande d'achat refusée par le vendeur
+            </div>
+            <div style="font-size: 12px; color: var(--text-gray); margin-top: 4px;">
+              Le vendeur n'a pas validé cette demande. Vous pouvez formuler une nouvelle offre ou choisir un autre compte.
+            </div>
+            ${ad.statut !== 'VENDU' && ad.statut !== 'EN_COURS' ? `
+              <button type="button" class="btn-secondary" style="font-size: 11.5px; margin-top: 8px;" onclick="ouvrirModalIntentionAchat('${ad.id}')">
+                🔒 Renvoyer une demande
+              </button>
+            ` : ''}
+          </div>
+        `;
+      } else if (maTx.statut === 'LITIGE') {
+        actionBox = `
+          <div class="tx-action-box box-litige">
+            <div style="font-weight: 700; color: #ef4444; font-size: 13.5px;">
+              🚨 Transaction en litige : ${escapeHtml(maTx.motifLitige || 'Signalé')}
+            </div>
+            <div style="font-size: 12px; color: #fca5a5; margin-top: 4px;">
+              Cette transaction fait l'objet d'un signalement. Contactez le vendeur ou le support pour la régularisation.
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="detail-transaction-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <span>🤝</span> <span>Suivi de Transaction (Acheteur)</span>
+            </div>
+            <span class="tx-status-badge ${maTx.statut}">
+              ${getLibelleStatut(maTx.statut)}
+            </span>
+          </div>
+          ${stepper}
+          ${actionBox}
+        </div>
+      `;
+    }
+
+    /**
+     * Affiche l'onglet "Mes Transactions" avec filtrage et stepper interactif
+     */
+    function afficherPageTransactions(filtre = 'toutes') {
+      currentTransactionsTab = filtre;
+      const container = document.getElementById('transactions-content-wrapper');
+      if (!container) return;
+
+      const profil = getProfilUtilisateur();
+      const monNom = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+      const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
+
+      const toutesTxs = getTransactions();
+
+      // Identifier le rôle de l'utilisateur pour chaque transaction
+      const txsAvecRole = toutesTxs.map(t => {
+        const estVendeur = (profil && profil.id && t.vendeurId === profil.id) ||
+                           t.vendeur === monNom || t.vendeur === monNomFormate ||
+                           (profil && profil.prenom && t.vendeurPrenom === profil.prenom);
+        const estAcheteur = (profil && profil.id && t.acheteurId === profil.id) ||
+                            t.acheteur === monNom || t.acheteur === monNomFormate ||
+                            t.acheteurNom === monNom;
+        return { ...t, estVendeur, estAcheteur };
+      });
+
+      // Calcul des compteurs
+      const countVentes = txsAvecRole.filter(t => t.estVendeur).length;
+      const countAchats = txsAvecRole.filter(t => t.estAcheteur).length;
+      const countTotal = txsAvecRole.length;
+
+      const countDemandes = txsAvecRole.filter(t => (t.estVendeur && t.statut === 'DEMANDE_ENVOYEE') || (t.estAcheteur && t.statut === 'DEMANDE_ENVOYEE')).length;
+      const countEnCours = txsAvecRole.filter(t => t.statut === 'ACCEPTEE' || t.statut === 'LIVRAISON_CONFIRMEE').length;
+      const countTerminees = txsAvecRole.filter(t => t.statut === 'TERMINEE').length;
+
+      // Filtrer la liste selon l'onglet
+      let txsFiltrees = txsAvecRole;
+      if (filtre === 'ventes') {
+        txsFiltrees = txsAvecRole.filter(t => t.estVendeur);
+      } else if (filtre === 'achats') {
+        txsFiltrees = txsAvecRole.filter(t => t.estAcheteur);
+      }
+
+      // Génération du HTML
+      let html = `
+        <div class="transactions-hero">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="font-size: 20px; font-weight: 800; color: var(--text-white); margin-bottom: 4px;">
+                🤝 Mes Transactions Sécurisées
+              </h2>
+              <p style="font-size: 13px; color: var(--text-gray); line-height: 1.4;">
+                Système à double confirmation : achetez et vendez vos comptes eFootball au Sénégal sans risque de vol ou d'annulation abusive.
+              </p>
+            </div>
+            <button type="button" class="btn-publish-header" onclick="changerPage('accueil')">
+              <span>🔍</span> Explorer les comptes
+            </button>
+          </div>
+
+          <div class="transactions-stats-strip">
+            <div class="transactions-stat-item">
+              <div class="transactions-stat-val" style="color: #fbbf24;">${countDemandes}</div>
+              <div class="transactions-stat-lbl">Demandes en attente</div>
+            </div>
+            <div class="transactions-stat-item">
+              <div class="transactions-stat-val" style="color: #60a5fa;">${countEnCours}</div>
+              <div class="transactions-stat-lbl">Ventes en cours</div>
+            </div>
+            <div class="transactions-stat-item">
+              <div class="transactions-stat-val" style="color: #00E676;">${countTerminees}</div>
+              <div class="transactions-stat-lbl">Transactions terminées</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tx-filter-tabs">
+          <button type="button" class="tx-filter-btn ${filtre === 'toutes' ? 'active' : ''}" onclick="afficherPageTransactions('toutes')">
+            📋 Toutes (${countTotal})
+          </button>
+          <button type="button" class="tx-filter-btn ${filtre === 'ventes' ? 'active' : ''}" onclick="afficherPageTransactions('ventes')">
+            📥 Mes Ventes / Demandes reçues (${countVentes})
+          </button>
+          <button type="button" class="tx-filter-btn ${filtre === 'achats' ? 'active' : ''}" onclick="afficherPageTransactions('achats')">
+            📤 Mes Achats / Demandes envoyées (${countAchats})
+          </button>
+        </div>
+      `;
+
+      if (txsFiltrees.length === 0) {
+        html += `
+          <div class="empty-state-box" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 40px 20px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 12px;">🤝</div>
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-white); margin-bottom: 6px;">
+              Aucune transaction dans cette section
+            </h3>
+            <p style="font-size: 13px; color: var(--text-gray); max-width: 440px; margin: 0 auto 18px;">
+              ${filtre === 'ventes' ? 'Vous n\'avez pas encore reçu de demande d\'achat pour vos annonces.' : 
+                (filtre === 'achats' ? 'Vous n\'avez pas encore demandé à acheter de compte eFootball.' : 
+                'Vos demandes d\'achat et vos ventes apparaîtront ici avec le suivi sécurisé.')}
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <button class="btn-primary" onclick="changerPage('accueil')">
+                🎮 Explorer le catalogue
+              </button>
+              <button class="btn-secondary" onclick="changerPage('publier')">
+                ➕ Publier un compte
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        html += `<div class="tx-list">`;
+
+        txsFiltrees.forEach(t => {
+          const stepperHtml = formaterStepperHtml(t.statut);
+          const libelleStatut = getLibelleStatut(t.statut);
+          const dateTexte = t.dateMiseAJour ? formaterDate(t.dateMiseAJour) : formaterDate(t.date);
+
+          // Rôle de l'utilisateur
+          const estVendeur = t.estVendeur;
+          const roleLabel = estVendeur ? 
+            `<span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.15); border: 1px solid rgba(33, 150, 243, 0.3);">Vendeur</span>` : 
+            `<span class="badge-pill" style="color: #00E676; background: rgba(0, 200, 83, 0.15); border: 1px solid rgba(0, 200, 83, 0.3);">Acheteur</span>`;
+
+          const interlocuteurTexte = estVendeur ? `Acheteur : <strong>${escapeHtml(t.acheteur)}</strong>` : `Vendeur : <strong>${escapeHtml(t.vendeur)}</strong>`;
+
+          // Image miniature
+          const thumbHtml = t.imageAnnonce ? 
+            `<img src="${t.imageAnnonce}" alt="${escapeHtml(t.titreAnnonce)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">` : 
+            `<div style="width: 70px; height: 70px; background: #242424; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 26px; border: 1px solid var(--border-color);">⚽</div>`;
+
+          // WhatsApp link
+          const waNum = t.telephoneWhatsAppVendeur || "";
+          const msgWa = encodeURIComponent(`Bonjour, je vous contacte sur EFoot Market SN à propos de la transaction sécurisée pour "${t.titreAnnonce}".`);
+          const waLink = waNum ? `https://wa.me/${waNum}?text=${msgWa}` : null;
+
+          // Boîte d'actions contextuelles
+          let actionBoxHtml = '';
+
+          if (estVendeur) {
+            // Actions vendeur
+            if (t.statut === 'DEMANDE_ENVOYEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-demande">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">📥 Demande d'achat en attente de votre réponse</div>
+                      <div style="font-size: 12px; color: #fff; margin-top: 2px;">
+                        ${escapeHtml(t.acheteur)} propose d'acheter pour <strong>${formaterPrix(t.prixAnnonce)}</strong>.
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="button" class="btn-danger" style="padding: 7px 14px; font-size: 12px;" onclick="demanderRefusDemandeVendeur('${t.id}')">
+                        ❌ Refuser
+                      </button>
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 7px 16px; font-size: 12px;" onclick="demanderAcceptationVendeur('${t.id}')">
+                        ✅ Accepter la vente
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else if (t.statut === 'ACCEPTEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-acceptee">
+                  <div style="font-weight: 700; color: #60a5fa; font-size: 13px;">🔵 Vente acceptée • En attente de vérification par l'acheteur</div>
+                  <div style="font-size: 12px; color: #ccc; margin-top: 3px;">
+                    Transmettez le Konami ID et mot de passe à ${escapeHtml(t.acheteur)}. Dès qu'il aura vérifié, il confirmera la réception.
+                  </div>
+                </div>
+              `;
+            } else if (t.statut === 'LIVRAISON_CONFIRMEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-livraison">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #fb923c; font-size: 13.5px;">✅ L'acheteur a confirmé avoir reçu le compte !</div>
+                      <div style="font-size: 12px; color: #fff; margin-top: 2px;">
+                        Vérifiez votre paiement Wave / OM puis finalisez la vente définitive.
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12.5px;" onclick="ouvrirModalTerminerTransaction('${t.id}')">
+                        ✅ Marquer comme terminée
+                      </button>
+                      <button type="button" class="btn-danger" style="padding: 8px 12px; font-size: 12px;" onclick="ouvrirModalLitige('${t.id}')">
+                        🚨 Signaler un problème
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else if (t.statut === 'TERMINEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-terminee">
+                  <div style="font-weight: 700; color: #34d399; font-size: 13px;">🟢 Vente terminée et clôturée</div>
+                  <div style="font-size: 12px; color: var(--text-gray); margin-top: 2px;">L'annonce est marquée comme VENDU.</div>
+                </div>
+              `;
+            } else if (t.statut === 'REFUSEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-litige">
+                  <div style="font-weight: 600; color: #f87171; font-size: 12.5px;">🔴 Demande d'achat refusée</div>
+                </div>
+              `;
+            } else if (t.statut === 'LITIGE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-litige">
+                  <div style="font-weight: 700; color: #ef4444; font-size: 13px;">🚨 Litige : ${escapeHtml(t.motifLitige || 'Signalé')}</div>
+                </div>
+              `;
+            }
+          } else {
+            // Actions acheteur
+            if (t.statut === 'DEMANDE_ENVOYEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-demande">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">⏳ En attente que le vendeur accepte votre demande</div>
+                      <div style="font-size: 12px; color: #bbb; margin-top: 2px;">Le vendeur doit valider votre demande d'achat.</div>
+                    </div>
+                    <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemandeAchat('${t.id}')">
+                      Annuler la demande
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else if (t.statut === 'ACCEPTEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-acceptee">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #60a5fa; font-size: 13.5px;">🎉 Le vendeur a accepté votre demande !</div>
+                      <div style="font-size: 12px; color: #fff; margin-top: 2px;">
+                        Avez-vous bien reçu les identifiants Konami ID et vérifié le compte eFootball ?
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12.5px;" onclick="demanderConfirmationLivraison('${t.id}')">
+                        📦 Oui, j'ai reçu le compte
+                      </button>
+                      <button type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="rappelerAttenteLivraison('${t.id}')">
+                        Non, pas encore
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else if (t.statut === 'LIVRAISON_CONFIRMEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-livraison">
+                  <div style="font-weight: 700; color: #fb923c; font-size: 13px;">📦 Réception confirmée par vos soins</div>
+                  <div style="font-size: 12px; color: #ccc; margin-top: 2px;">
+                    Le vendeur vérifie la réception de son paiement Wave/OM pour clore la transaction.
+                  </div>
+                </div>
+              `;
+            } else if (t.statut === 'TERMINEE') {
+              const tousAvis = getAvis();
+              const monAvis = tousAvis.find(a => a.transactionId === t.id || (a.vendeurNom === t.vendeur && a.acheteurNom === monNom && a.annonceId === t.annonceId));
+
+              actionBoxHtml = `
+                <div class="tx-action-box box-terminee">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #34d399; font-size: 13.5px;">✅ Achat terminé avec succès !</div>
+                      <div style="font-size: 12px; color: var(--text-gray); margin-top: 2px;">
+                        ${monAvis ? `Vous avez noté ce vendeur ${monAvis.note}/5 ★ : « ${escapeHtml(monAvis.commentaire)} »` : 'Vous pouvez évaluer votre expérience avec ce vendeur.'}
+                      </div>
+                    </div>
+                    <button type="button" class="btn-tx-review" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirModalAvisPourAnnonce('${t.annonceId}')">
+                      ${monAvis ? '✏️ Modifier mon avis' : '⭐ Laisser un avis'}
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else if (t.statut === 'REFUSEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-litige">
+                  <div style="font-weight: 600; color: #f87171; font-size: 12.5px;">🔴 Demande d'achat refusée par le vendeur</div>
+                </div>
+              `;
+            } else if (t.statut === 'LITIGE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-litige">
+                  <div style="font-weight: 700; color: #ef4444; font-size: 13px;">🚨 Litige : ${escapeHtml(t.motifLitige || 'Signalé')}</div>
+                </div>
+              `;
+            }
+          }
+
+          html += `
+            <div class="tx-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="tx-status-badge ${t.statut}">
+                    ${libelleStatut}
+                  </span>
+                  ${roleLabel}
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-muted);">
+                  ${dateTexte}
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
+                ${thumbHtml}
+                <div style="flex: 1; min-width: 200px;">
+                  <div style="font-weight: 700; font-size: 15px; color: var(--text-white); margin-bottom: 4px; cursor: pointer;" onclick="changerPage('detail', { annonceId: '${t.annonceId}' })" title="Voir l'annonce">
+                    ${escapeHtml(t.titreAnnonce)}
+                  </div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">
+                    ${formaterPrix(t.prixAnnonce)}
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-gray);">
+                    ${interlocuteurTexte} • 🎮 ${escapeHtml(t.plateforme || 'Mobile')} • 📍 ${escapeHtml(t.region || 'Dakar')}
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  ${waLink ? `
+                    <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="font-size: 12px; padding: 6px 12px; color: #25D366; border-color: rgba(37, 211, 102, 0.4);" title="WhatsApp">
+                      <span>💬 WhatsApp</span>
+                    </a>
+                  ` : ''}
+                  <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="initierDiscussion('${t.annonceId}')" title="Messagerie interne">
+                    <span>✉️ Chat</span>
+                  </button>
+                  <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="changerPage('detail', { annonceId: '${t.annonceId}' })" title="Détails de l'annonce">
+                    <span>👁️ Annonce</span>
+                  </button>
+                </div>
+              </div>
+
+              ${stepperHtml}
+              ${actionBoxHtml}
+            </div>
+          `;
+        });
+
+        html += `</div>`;
+      }
+
+      container.innerHTML = html;
+      mettreAJourBadgeTransactions();
+    }
+
+    /**
+     * Remplacement sécurisé : déclenche l'étape correspondante depuis le chat
      */
     function marquerTransactionTermineeDepuisChat(convId) {
       const convs = getConversations();
@@ -5141,128 +6851,28 @@
         return;
       }
 
-      if (!confirm(`Confirmez-vous que la transaction pour "${conv.titreAnnonce}" est terminée ? Vous pourrez ensuite laisser un avis et un commentaire sur le vendeur ${conv.vendeurNom}.`)) {
-        return;
-      }
-
-      conv.statutTransaction = 'terminee';
-      conv.dateTerminee = new Date().toISOString();
-
-      // Message système dans la discussion
-      const msgSys = {
-        id: 'msg_' + Date.now(),
-        expediteur: 'Système',
-        destinataire: 'Tous',
-        contenu: `🎉 Transaction marquée comme 'Terminée' par l'acheteur ${profil.nom}. Félicitations pour cette vente réussie !`,
-        date: new Date().toISOString(),
-        isSystem: true
-      };
-      conv.messages.push(msgSys);
-      setConversations(convs);
-
-      // Enregistrer/mettre à jour dans la liste des transactions
       const txs = getTransactions();
-      const existIndex = txs.findIndex(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && t.acheteurNom === profil.nom));
-      const txId = existIndex >= 0 ? txs[existIndex].id : ('tx_' + Date.now());
-      if (existIndex >= 0) {
-        txs[existIndex].statut = 'terminee';
-        txs[existIndex].dateTerminee = new Date().toISOString();
+      const tx = txs.find(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && (t.acheteurNom === conv.acheteurNom || t.acheteur === conv.acheteurNom)));
+      if (tx) {
+        if (tx.statut === 'LIVRAISON_CONFIRMEE') {
+          ouvrirModalTerminerTransaction(tx.id);
+        } else if (tx.statut === 'ACCEPTEE') {
+          demanderConfirmationLivraison(tx.id);
+        } else if (tx.statut === 'DEMANDE_ENVOYEE') {
+          afficherPageTransactions('ventes');
+        } else {
+          afficherPageTransactions();
+        }
       } else {
-        txs.push({
-          id: txId,
-          conversationId: conv.id,
-          annonceId: conv.annonceId,
-          titreAnnonce: conv.titreAnnonce,
-          prixAnnonce: conv.prixAnnonce,
-          vendeurNom: conv.vendeurNom,
-          acheteurNom: profil.nom,
-          statut: 'terminee',
-          dateCreation: new Date().toISOString(),
-          dateTerminee: new Date().toISOString()
-        });
+        ouvrirModalIntentionAchat(conv.annonceId);
       }
-      setTransactions(txs);
-
-      afficherNotification("Transaction marquée comme 'Terminée' !", "🎉");
-      afficherConversations(conv.id);
-
-      // Ouvre immédiatement la modale d'avis
-      ouvrirModalAvis({
-        transactionId: txId,
-        vendeurNom: conv.vendeurNom,
-        annonceId: conv.annonceId,
-        titreAnnonce: conv.titreAnnonce
-      });
     }
 
     /**
-     * Marque la transaction comme 'Terminée' depuis la page détail de l'annonce
+     * Remplacement sécurisé : ouvre la demande d'achat ou l'action correspondante
      */
     function marquerTransactionTermineePourAnnonce(annonceId) {
-      verifierProfilOuDemander(profil => {
-        const annonces = getAnnonces();
-        const ad = annonces.find(a => a.id === annonceId);
-        if (!ad) return;
-
-        if (ad.vendeur === profil.nom) {
-          afficherNotification("Vous êtes le vendeur de cette annonce.", "ℹ️");
-          return;
-        }
-
-        if (!confirm(`Confirmez-vous que vous avez reçu le compte "${ad.titre}" et effectué le paiement ? Cette action marque la transaction comme 'Terminée'.`)) {
-          return;
-        }
-
-        const txs = getTransactions();
-        let tx = txs.find(t => t.annonceId === annonceId && t.acheteurNom === profil.nom);
-        const txId = tx ? tx.id : ('tx_' + Date.now());
-
-        if (tx) {
-          tx.statut = 'terminee';
-          tx.dateTerminee = new Date().toISOString();
-        } else {
-          tx = {
-            id: txId,
-            annonceId: ad.id,
-            titreAnnonce: ad.titre,
-            prixAnnonce: ad.prix,
-            vendeurNom: ad.vendeur,
-            acheteurNom: profil.nom,
-            statut: 'terminee',
-            dateCreation: new Date().toISOString(),
-            dateTerminee: new Date().toISOString()
-          };
-          txs.push(tx);
-        }
-        setTransactions(txs);
-
-        // Mettre à jour la conversation correspondante si elle existe
-        const convs = getConversations();
-        const conv = convs.find(c => c.annonceId === annonceId && c.acheteurNom === profil.nom);
-        if (conv) {
-          conv.statutTransaction = 'terminee';
-          conv.messages.push({
-            id: 'msg_' + Date.now(),
-            expediteur: 'Système',
-            destinataire: 'Tous',
-            contenu: `🎉 Transaction marquée comme 'Terminée' par ${profil.nom}.`,
-            date: new Date().toISOString(),
-            isSystem: true
-          });
-          setConversations(convs);
-        }
-
-        afficherNotification("Transaction marquée comme 'Terminée' !", "🎉");
-        afficherDetailAnnonce(annonceId);
-
-        // Ouvrir la modale d'évaluation
-        ouvrirModalAvis({
-          transactionId: txId,
-          vendeurNom: ad.vendeur,
-          annonceId: ad.id,
-          titreAnnonce: ad.titre
-        });
-      });
+      ouvrirModalIntentionAchat(annonceId);
     }
 
     /**
@@ -5910,12 +7520,10 @@
 
       // Synchronisation du statut de transaction
       const txs = getTransactions();
-      const maTx = txs.find(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && t.acheteurNom === conv.acheteurNom));
-      if (maTx && maTx.statut === 'terminee') {
-        conv.statutTransaction = 'terminee';
-      }
+      const maTx = txs.find(t => t.conversationId === conv.id || (t.annonceId === conv.annonceId && (t.acheteurNom === conv.acheteurNom || t.acheteur === conv.acheteurNom)));
+      const statutCourant = maTx ? maTx.statut : (conv.statutTransaction === 'terminee' || conv.statutTransaction === 'TERMINEE' ? 'TERMINEE' : 'DEMANDE_ENVOYEE');
+      const estTerminee = statutCourant === 'TERMINEE';
 
-      const estTerminee = conv.statutTransaction === 'terminee';
       const tousAvis = getAvis();
       const avisExistant = tousAvis.find(a => 
         (maTx && a.transactionId === maTx.id) ||
@@ -5927,20 +7535,143 @@
       if (banner) {
         banner.style.display = 'flex';
 
-        if (estTerminee) {
+        if (statutCourant === 'DEMANDE_ENVOYEE') {
+          if (estAcheteur) {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge DEMANDE_ENVOYEE">🟡 Demande envoyée</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">Demande d'achat en attente d'acceptation du vendeur</div>
+                  <div class="tx-banner-sub">Le vendeur ${escapeHtml(conv.vendeurNom)} doit valider votre proposition pour réserver le compte.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions', { filtre: 'achats' })">
+                  📋 Mes transactions
+                </button>
+              </div>
+            `;
+          } else {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge DEMANDE_ENVOYEE">📥 Demande reçue</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">Demande d'achat reçue de ${escapeHtml(conv.acheteurNom)} (${formaterPrix(conv.prixAnnonce)})</div>
+                  <div class="tx-banner-sub">Acceptez pour réserver l'annonce et débuter la transmission des identifiants Konami.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                ${maTx ? `
+                  <button class="btn-danger" style="font-size: 11.5px; padding: 6px 12px;" onclick="demanderRefusDemandeVendeur('${maTx.id}')">
+                    ❌ Refuser
+                  </button>
+                  <button class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; font-size: 11.5px; padding: 6px 14px;" onclick="demanderAcceptationVendeur('${maTx.id}')">
+                    ✅ Accepter la vente
+                  </button>
+                ` : `
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions', { filtre: 'ventes' })">
+                    Voir mes transactions
+                  </button>
+                `}
+              </div>
+            `;
+          }
+        } else if (statutCourant === 'ACCEPTEE') {
+          if (estAcheteur) {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge ACCEPTEE">🔵 Vente acceptée</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">📦 Avez-vous reçu le compte eFootball ?</div>
+                  <div class="tx-banner-sub">Vérifiez la connexion avec le Konami ID fourni par le vendeur avant de confirmer.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                ${maTx ? `
+                  <button class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; font-size: 11.5px; padding: 6px 14px;" onclick="demanderConfirmationLivraison('${maTx.id}')">
+                    📦 Oui, j'ai reçu le compte
+                  </button>
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="rappelerAttenteLivraison('${maTx.id}')">
+                    Non, pas encore
+                  </button>
+                ` : `
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions')">
+                    Suivre la transaction
+                  </button>
+                `}
+              </div>
+            `;
+          } else {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge ACCEPTEE">🔵 Vente en cours</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">Vente acceptée avec ${escapeHtml(conv.acheteurNom)}</div>
+                  <div class="tx-banner-sub">Transmettez les identifiants de jeu. En attente de la confirmation de réception par l'acheteur.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions', { filtre: 'ventes' })">
+                  📋 Suivi vendeur
+                </button>
+              </div>
+            `;
+          }
+        } else if (statutCourant === 'LIVRAISON_CONFIRMEE') {
+          if (estAcheteur) {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge LIVRAISON_CONFIRMEE">🟠 Réception confirmée</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">Réception confirmée par vos soins</div>
+                  <div class="tx-banner-sub">Le vendeur vérifie son paiement Wave / OM pour la clôture définitive.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions', { filtre: 'achats' })">
+                  Mes transactions
+                </button>
+              </div>
+            `;
+          } else {
+            banner.innerHTML = `
+              <div class="tx-banner-left">
+                <span class="tx-status-badge LIVRAISON_CONFIRMEE">✅ Compte reçu par l'acheteur</span>
+                <div class="tx-banner-info">
+                  <div class="tx-banner-title">L'acheteur a confirmé avoir reçu le compte !</div>
+                  <div class="tx-banner-sub">Avez-vous bien reçu la totalité du paiement ? Marquez comme terminée pour clore la vente.</div>
+                </div>
+              </div>
+              <div class="tx-banner-actions">
+                ${maTx ? `
+                  <button class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; font-size: 11.5px; padding: 6px 14px;" onclick="ouvrirModalTerminerTransaction('${maTx.id}')">
+                    ✅ Marquer comme terminée
+                  </button>
+                  <button class="btn-danger" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirModalLitige('${maTx.id}')">
+                    🚨 Litige
+                  </button>
+                ` : `
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions', { filtre: 'ventes' })">
+                    Gérer
+                  </button>
+                `}
+              </div>
+            `;
+          }
+        } else if (statutCourant === 'TERMINEE') {
           if (estAcheteur) {
             if (avisExistant) {
               banner.innerHTML = `
                 <div class="tx-banner-left">
-                  <span class="tx-status-badge completed">✅ Terminée</span>
+                  <span class="tx-status-badge TERMINEE">🟢 Terminée</span>
                   <div class="tx-banner-info">
-                    <div class="tx-banner-title">Avis étoilé enregistré (${avisExistant.note}/5 ★) sur le profil de ${conv.vendeurNom}</div>
-                    <div class="tx-banner-sub">« ${avisExistant.commentaire.substring(0, 55)}${avisExistant.commentaire.length > 55 ? '...' : ''} »</div>
+                    <div class="tx-banner-title">Avis étoilé enregistré (${avisExistant.note}/5 ★) sur ${escapeHtml(conv.vendeurNom)}</div>
+                    <div class="tx-banner-sub">« ${escapeHtml(avisExistant.commentaire.substring(0, 55))}${avisExistant.commentaire.length > 55 ? '...' : ''} »</div>
                   </div>
                 </div>
                 <div class="tx-banner-actions">
                   <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
-                    👤 Voir profil & avis
+                    👤 Profil vendeur
                   </button>
                   <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirModalAvisDepuisChat('${conv.id}')">
                     ✏️ Modifier mon avis
@@ -5950,9 +7681,9 @@
             } else {
               banner.innerHTML = `
                 <div class="tx-banner-left">
-                  <span class="tx-status-badge completed">✅ Terminée</span>
+                  <span class="tx-status-badge TERMINEE">🟢 Terminée</span>
                   <div class="tx-banner-info">
-                    <div class="tx-banner-title">Transaction finalisée ! Laissez un avis sur ${conv.vendeurNom}</div>
+                    <div class="tx-banner-title">Transaction finalisée ! Laissez un avis sur ${escapeHtml(conv.vendeurNom)}</div>
                     <div class="tx-banner-sub">Attribuez vos étoiles et votre commentaire textuel sur le profil du vendeur.</div>
                   </div>
                 </div>
@@ -5961,55 +7692,18 @@
                     👤 Profil vendeur
                   </button>
                   <button class="btn-tx-review" onclick="ouvrirModalAvisDepuisChat('${conv.id}')">
-                    ⭐ Laisser un avis et commentaire
+                    ⭐ Laisser un avis
                   </button>
                 </div>
               `;
             }
           } else {
-            // Vue pour le vendeur
             banner.innerHTML = `
               <div class="tx-banner-left">
-                <span class="tx-status-badge completed">✅ Terminée</span>
+                <span class="tx-status-badge TERMINEE">🟢 Terminée</span>
                 <div class="tx-banner-info">
-                  <div class="tx-banner-title">L'acheteur a marqué cette vente comme terminée</div>
-                  <div class="tx-banner-sub">${avisExistant ? `Avis reçu : ${avisExistant.note}★ - « ${avisExistant.commentaire} »` : `En attente du commentaire et de la note de l'acheteur.`}</div>
-                </div>
-              </div>
-              <div class="tx-banner-actions">
-                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
-                  👤 Voir mon profil vendeur
-                </button>
-              </div>
-            `;
-          }
-        } else {
-          // Transaction encore en cours
-          if (estAcheteur) {
-            banner.innerHTML = `
-              <div class="tx-banner-left">
-                <span class="tx-status-badge ongoing">🟡 En cours</span>
-                <div class="tx-banner-info">
-                  <div class="tx-banner-title">Achat de : ${conv.titreAnnonce}</div>
-                  <div class="tx-banner-sub">Identifiants Konami reçus et paiement fait ? Marquez la transaction comme terminée pour évaluer le vendeur.</div>
-                </div>
-              </div>
-              <div class="tx-banner-actions">
-                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
-                  👤 Profil de ${conv.vendeurNom}
-                </button>
-                <button class="btn-tx-complete" onclick="marquerTransactionTermineeDepuisChat('${conv.id}')">
-                  ✅ Marquer comme 'Terminée'
-                </button>
-              </div>
-            `;
-          } else {
-            banner.innerHTML = `
-              <div class="tx-banner-left">
-                <span class="tx-status-badge ongoing">🟡 En cours</span>
-                <div class="tx-banner-info">
-                  <div class="tx-banner-title">Vente en cours : ${conv.titreAnnonce} (${formaterPrix(conv.prixAnnonce)})</div>
-                  <div class="tx-banner-sub">L'acheteur pourra marquer la transaction comme 'Terminée' et vous laisser un avis étoilé.</div>
+                  <div class="tx-banner-title">Transaction finalisée et close</div>
+                  <div class="tx-banner-sub">${avisExistant ? `Avis reçu : ${avisExistant.note}★ - « ${escapeHtml(avisExistant.commentaire)} »` : `Le compte a été marqué comme VENDU.`}</div>
                 </div>
               </div>
               <div class="tx-banner-actions">
@@ -6019,6 +7713,36 @@
               </div>
             `;
           }
+        } else if (statutCourant === 'REFUSEE') {
+          banner.innerHTML = `
+            <div class="tx-banner-left">
+              <span class="tx-status-badge REFUSEE">🔴 Demande refusée</span>
+              <div class="tx-banner-info">
+                <div class="tx-banner-title">Cette demande d'achat a été refusée</div>
+                <div class="tx-banner-sub">L'annonce reste disponible pour d'autres propositions.</div>
+              </div>
+            </div>
+            <div class="tx-banner-actions">
+              <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions')">
+                Mes transactions
+              </button>
+            </div>
+          `;
+        } else if (statutCourant === 'LITIGE') {
+          banner.innerHTML = `
+            <div class="tx-banner-left">
+              <span class="tx-status-badge LITIGE">🚨 Litige signalé</span>
+              <div class="tx-banner-info">
+                <div class="tx-banner-title">Transaction suspendue pour litige</div>
+                <div class="tx-banner-sub">${escapeHtml(maTx && maTx.motifLitige ? maTx.motifLitige : 'Un problème a été signalé sur cette transaction.')}</div>
+              </div>
+            </div>
+            <div class="tx-banner-actions">
+              <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions')">
+                Voir détails
+              </button>
+            </div>
+          `;
         }
       }
 
@@ -6273,8 +7997,9 @@
         localStorage.setItem(STORAGE_AVIS, JSON.stringify(avisInitiaux));
       }
 
-      // Mettre à jour les badges de messages
+      // Mettre à jour les badges de messages et transactions
       mettreAJourBadgeMessages();
+      mettreAJourBadgeTransactions();
 
       // Écouter les changements d'ancre (hash) pour navigation directe vers une annonce
       window.addEventListener('hashchange', function() {
