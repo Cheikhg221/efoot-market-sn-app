@@ -805,6 +805,34 @@
       color: #000;
     }
 
+    .btn-share {
+      background: rgba(33, 150, 243, 0.12);
+      color: #64b5f6;
+      border: 1px solid rgba(33, 150, 243, 0.35);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .btn-share:hover {
+      background: rgba(33, 150, 243, 0.22);
+      border-color: #64b5f6;
+      color: #90caf9;
+      transform: translateY(-1px);
+    }
+
+    .btn-share:active {
+      transform: translateY(0);
+    }
+
     /* ==========================================================
        6. PAGE 2 : PUBLIER UNE ANNONCE
        ========================================================== */
@@ -3472,6 +3500,7 @@
       if (user) {
         mettreAJourAffichageUtilisateur(user);
       }
+      verifierLienPartageUrl();
     }
 
     /**
@@ -4104,18 +4133,52 @@
 
       // Actions spécifiques selon la page demandée
       if (pageId === 'accueil') {
+        nettoyerHashAnnonce();
         appliquerFiltres();
       } else if (pageId === 'mes-annonces') {
+        nettoyerHashAnnonce();
         afficherMesAnnonces();
       } else if (pageId === 'messages') {
+        nettoyerHashAnnonce();
         afficherConversations(params.conversationId);
       } else if (pageId === 'detail' && params.annonceId) {
+        synchroniserHashAnnonce(params.annonceId);
         afficherDetailAnnonce(params.annonceId);
       } else if (pageId === 'profil') {
+        nettoyerHashAnnonce();
         afficherPageProfil(params.modeEdition || false);
       } else if (pageId === 'publier') {
+        nettoyerHashAnnonce();
         preRemplirFormulairePublication();
       }
+    }
+
+    /**
+     * Met à jour l'URL avec le hash de l'annonce sans recharger la page
+     */
+    function synchroniserHashAnnonce(id) {
+      try {
+        if (history.replaceState) {
+          history.replaceState(null, '', '#annonce=' + encodeURIComponent(id));
+        } else {
+          window.location.hash = '#annonce=' + encodeURIComponent(id);
+        }
+      } catch (e) {}
+    }
+
+    /**
+     * Supprime le hash d'annonce de l'URL lors du retour aux autres pages
+     */
+    function nettoyerHashAnnonce() {
+      try {
+        if (window.location.hash && window.location.hash.startsWith('#annonce=')) {
+          if (history.replaceState) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          } else {
+            window.location.hash = '';
+          }
+        }
+      } catch (e) {}
     }
 
     /* ==========================================================
@@ -4692,7 +4755,12 @@
           <button class="btn-secondary" onclick="changerPage('accueil')">
             ← Retour à l'accueil
           </button>
-          <span style="font-size: 12px; color: var(--text-muted);">Publié le ${formaterDate(ad.date)}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn-share" onclick="partagerAnnonce('${ad.id}')" style="padding: 7px 12px; font-size: 12.5px;" title="Partager cette annonce">
+              <span>📤</span> <span>Partager</span>
+            </button>
+            <span style="font-size: 12px; color: var(--text-muted);">Publié le ${formaterDate(ad.date)}</span>
+          </div>
         </div>
 
         <div class="detail-image-box">
@@ -4750,13 +4818,18 @@
             </div>
           </div>
 
-          <!-- Actions de contact -->
+          <!-- Actions de contact et partage -->
           <div class="detail-actions-row">
-            <a href="${lienWhatsApp}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-whatsapp" style="flex: 1;">
-              <span>💬</span> Contacter sur WhatsApp
-            </a>
-            <button class="btn-primary" style="flex: 1;" onclick="initierDiscussion('${ad.id}')">
-              <span>✉️</span> Message au vendeur
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <a href="${lienWhatsApp}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-whatsapp" style="flex: 1; min-width: 180px;">
+                <span>💬</span> Contacter sur WhatsApp
+              </a>
+              <button class="btn-primary" style="flex: 1; min-width: 180px;" onclick="initierDiscussion('${ad.id}')">
+                <span>✉️</span> Message au vendeur
+              </button>
+            </div>
+            <button type="button" class="btn-share" style="width: 100%; padding: 12px 18px; font-size: 14px; justify-content: center;" onclick="partagerAnnonce('${ad.id}')" title="Partager l'annonce ou copier le lien">
+              <span>🔗</span> <span>Partager cette annonce (Copier le lien / Partage natif)</span>
             </button>
           </div>
 
@@ -4846,6 +4919,119 @@
           </div>
         </div>
       `;
+    }
+
+    /* ==========================================================
+       SECTION 7.1 : PARTAGE D'UNE ANNONCE (Web Share API & Copie de Lien)
+       ========================================================== */
+
+    /**
+     * Partage une annonce via Web Share API native ou copie le lien
+     */
+    function partagerAnnonce(adId) {
+      const annonces = getAnnonces();
+      const ad = annonces.find(item => item.id === adId);
+      if (!ad) {
+        afficherNotification("Annonce introuvable pour le partage", "⚠️");
+        return;
+      }
+
+      // Construction du lien de partage direct (compatible avec hash et search param)
+      const baseUrl = window.location.origin && window.location.origin !== 'null' ? 
+        (window.location.origin + window.location.pathname) : 
+        window.location.href.split('#')[0];
+      const urlPartage = `${baseUrl}#annonce=${encodeURIComponent(ad.id)}`;
+      
+      const titrePartage = `⚽ Compte eFootball : ${ad.titre}`;
+      const puissanceTxt = ad.puissance ? ` • Puissance ${ad.puissance}` : '';
+      const textePartage = `Regarde ce compte eFootball en vente sur EFoot Market SN : "${ad.titre}" (${ad.plateforme}${puissanceTxt}) au prix de ${formaterPrix(ad.prix)}.`;
+
+      // Tentative via l'API Web Share native si supportée
+      if (navigator.share) {
+        navigator.share({
+          title: titrePartage,
+          text: textePartage,
+          url: urlPartage
+        }).then(function() {
+          afficherNotification("Annonce partagée avec succès !", "🔗");
+        }).catch(function(err) {
+          // Si l'utilisateur a simplement fermé le panneau de partage natif (AbortError)
+          if (err && err.name === 'AbortError') {
+            return;
+          }
+          // En cas de refus de permission (iframe, etc.), repli sur la copie de lien
+          copierLienPartage(urlPartage);
+        });
+      } else {
+        // Navigateur sans Web Share API -> Copie directe dans le presse-papier
+        copierLienPartage(urlPartage);
+      }
+    }
+
+    /**
+     * Copie le lien de l'annonce dans le presse-papier avec confirmation visuelle
+     */
+    function copierLienPartage(url) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url)
+          .then(function() {
+            afficherNotification("Lien de l'annonce copié dans le presse-papier !", "📋");
+          })
+          .catch(function() {
+            copierTexteFallback(url);
+          });
+      } else {
+        copierTexteFallback(url);
+      }
+    }
+
+    /**
+     * Méthode de secours pour copier du texte dans le presse-papier
+     */
+    function copierTexteFallback(texte) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = texte;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const reussi = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (reussi) {
+          afficherNotification("Lien de l'annonce copié !", "📋");
+        } else {
+          prompt("Copiez le lien de l'annonce ci-dessous :", texte);
+        }
+      } catch (e) {
+        prompt("Copiez le lien de l'annonce ci-dessous :", texte);
+      }
+    }
+
+    /**
+     * Vérifie si un identifiant d'annonce est présent dans l'URL (#annonce=... ou ?annonce=...)
+     */
+    function verifierLienPartageUrl() {
+      try {
+        const hash = window.location.hash || '';
+        const search = new URLSearchParams(window.location.search);
+        let idAnnonce = search.get('annonce');
+        if (!idAnnonce && hash.startsWith('#annonce=')) {
+          idAnnonce = decodeURIComponent(hash.substring(9));
+        }
+
+        if (idAnnonce) {
+          const annonces = getAnnonces();
+          const ad = annonces.find(a => a.id === idAnnonce);
+          if (ad) {
+            changerPage('detail', { annonceId: idAnnonce });
+            return true;
+          }
+        }
+      } catch (e) {}
+      return false;
     }
 
     /* ==========================================================
@@ -6090,8 +6276,15 @@
       // Mettre à jour les badges de messages
       mettreAJourBadgeMessages();
 
-      // Affichage initial de la page d'accueil
-      changerPage('accueil');
+      // Écouter les changements d'ancre (hash) pour navigation directe vers une annonce
+      window.addEventListener('hashchange', function() {
+        verifierLienPartageUrl();
+      });
+
+      // Affichage initial : ouvrir l'annonce partagée si présente dans l'URL, sinon accueil
+      if (!verifierLienPartageUrl()) {
+        changerPage('accueil');
+      }
     });
   </script>
 </body>
