@@ -2087,6 +2087,117 @@
         font-size: 11px;
       }
     }
+
+    /* Animation clignotement discret pour profil incomplet */
+    @keyframes pulseProfilIncomplet {
+      0% {
+        box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.45);
+        border-color: rgba(0, 200, 83, 0.6);
+      }
+      50% {
+        box-shadow: 0 0 0 7px rgba(0, 200, 83, 0);
+        border-color: #00E676;
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.45);
+        border-color: rgba(0, 200, 83, 0.6);
+      }
+    }
+
+    .user-pill-incomplete {
+      animation: pulseProfilIncomplet 2s infinite ease-in-out;
+      border-color: #00C853 !important;
+      color: #00E676 !important;
+      cursor: pointer;
+      font-weight: 600;
+      background: rgba(0, 200, 83, 0.12) !important;
+    }
+
+    .user-avatar-mini {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: inline-block;
+      vertical-align: middle;
+      border: 1px solid var(--primary);
+    }
+
+    /* Styles pour la page Profil */
+    .profile-page-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      max-width: 580px;
+      margin: 0 auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .profile-avatar-circle {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      margin: 0 auto 16px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      background: #252525;
+      border: 2px solid var(--primary);
+      box-shadow: 0 4px 14px rgba(0, 200, 83, 0.25);
+      overflow: hidden;
+    }
+
+    .profile-avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 22px 0;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      padding: 18px 0;
+    }
+
+    .profile-info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      padding: 4px 0;
+    }
+
+    .profile-info-label {
+      color: var(--text-gray);
+      font-weight: 500;
+    }
+
+    .profile-info-value {
+      color: var(--text-white);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .verified-chip {
+      background: rgba(0, 200, 83, 0.15);
+      color: var(--primary);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 200, 83, 0.35);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
   </style>
 </head>
 <body>
@@ -2120,6 +2231,106 @@
       </div>
 
       <div class="auth-hint">Aucune inscription requise pour tester</div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       ÉCRAN "COMPLÉTER LE PROFIL" (PREMIÈRE CONNEXION)
+       ========================================================== -->
+  <div id="complete-profile-screen" class="auth-screen" style="display: none;">
+    <div class="auth-card" style="max-width: 440px; padding: 28px 24px;">
+      <div class="auth-logo" style="font-size: 34px; margin-bottom: 8px;">👤</div>
+      <h2 class="auth-title" style="font-size: 20px; letter-spacing: 0.5px;">COMPLÉTEZ VOTRE PROFIL</h2>
+      <p class="auth-subtitle" style="margin-bottom: 20px; font-size: 13px;">
+        Renseignez vos coordonnées pour publier vos comptes eFootball et échanger en toute confiance au Sénégal.
+      </p>
+
+      <form id="form-complete-profile" onsubmit="soumettreCompleterProfil(event)" style="width: 100%; text-align: left;">
+        <!-- Prénom -->
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="onboard-prenom" style="font-size: 13px; font-weight: 600; color: #fff; display: flex; justify-content: space-between;">
+            <span>Prénom <span class="required-star" style="color: var(--primary);">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">Min. 2 car.</small>
+          </label>
+          <input 
+            type="text" 
+            id="onboard-prenom" 
+            class="form-control" 
+            placeholder="Ex : Cheikh" 
+            required 
+            minlength="2"
+            maxlength="30"
+          >
+          <div class="error-msg" id="err-onboard-prenom" style="color: var(--danger); font-size: 11px; display: none; margin-top: 3px;">Le prénom doit comporter au moins 2 caractères.</div>
+        </div>
+
+        <!-- Nom -->
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="onboard-nom" style="font-size: 13px; font-weight: 600; color: #fff; display: flex; justify-content: space-between;">
+            <span>Nom <span class="required-star" style="color: var(--primary);">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">Min. 2 car.</small>
+          </label>
+          <input 
+            type="text" 
+            id="onboard-nom" 
+            class="form-control" 
+            placeholder="Ex : Seck" 
+            required 
+            minlength="2"
+            maxlength="30"
+          >
+          <div class="error-msg" id="err-onboard-nom" style="color: var(--danger); font-size: 11px; display: none; margin-top: 3px;">Le nom doit comporter au moins 2 caractères.</div>
+        </div>
+
+        <!-- Téléphone -->
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="onboard-telephone" style="font-size: 13px; font-weight: 600; color: #fff; display: flex; justify-content: space-between;">
+            <span>Téléphone <span class="required-star" style="color: var(--primary);">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">+221XXXXXXXX</small>
+          </label>
+          <input 
+            type="tel" 
+            id="onboard-telephone" 
+            class="form-control" 
+            placeholder="+221 77 123 45 67" 
+            required
+          >
+          <div class="error-msg" id="err-onboard-telephone" style="color: var(--danger); font-size: 11px; display: none; margin-top: 3px;">Numéro sénégalais requis (+221 suivi de 9 chiffres).</div>
+        </div>
+
+        <!-- Localisation -->
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label for="onboard-localisation" style="font-size: 13px; font-weight: 600; color: #fff;">
+            <span>Localisation</span>
+          </label>
+          <select id="onboard-localisation" class="form-control">
+            <option value="Dakar">Dakar</option>
+            <option value="Thiès">Thiès</option>
+            <option value="Saint-Louis">Saint-Louis</option>
+            <option value="Mbour">Mbour</option>
+            <option value="Touba">Touba</option>
+            <option value="Kaolack">Kaolack</option>
+            <option value="Ziguinchor">Ziguinchor</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+          <button type="submit" class="btn-auth-guest" id="btn-save-onboard-profile" style="padding: 12px 18px; font-size: 14px;">
+            <span>✓ Enregistrer mon profil</span>
+          </button>
+          <button type="button" class="btn-secondary" onclick="passerProfilPourLinstant()" style="background: transparent; border: 1px solid #444; color: #aaa; padding: 10px 18px; font-size: 13px; justify-content: center;">
+            <span>⟶ Passer pour l'instant</span>
+          </button>
+        </div>
+
+        <!-- Avertissement -->
+        <div style="margin-top: 16px; font-size: 11.5px; color: #f59e0b; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px; display: flex; align-items: flex-start; gap: 6px; line-height: 1.4;">
+          <span>⚠️</span>
+          <span>Votre téléphone est visible uniquement dans vos annonces pour être contacté</span>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2160,6 +2371,9 @@
         <button class="nav-link-btn" id="nav-btn-mes-annonces" onclick="changerPage('mes-annonces')">
           <span>📋</span> Mes annonces
         </button>
+        <button class="nav-link-btn" id="nav-btn-profil" onclick="changerPage('profil')">
+          <span>👤</span> Profil
+        </button>
         <button class="btn-publish-header" onclick="changerPage('publier')">
           <span>➕</span> Publier
         </button>
@@ -2167,10 +2381,10 @@
 
       <!-- Zone utilisateur connecté & bouton Déconnexion -->
       <div class="nav-user-container" id="nav-user-container">
-        <div class="user-pill" id="user-display-pill" title="Utilisateur connecté">
+        <div class="user-pill" id="user-display-pill" title="Mon profil" onclick="clicSurProfilNav()" style="cursor: pointer;">
           <span id="user-display-name">👤 Invité</span>
         </div>
-        <button type="button" class="btn-logout" id="btn-logout" onclick="deconnexion()" title="Se déconnecter">
+        <button type="button" class="btn-logout" id="btn-logout" onclick="afficherPopupDeconnexion()" title="Se déconnecter">
           <span>Se déconnecter</span>
         </button>
       </div>
@@ -2196,6 +2410,10 @@
     <button class="dock-btn" id="dock-btn-mes-annonces" onclick="changerPage('mes-annonces')">
       <span class="dock-icon">📋</span>
       <span>Mes annonces</span>
+    </button>
+    <button class="dock-btn" id="dock-btn-profil" onclick="changerPage('profil')">
+      <span class="dock-icon">👤</span>
+      <span>Profil</span>
     </button>
   </nav>
 
@@ -2639,39 +2857,122 @@
       </div>
     </section>
 
+    <!-- --------------------------------------------------------
+         PAGE 6 : MON PROFIL
+         -------------------------------------------------------- -->
+    <section id="page-profil" class="page-view">
+      <div id="profil-content-wrapper" class="profile-page-card">
+        <!-- Rendu dynamique via afficherPageProfil() -->
+      </div>
+    </section>
+
   </main>
 
   <!-- ==========================================================
-       MODALE SIMPLE : NOM D'UTILISATEUR (PREMIÈRE ACTION)
+       MODALE DE COMPLÉTION / MODIFICATION DU PROFIL
        ========================================================== -->
   <div class="modal-backdrop" id="user-profile-modal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 440px;">
       <div class="modal-title">
-        <span>⚽</span>
-        <span>Bienvenue sur EFoot Market SN</span>
+        <span>👤</span>
+        <span>Votre Profil eFoot Market</span>
       </div>
       <p class="modal-desc">
-        Veuillez entrer votre prénom ou pseudo pour publier des annonces et échanger avec les autres joueurs au Sénégal.
+        Renseignez vos coordonnées pour publier des annonces et rassurer les acheteurs au Sénégal.
       </p>
-      <form onsubmit="enregistrerProfil(event)">
-        <div class="form-group">
-          <label for="modal-user-name">Votre prénom ou pseudo <span class="required-star">*</span></label>
+      <form onsubmit="enregistrerProfilDepuisModale(event)" style="text-align: left;">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="modal-profile-prenom" style="display: flex; justify-content: space-between;">
+            <span>Prénom <span class="required-star">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">Min. 2 car.</small>
+          </label>
           <input 
             type="text" 
-            id="modal-user-name" 
+            id="modal-profile-prenom" 
             class="form-control" 
-            placeholder="Ex : Moussa_Dakar ou FootGamer221" 
+            placeholder="Ex : Cheikh" 
             required 
-            minlength="3"
-            maxlength="25"
+            minlength="2"
+            maxlength="30"
           >
+          <div class="error-msg" id="err-modal-prenom">Le prénom doit comporter au moins 2 caractères.</div>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 14px;">
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="modal-profile-nom" style="display: flex; justify-content: space-between;">
+            <span>Nom <span class="required-star">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">Min. 2 car.</small>
+          </label>
+          <input 
+            type="text" 
+            id="modal-profile-nom" 
+            class="form-control" 
+            placeholder="Ex : Seck" 
+            required 
+            minlength="2"
+            maxlength="30"
+          >
+          <div class="error-msg" id="err-modal-nom">Le nom doit comporter au moins 2 caractères.</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="modal-profile-telephone" style="display: flex; justify-content: space-between;">
+            <span>Téléphone <span class="required-star">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">+221XXXXXXXX</small>
+          </label>
+          <input 
+            type="tel" 
+            id="modal-profile-telephone" 
+            class="form-control" 
+            placeholder="+221 77 123 45 67" 
+            required
+          >
+          <div class="error-msg" id="err-modal-telephone">Numéro sénégalais requis (+221 suivi de 9 chiffres).</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="modal-profile-localisation">Localisation</label>
+          <select id="modal-profile-localisation" class="form-control">
+            <option value="Dakar">Dakar</option>
+            <option value="Thiès">Thiès</option>
+            <option value="Saint-Louis">Saint-Louis</option>
+            <option value="Mbour">Mbour</option>
+            <option value="Touba">Touba</option>
+            <option value="Kaolack">Kaolack</option>
+            <option value="Ziguinchor">Ziguinchor</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+
+        <div style="font-size: 11px; color: #f59e0b; margin-bottom: 14px; background: rgba(245,158,11,0.08); padding: 6px 10px; border-radius: 6px;">
+          ⚠️ Votre téléphone est visible uniquement dans vos annonces pour être contacté
+        </div>
+
+        <div style="display: flex; gap: 8px;">
           <button type="submit" class="btn-primary" style="flex: 1;">
             Enregistrer mon profil
           </button>
+          <button type="button" class="btn-secondary" onclick="fermerModaleProfil()">
+            Fermer
+          </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       POPUP DE CONFIRMATION DE DÉCONNEXION
+       ========================================================== -->
+  <div id="popupDeconnexion" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#1E1E1E; padding:25px; border-radius:15px; text-align:center; max-width:350px; width:90%; margin:auto; border:1px solid #333; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+      <h3 style="color:white; margin-bottom:15px; font-size:18px; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span>⚠️</span> Confirmation
+      </h3>
+      <p style="color:#ccc; margin-bottom:20px; font-size:14px; line-height:1.5;">Voulez-vous vraiment vous déconnecter ?</p>
+      <div style="display:flex; justify-content:center; gap:10px;">
+        <button type="button" onclick="annulerDeconnexion()" style="background:#333; color:white; padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px;">Annuler</button>
+        <button type="button" onclick="confirmerDeconnexion()" style="background:#00C853; color:white; padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px;">Oui, déconnecter</button>
+      </div>
     </div>
   </div>
 
@@ -2811,11 +3112,13 @@
       firebase.auth().signInAnonymously()
         .then(function(userCredential) {
           var user = userCredential.user;
-          var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
-          localStorage.setItem("efoot_nom", nomInvite);
+          if (!localStorage.getItem("efoot_nom")) {
+            var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
+            localStorage.setItem("efoot_nom", nomInvite);
+          }
           mettreAJourAffichageUtilisateur(user);
-          afficherApplication();
-          afficherNotification(`Connecté : ${nomInvite}`, "👤");
+          verifierProfilApresConnexion(user);
+          afficherNotification(`Connecté en invité`, "👤");
         })
         .catch(function(error) {
           if (btn) {
@@ -2842,8 +3145,17 @@
           var user = result.user;
           var nomGoogle = user.displayName || "Joueur Google";
           localStorage.setItem("efoot_nom", nomGoogle);
+
+          // Synchroniser ou mettre à jour la photo et l'email dans le profil
+          const profilExistant = getProfilUtilisateur();
+          if (profilExistant) {
+            profilExistant.photo = user.photoURL || profilExistant.photo;
+            profilExistant.email = user.email || profilExistant.email;
+            localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilExistant));
+          }
+
           mettreAJourAffichageUtilisateur(user);
-          afficherApplication();
+          verifierProfilApresConnexion(user);
           afficherNotification(`Bienvenue ${nomGoogle} !`, "⚽");
         })
         .catch(function(error) {
@@ -2864,11 +3176,10 @@
     }
 
     /**
-     * 4. VÉRIFICATION DE SESSION
+     * 4. VÉRIFICATION DE SESSION AU CHARGEMENT
      */
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
-        // Utilisateur connecté (anonyme ou Google)
         if (!localStorage.getItem("efoot_nom")) {
           if (user.isAnonymous) {
             var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
@@ -2880,20 +3191,39 @@
           }
         }
         mettreAJourAffichageUtilisateur(user);
-        afficherApplication();
+        verifierProfilApresConnexion(user);
       } else {
-        // Pas connecté
         afficherEcranConnexion();
       }
     });
 
     /**
-     * 5. DÉCONNEXION
+     * 5. GESTION DE LA DÉCONNEXION AVEC CONFIRMATION
      */
-    function deconnexion() {
+    function afficherPopupDeconnexion() {
+      const popup = document.getElementById("popupDeconnexion");
+      if (popup) {
+        popup.style.display = "flex";
+      }
+    }
+
+    function annulerDeconnexion() {
+      const popup = document.getElementById("popupDeconnexion");
+      if (popup) {
+        popup.style.display = "none";
+      }
+    }
+
+    function confirmerDeconnexion() {
+      const popup = document.getElementById("popupDeconnexion");
+      if (popup) {
+        popup.style.display = "none";
+      }
       firebase.auth().signOut()
         .then(function() {
           localStorage.removeItem("efoot_nom");
+          localStorage.removeItem("efoot_profil");
+          localStorage.removeItem("efoot_profil_saute");
           afficherEcranConnexion();
           afficherNotification("Déconnexion réussie", "👋");
         })
@@ -2902,27 +3232,227 @@
         });
     }
 
+    function deconnexion() {
+      afficherPopupDeconnexion();
+    }
+
     /**
-     * 6. AFFICHAGE DU NOM D'UTILISATEUR
-     * Dans la barre de navigation :
-     * - Si connecté anonyme : "👤 " + nom stocké
-     * - Si connecté Google : "📷 " + nom Google
-     * - Bouton "Se déconnecter" à côté du nom
+     * 6. VÉRIFICATION ET AFFICHAGE DU FORMULAIRE DE PROFIL LORS DE LA PREMIÈRE CONNEXION
+     * Règle : S'affiche UNIQUEMENT la première connexion (sauf si complété ou passé).
      */
-    function mettreAJourAffichageUtilisateur(user) {
-      const nomStocke = localStorage.getItem("efoot_nom") || (user && user.displayName) || "Utilisateur";
-      const userElem = document.getElementById('user-display-name');
-      if (!userElem) return;
+    function verifierProfilApresConnexion(user) {
+      const profil = getProfilUtilisateur();
+      const aPasse = localStorage.getItem("efoot_profil_saute") === "true";
+
+      // Si le profil est déjà complet (complete === true)
+      if (profil && profil.complete === true) {
+        cacherEcranCompleterProfil();
+        afficherApplication();
+        return;
+      }
+
+      // Si l'utilisateur a déjà cliqué sur "Passer pour l'instant" lors d'une session précédente
+      if (aPasse) {
+        cacherEcranCompleterProfil();
+        afficherApplication();
+        return;
+      }
+
+      // PREMIÈRE CONNEXION : afficher le formulaire de profil AVANT d'accéder à l'application
+      afficherEcranCompleterProfil(user);
+    }
+
+    /**
+     * Affiche l'écran plein "COMPLÉTEZ VOTRE PROFIL"
+     */
+    function afficherEcranCompleterProfil(user) {
+      const authScreen = document.getElementById('auth-screen');
+      const appWrapper = document.getElementById('app-wrapper');
+      const completeScreen = document.getElementById('complete-profile-screen');
+
+      if (authScreen) authScreen.style.display = 'none';
+      if (appWrapper) appWrapper.style.display = 'none';
+      if (completeScreen) completeScreen.style.display = 'flex';
+
+      const prenomInput = document.getElementById('onboard-prenom');
+      const nomInput = document.getElementById('onboard-nom');
+      const telInput = document.getElementById('onboard-telephone');
+      const locSelect = document.getElementById('onboard-localisation');
+
+      const profil = getProfilUtilisateur();
+
+      // Pré-remplir les données si compte Google
+      if (user && user.displayName) {
+        const parts = user.displayName.trim().split(/\s+/);
+        if (prenomInput && !prenomInput.value) prenomInput.value = parts[0] || "";
+        if (nomInput && !nomInput.value) nomInput.value = parts.slice(1).join(" ") || "";
+      } else if (profil && profil.prenom && !profil.prenom.startsWith("Invité")) {
+        if (prenomInput && !prenomInput.value) prenomInput.value = profil.prenom;
+        if (nomInput && !nomInput.value) nomInput.value = profil.nom;
+      }
+
+      if (telInput && profil && profil.telephone && !telInput.value) {
+        telInput.value = profil.telephone;
+      }
+      if (locSelect && profil && profil.localisation) {
+        locSelect.value = profil.localisation;
+      }
+
+      // Réinitialiser les messages d'erreur
+      document.querySelectorAll('#complete-profile-screen .error-msg').forEach(el => el.style.display = 'none');
+      if (prenomInput) prenomInput.focus();
+    }
+
+    /**
+     * Cache l'écran de complétion de profil
+     */
+    function cacherEcranCompleterProfil() {
+      const completeScreen = document.getElementById('complete-profile-screen');
+      if (completeScreen) completeScreen.style.display = 'none';
+    }
+
+    /**
+     * Soumission du formulaire d'onboarding "COMPLÉTEZ VOTRE PROFIL"
+     */
+    function soumettreCompleterProfil(event) {
+      event.preventDefault();
+      const prenom = document.getElementById('onboard-prenom').value.trim();
+      const nom = document.getElementById('onboard-nom').value.trim();
+      const telBrut = document.getElementById('onboard-telephone').value.trim();
+      const loc = document.getElementById('onboard-localisation').value;
+
+      const errPrenom = document.getElementById('err-onboard-prenom');
+      const errNom = document.getElementById('err-onboard-nom');
+      const errTel = document.getElementById('err-onboard-telephone');
+
+      let valide = true;
+      if (prenom.length < 2) {
+        if (errPrenom) errPrenom.style.display = 'block';
+        valide = false;
+      } else {
+        if (errPrenom) errPrenom.style.display = 'none';
+      }
+
+      if (nom.length < 2) {
+        if (errNom) errNom.style.display = 'block';
+        valide = false;
+      } else {
+        if (errNom) errNom.style.display = 'none';
+      }
+
+      if (!validerTelephoneSenegal(telBrut)) {
+        if (errTel) errTel.style.display = 'block';
+        valide = false;
+      } else {
+        if (errTel) errTel.style.display = 'none';
+      }
+
+      if (!valide) return;
+
+      const user = firebase.auth().currentUser;
+      const telFormate = normaliserTelephoneSenegal(telBrut);
 
       const isGoogle = user && (
         (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) ||
         (!user.isAnonymous && user.displayName)
       );
 
-      if (isGoogle) {
-        userElem.textContent = "📷 " + nomStocke;
+      const profilData = {
+        prenom: prenom,
+        nom: nom,
+        telephone: telFormate,
+        localisation: loc,
+        photo: isGoogle && user ? user.photoURL : null,
+        email: isGoogle && user ? user.email : null,
+        complete: true
+      };
+
+      localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilData));
+      localStorage.setItem("efoot_nom", `${prenom} ${nom}`.trim());
+      localStorage.removeItem("efoot_profil_saute");
+
+      cacherEcranCompleterProfil();
+      afficherApplication();
+      afficherNotification(`Profil enregistré : ${prenom} ${nom}`, "✅");
+    }
+
+    /**
+     * Action "Passer pour l'instant" lors de la première connexion
+     */
+    function passerProfilPourLinstant() {
+      const user = firebase.auth().currentUser;
+      localStorage.setItem("efoot_profil_saute", "true");
+
+      let profil = getProfilUtilisateur();
+      if (!profil || !profil.prenom) {
+        const prenomDefaut = (user && user.displayName) ? user.displayName.split(' ')[0] : (localStorage.getItem("efoot_nom") || "Invité");
+        const isGoogle = user && (
+          (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) ||
+          (!user.isAnonymous && user.displayName)
+        );
+        profil = {
+          prenom: prenomDefaut,
+          nom: "",
+          telephone: "",
+          localisation: "Dakar",
+          photo: isGoogle && user ? user.photoURL : null,
+          email: isGoogle && user ? user.email : null,
+          complete: false
+        };
+        localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profil));
+      }
+
+      cacherEcranCompleterProfil();
+      afficherApplication();
+      afficherNotification("Profil reporté. Vous pouvez le compléter à tout moment via la barre de navigation.", "ℹ️");
+    }
+
+    /**
+     * 7. AFFICHAGE DE L'UTILISATEUR DANS LA BARRE DE NAVIGATION
+     * - Si profil complété : "👤 Prénom Nom" + avatar (photo Google ou icône)
+     * - Si profil non complété : "👤 Compléter mon profil" (clignotant discret)
+     */
+    function mettreAJourAffichageUtilisateur(user) {
+      const userElem = document.getElementById('user-display-name');
+      const userPill = document.getElementById('user-display-pill');
+      if (!userElem) return;
+
+      const profil = getProfilUtilisateur();
+      const isGoogle = user && (
+        (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) ||
+        (!user.isAnonymous && user.displayName)
+      );
+      const photoUrl = (profil && profil.photo) || (isGoogle && user && user.photoURL) || null;
+
+      if (profil && profil.complete === true) {
+        if (userPill) {
+          userPill.classList.remove('user-pill-incomplete');
+          userPill.title = `Mon profil (${profil.prenom} ${profil.nom || ''})`;
+        }
+        let avatarMarkup = "👤 ";
+        if (photoUrl) {
+          avatarMarkup = `<img src="${photoUrl}" alt="Avatar" class="user-avatar-mini" referrerpolicy="no-referrer"> `;
+        }
+        const nomAffiche = `${profil.prenom} ${profil.nom || ''}`.trim();
+        userElem.innerHTML = `${avatarMarkup}${escapeHtml(nomAffiche)}`;
       } else {
-        userElem.textContent = "👤 " + nomStocke;
+        if (userPill) {
+          userPill.classList.add('user-pill-incomplete');
+          userPill.title = "Cliquez pour compléter votre profil";
+        }
+        userElem.innerHTML = `👤 Compléter mon profil`;
+      }
+    }
+
+    /**
+     * Clic sur le badge de profil dans la navigation
+     */
+    function clicSurProfilNav() {
+      const profil = getProfilUtilisateur();
+      if (!profil || !profil.complete) {
+        changerPage('profil', { modeEdition: true });
+      } else {
+        changerPage('profil', { modeEdition: false });
       }
     }
 
@@ -2931,8 +3461,11 @@
      */
     function afficherApplication() {
       const authScreen = document.getElementById('auth-screen');
+      const completeScreen = document.getElementById('complete-profile-screen');
       const appWrapper = document.getElementById('app-wrapper');
+
       if (authScreen) authScreen.style.display = 'none';
+      if (completeScreen) completeScreen.style.display = 'none';
       if (appWrapper) appWrapper.style.display = 'block';
 
       const user = firebase.auth().currentUser;
@@ -2946,8 +3479,11 @@
      */
     function afficherEcranConnexion() {
       const authScreen = document.getElementById('auth-screen');
+      const completeScreen = document.getElementById('complete-profile-screen');
       const appWrapper = document.getElementById('app-wrapper');
+
       if (authScreen) authScreen.style.display = 'flex';
+      if (completeScreen) completeScreen.style.display = 'none';
       if (appWrapper) appWrapper.style.display = 'none';
 
       const btnGuest = document.getElementById('btn-auth-guest');
@@ -2998,6 +3534,69 @@
        ========================================================== */
 
     /**
+     * Échappe les caractères HTML dangereux
+     */
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * Valide si un numéro est un numéro sénégalais valide
+     * Format accepté : +221XXXXXXXXX, 221XXXXXXXXX, ou 9 chiffres (ex: 77XXXXXXX)
+     */
+    function validerTelephoneSenegal(tel) {
+      if (!tel) return false;
+      const digits = String(tel).replace(/[^0-9]/g, '');
+      if (digits.startsWith('221') && digits.length === 12) return true;
+      if (digits.length === 9) return true;
+      return false;
+    }
+
+    /**
+     * Normalise un numéro sénégalais en format lisible : +221 77 123 45 67
+     */
+    function normaliserTelephoneSenegal(tel) {
+      if (!tel) return "";
+      const digits = String(tel).replace(/[^0-9]/g, '');
+      let num9 = "";
+      if (digits.startsWith('221') && digits.length === 12) {
+        num9 = digits.substring(3);
+      } else if (digits.length === 9) {
+        num9 = digits;
+      } else {
+        return String(tel).trim();
+      }
+      return `+221 ${num9.substring(0, 2)} ${num9.substring(2, 5)} ${num9.substring(5, 7)} ${num9.substring(7, 9)}`;
+    }
+
+    /**
+     * Formate le nom vendeur au format : Prénom + Initiale du nom (ex: "Cheikh S.")
+     */
+    function formaterNomAffichage(nomOuPrenom, nomOptionnel) {
+      if (!nomOuPrenom) return "Joueur eFoot";
+      if (nomOptionnel && String(nomOptionnel).trim().length > 0) {
+        const prenom = String(nomOuPrenom).trim();
+        const initiale = String(nomOptionnel).trim().charAt(0).toUpperCase();
+        return `${prenom} ${initiale}.`;
+      }
+      const str = String(nomOuPrenom).trim();
+      const parties = str.split(/\s+/);
+      if (parties.length >= 2 && !str.startsWith("Invité")) {
+        const prenom = parties[0];
+        const nom = parties.slice(1).join(' ');
+        const initiale = nom.charAt(0).toUpperCase();
+        return `${prenom} ${initiale}.`;
+      }
+      return str;
+    }
+
+    /**
      * Formate un montant numérique en FCFA lisible
      */
     function formaterPrix(nombre) {
@@ -3037,35 +3636,385 @@
      */
     function getProfilUtilisateur() {
       try {
-        const nomStocke = localStorage.getItem("efoot_nom");
+        const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
         const p = localStorage.getItem(STORAGE_PROFIL);
-        const parsed = p ? JSON.parse(p) : {};
+        let profil = p ? JSON.parse(p) : null;
+
+        if (profil && typeof profil === 'object') {
+          if (user) {
+            if (!profil.photo && user.photoURL) profil.photo = user.photoURL;
+            if (!profil.email && user.email) profil.email = user.email;
+            if (!profil.id) profil.id = user.uid;
+          }
+          return profil;
+        }
+
+        const nomStocke = localStorage.getItem("efoot_nom");
         if (nomStocke) {
-          const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+          const parts = nomStocke.trim().split(/\s+/);
           return {
-            id: (user ? user.uid : null) || parsed.id || 'usr_' + nomStocke.replace(/\s+/g, '_').toLowerCase(),
-            nom: nomStocke,
-            photoURL: (user && user.photoURL) || parsed.photoURL || null,
-            creeLe: parsed.creeLe || new Date().toISOString()
+            id: user ? user.uid : 'usr_local',
+            prenom: parts[0] || nomStocke,
+            nom: parts.slice(1).join(' ') || '',
+            telephone: '',
+            localisation: 'Dakar',
+            photo: (user && user.photoURL) || null,
+            email: (user && user.email) || null,
+            complete: false
           };
         }
-        return (parsed && parsed.nom) ? parsed : null;
+        return null;
       } catch (e) {
         return null;
       }
     }
 
     /**
-     * Vérifie la présence d'un nom d'utilisateur. Si absent, ouvre la connexion ou modale
+     * Affiche la page Mon Profil (Mode Consultation ou Mode Édition)
+     */
+    function afficherPageProfil(modeEdition = false) {
+      const container = document.getElementById('profil-content-wrapper');
+      if (!container) return;
+
+      const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      const profil = getProfilUtilisateur() || {
+        prenom: "",
+        nom: "",
+        telephone: "",
+        localisation: "Dakar",
+        photo: null,
+        email: null,
+        complete: false
+      };
+
+      const isGoogle = user && (
+        (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) ||
+        (!user.isAnonymous && user.displayName)
+      );
+
+      const photo = profil.photo || (isGoogle && user ? user.photoURL : null);
+      const email = profil.email || (isGoogle && user ? user.email : null);
+      const telValide = validerTelephoneSenegal(profil.telephone);
+
+      if (modeEdition) {
+        // Mode édition du profil
+        container.innerHTML = `
+          <div class="form-header" style="text-align: left; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px;">
+            <h2 style="font-size: 20px; display: flex; align-items: center; gap: 8px;">
+              <span>✏️</span>
+              <span>Modifier mon profil</span>
+            </h2>
+            <p style="font-size: 13px; color: var(--text-gray); margin-top: 4px;">
+              Vos coordonnées sont utilisées pour vos annonces eFootball et pour rassurer les acheteurs.
+            </p>
+          </div>
+
+          <form id="form-edit-profil-page" onsubmit="sauvegarderModificationProfil(event)" style="text-align: left;">
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="edit-page-prenom" style="display: flex; justify-content: space-between;">
+                <span>Prénom <span class="required-star">*</span></span>
+                <small style="color: var(--text-muted); font-weight: normal;">Min. 2 car.</small>
+              </label>
+              <input 
+                type="text" 
+                id="edit-page-prenom" 
+                class="form-control" 
+                value="${escapeHtml(profil.prenom || '')}" 
+                placeholder="Ex : Cheikh"
+                required 
+                minlength="2" 
+                maxlength="30"
+              >
+              <div class="error-msg" id="err-edit-prenom">Le prénom doit comporter au moins 2 caractères.</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="edit-page-nom" style="display: flex; justify-content: space-between;">
+                <span>Nom <span class="required-star">*</span></span>
+                <small style="color: var(--text-muted); font-weight: normal;">Min. 2 car.</small>
+              </label>
+              <input 
+                type="text" 
+                id="edit-page-nom" 
+                class="form-control" 
+                value="${escapeHtml(profil.nom || '')}" 
+                placeholder="Ex : Seck"
+                required 
+                minlength="2" 
+                maxlength="30"
+              >
+              <div class="error-msg" id="err-edit-nom">Le nom doit comporter au moins 2 caractères.</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="edit-page-telephone" style="display: flex; justify-content: space-between;">
+                <span>Téléphone <span class="required-star">*</span></span>
+                <small style="color: var(--text-muted); font-weight: normal;">+221XXXXXXXX</small>
+              </label>
+              <input 
+                type="tel" 
+                id="edit-page-telephone" 
+                class="form-control" 
+                value="${escapeHtml(profil.telephone || '')}" 
+                placeholder="+221 77 123 45 67"
+                required
+              >
+              <div class="error-msg" id="err-edit-telephone">Veuillez renseigner un numéro sénégalais valide (+221 suivi de 9 chiffres).</div>
+              <div style="font-size: 11.5px; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span>⚠️</span>
+                <span>Votre téléphone est visible uniquement dans vos annonces pour être contacté</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 22px;">
+              <label for="edit-page-localisation">Localisation</label>
+              <select id="edit-page-localisation" class="form-control">
+                ${['Dakar', 'Thiès', 'Saint-Louis', 'Mbour', 'Touba', 'Kaolack', 'Ziguinchor', 'Autre'].map(loc => `
+                  <option value="${loc}" ${profil.localisation === loc ? 'selected' : ''}>${loc}</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 14px;">
+              <button type="submit" class="btn-primary" style="flex: 1; padding: 12px 18px;">
+                <span>✓</span> Enregistrer mon profil
+              </button>
+              <button type="button" class="btn-secondary" onclick="afficherPageProfil(false)" style="padding: 12px 18px;">
+                Annuler
+              </button>
+            </div>
+          </form>
+        `;
+        const prenomInput = document.getElementById('edit-page-prenom');
+        if (prenomInput) prenomInput.focus();
+        return;
+      }
+
+      // Mode affichage du profil (Carte élégante demandée)
+      const avatarHtml = photo 
+        ? `<img src="${photo}" alt="Avatar" referrerpolicy="no-referrer">` 
+        : `<span>👤</span>`;
+
+      const statutProfilBadge = profil.complete 
+        ? `<span class="verified-chip" style="font-size: 12px; padding: 3px 10px;">✅ Profil complet</span>` 
+        : `<span style="font-size: 12px; padding: 3px 10px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 600;">⚠️ Profil incomplet</span>`;
+
+      container.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div class="profile-avatar-circle">
+            ${avatarHtml}
+          </div>
+          <h2 style="font-size: 22px; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">
+            👤 MON PROFIL
+          </h2>
+          <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+            ${statutProfilBadge}
+            <span style="font-size: 12px; color: var(--text-muted);">
+              ${isGoogle ? '🌐 Connecté via Google' : '👤 Session invité'}
+            </span>
+          </div>
+        </div>
+
+        <div class="profile-info-list">
+          <div class="profile-info-item">
+            <span class="profile-info-label">Prénom</span>
+            <span class="profile-info-value">${escapeHtml(profil.prenom || 'Non renseigné')}</span>
+          </div>
+
+          <div class="profile-info-item">
+            <span class="profile-info-label">Nom</span>
+            <span class="profile-info-value">${escapeHtml(profil.nom || 'Non renseigné')}</span>
+          </div>
+
+          <div class="profile-info-item">
+            <span class="profile-info-label">Téléphone</span>
+            <span class="profile-info-value">
+              ${profil.telephone 
+                ? `<span>${escapeHtml(profil.telephone)}</span> ${telValide ? '<span class="verified-chip">✅ Vérifié</span>' : ''}` 
+                : '<em style="color: var(--text-muted); font-weight: normal;">Non renseigné</em>'}
+            </span>
+          </div>
+
+          <div class="profile-info-item">
+            <span class="profile-info-label">Localisation</span>
+            <span class="profile-info-value">📍 ${escapeHtml(profil.localisation || 'Dakar')}</span>
+          </div>
+
+          ${email ? `
+          <div class="profile-info-item">
+            <span class="profile-info-label">Email</span>
+            <span class="profile-info-value" style="font-size: 13px; font-weight: normal; color: #ddd;">${escapeHtml(email)}</span>
+          </div>
+          ` : ''}
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 24px;">
+          <button type="button" class="btn-primary" onclick="afficherPageProfil(true)" style="padding: 12px 18px; font-size: 14px; justify-content: center;">
+            <span>✏️</span> Modifier mon profil
+          </button>
+          <button type="button" class="btn-danger" onclick="afficherPopupDeconnexion()" style="padding: 11px 18px; font-size: 14px; justify-content: center;">
+            <span>🚪</span> Se déconnecter
+          </button>
+        </div>
+      `;
+    }
+
+    /**
+     * Sauvegarde les modifications du profil depuis la page Profil
+     */
+    function sauvegarderModificationProfil(event) {
+      event.preventDefault();
+      const prenom = document.getElementById('edit-page-prenom').value.trim();
+      const nom = document.getElementById('edit-page-nom').value.trim();
+      const telBrut = document.getElementById('edit-page-telephone').value.trim();
+      const loc = document.getElementById('edit-page-localisation').value;
+
+      const errPrenom = document.getElementById('err-edit-prenom');
+      const errNom = document.getElementById('err-edit-nom');
+      const errTel = document.getElementById('err-edit-telephone');
+
+      let valide = true;
+      if (prenom.length < 2) {
+        if (errPrenom) errPrenom.classList.add('visible');
+        valide = false;
+      } else {
+        if (errPrenom) errPrenom.classList.remove('visible');
+      }
+
+      if (nom.length < 2) {
+        if (errNom) errNom.classList.add('visible');
+        valide = false;
+      } else {
+        if (errNom) errNom.classList.remove('visible');
+      }
+
+      if (!validerTelephoneSenegal(telBrut)) {
+        if (errTel) errTel.classList.add('visible');
+        valide = false;
+      } else {
+        if (errTel) errTel.classList.remove('visible');
+      }
+
+      if (!valide) return;
+
+      const user = firebase.auth().currentUser;
+      const isGoogle = user && (
+        (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) ||
+        (!user.isAnonymous && user.displayName)
+      );
+
+      const telFormate = normaliserTelephoneSenegal(telBrut);
+      const profilData = {
+        prenom: prenom,
+        nom: nom,
+        telephone: telFormate,
+        localisation: loc,
+        photo: isGoogle && user ? user.photoURL : null,
+        email: isGoogle && user ? user.email : null,
+        complete: true
+      };
+
+      localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilData));
+      localStorage.setItem("efoot_nom", `${prenom} ${nom}`.trim());
+      localStorage.removeItem("efoot_profil_saute");
+
+      if (user) {
+        mettreAJourAffichageUtilisateur(user);
+      }
+      afficherNotification("Profil mis à jour avec succès !", "✅");
+      afficherPageProfil(false);
+    }
+
+    /**
+     * Enregistre le profil depuis la boîte modale (utilisée comme fallback ou publication)
+     */
+    function enregistrerProfilDepuisModale(event) {
+      event.preventDefault();
+      const prenom = document.getElementById('modal-profile-prenom').value.trim();
+      const nom = document.getElementById('modal-profile-nom').value.trim();
+      const telBrut = document.getElementById('modal-profile-telephone').value.trim();
+      const loc = document.getElementById('modal-profile-localisation').value;
+
+      const errPrenom = document.getElementById('err-modal-prenom');
+      const errNom = document.getElementById('err-modal-nom');
+      const errTel = document.getElementById('err-modal-telephone');
+
+      let valide = true;
+      if (prenom.length < 2) {
+        if (errPrenom) errPrenom.classList.add('visible');
+        valide = false;
+      } else {
+        if (errPrenom) errPrenom.classList.remove('visible');
+      }
+
+      if (nom.length < 2) {
+        if (errNom) errNom.classList.add('visible');
+        valide = false;
+      } else {
+        if (errNom) errNom.classList.remove('visible');
+      }
+
+      if (!validerTelephoneSenegal(telBrut)) {
+        if (errTel) errTel.classList.add('visible');
+        valide = false;
+      } else {
+        if (errTel) errTel.classList.remove('visible');
+      }
+
+      if (!valide) return;
+
+      const user = firebase.auth().currentUser;
+      const isGoogle = user && (
+        (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) ||
+        (!user.isAnonymous && user.displayName)
+      );
+
+      const telFormate = normaliserTelephoneSenegal(telBrut);
+      const profilData = {
+        prenom: prenom,
+        nom: nom,
+        telephone: telFormate,
+        localisation: loc,
+        photo: isGoogle && user ? user.photoURL : null,
+        email: isGoogle && user ? user.email : null,
+        complete: true
+      };
+
+      localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilData));
+      localStorage.setItem("efoot_nom", `${prenom} ${nom}`.trim());
+      localStorage.removeItem("efoot_profil_saute");
+
+      fermerModaleProfil();
+      if (user) {
+        mettreAJourAffichageUtilisateur(user);
+      }
+      afficherNotification("Profil enregistré avec succès !", "✅");
+
+      if (pendingActionCallback) {
+        const cb = pendingActionCallback;
+        pendingActionCallback = null;
+        cb(profilData);
+      }
+    }
+
+    /**
+     * Ferme la modale de profil
+     */
+    function fermerModaleProfil() {
+      const modal = document.getElementById('user-profile-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    /**
+     * Vérifie la présence d'un profil complet. Si absent, ouvre la saisie du profil
      */
     function verifierProfilOuDemander(callbackApres) {
       const profil = getProfilUtilisateur();
-      if (profil && profil.nom) {
+      if (profil && profil.complete) {
         if (callbackApres) callbackApres(profil);
         return true;
       }
 
-      // Si pas connecté, afficher l'écran d'accueil Firebase
       const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       if (!user) {
         afficherEcranConnexion();
@@ -3073,38 +4022,50 @@
       }
 
       pendingActionCallback = callbackApres;
-      document.getElementById('user-profile-modal').classList.add('active');
-      document.getElementById('modal-user-name').focus();
+      const modal = document.getElementById('user-profile-modal');
+      if (modal) {
+        const prenomInp = document.getElementById('modal-profile-prenom');
+        const nomInp = document.getElementById('modal-profile-nom');
+        const telInp = document.getElementById('modal-profile-telephone');
+        const locInp = document.getElementById('modal-profile-localisation');
+        if (profil) {
+          if (prenomInp) prenomInp.value = profil.prenom || "";
+          if (nomInp) nomInp.value = profil.nom || "";
+          if (telInp) telInp.value = profil.telephone || "";
+          if (locInp && profil.localisation) locInp.value = profil.localisation;
+        }
+        modal.classList.add('active');
+        if (prenomInp) prenomInp.focus();
+      }
       return false;
     }
 
     /**
-     * Enregistre le nom d'utilisateur dans localStorage
+     * Pré-remplit automatiquement le formulaire de publication à partir du profil
      */
-    function enregistrerProfil(event) {
-      event.preventDefault();
-      const nom = document.getElementById('modal-user-name').value.trim();
-      if (!nom || nom.length < 3) return;
+    function preRemplirFormulairePublication() {
+      const profil = getProfilUtilisateur();
+      if (!profil) return;
 
-      localStorage.setItem("efoot_nom", nom);
-      const nouveauProfil = {
-        id: (firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'usr_' + Date.now()),
-        nom: nom,
-        creeLe: new Date().toISOString()
-      };
-
-      localStorage.setItem(STORAGE_PROFIL, JSON.stringify(nouveauProfil));
-      const user = firebase.auth().currentUser;
-      if (user) {
-        mettreAJourAffichageUtilisateur(user);
+      if (profil.telephone) {
+        const waInput = document.getElementById('pub-whatsapp');
+        if (waInput && (!waInput.value || waInput.value.trim() === '')) {
+          waInput.value = profil.telephone;
+          validerChamp('pub-whatsapp');
+        }
       }
-      document.getElementById('user-profile-modal').classList.remove('active');
-      afficherNotification(`Profil mis à jour : ${nom}`, "⚽");
 
-      if (pendingActionCallback) {
-        const cb = pendingActionCallback;
-        pendingActionCallback = null;
-        cb(nouveauProfil);
+      if (profil.localisation) {
+        const regInput = document.getElementById('pub-region');
+        if (regInput) {
+          for (let i = 0; i < regInput.options.length; i++) {
+            if (regInput.options[i].value.toLowerCase() === profil.localisation.toLowerCase()) {
+              regInput.selectedIndex = i;
+              validerChamp('pub-region');
+              break;
+            }
+          }
+        }
       }
     }
 
@@ -3150,6 +4111,10 @@
         afficherConversations(params.conversationId);
       } else if (pageId === 'detail' && params.annonceId) {
         afficherDetailAnnonce(params.annonceId);
+      } else if (pageId === 'profil') {
+        afficherPageProfil(params.modeEdition || false);
+      } else if (pageId === 'publier') {
+        preRemplirFormulairePublication();
       }
     }
 
@@ -3607,14 +4572,18 @@
         const description = document.getElementById('pub-desc').value.trim();
         const prix = parseFloat(document.getElementById('pub-price').value);
         const plateforme = document.getElementById('pub-platform').value;
-        const region = document.getElementById('pub-region') ? document.getElementById('pub-region').value : 'Dakar';
+        const region = document.getElementById('pub-region') ? document.getElementById('pub-region').value : (profil.localisation || 'Dakar');
         let puissance = document.getElementById('pub-power').value;
         if (puissance === 'custom') {
           const exactVal = document.getElementById('pub-power-exact').value.trim();
           puissance = exactVal ? exactVal : '';
         }
         const telephoneBrut = document.getElementById('pub-whatsapp').value.trim();
-        const telephone = nettoyerNumeroWhatsApp(telephoneBrut);
+        const telephone = telephoneBrut ? nettoyerNumeroWhatsApp(telephoneBrut) : (profil.telephone ? nettoyerNumeroWhatsApp(profil.telephone) : '');
+
+        // Nom du vendeur = Prénom + Initiale du nom (ex: "Cheikh S.")
+        const nomVendeurFormate = formaterNomAffichage(profil.prenom, profil.nom);
+        const aTelephone = Boolean(telephone && validerTelephoneSenegal(telephone));
 
         const nouvelleAnnonce = {
           id: 'efoot_' + Date.now(),
@@ -3626,10 +4595,12 @@
           puissance: puissance,
           telephoneWhatsApp: telephone,
           image: uploadedImageBase64 || null,
-          vendeur: profil.nom,
+          vendeur: nomVendeurFormate,
+          vendeurPrenom: profil.prenom,
+          vendeurNom: profil.nom,
           vendeurId: profil.id,
-          note: 4.8 + (Math.random() * 0.2), // Note aléatoire 4.8 - 5.0
-          verifie: Math.random() > 0.3,       // Badge vérifié pour la démo
+          note: 5.0,
+          verifie: aTelephone, // Badge vérifié si téléphone renseigné
           date: new Date().toISOString()
         };
 
@@ -3695,8 +4666,9 @@
       const listeAvis = statsVendeur.avis;
 
       const profil = getProfilUtilisateur();
-      const monNom = profil ? profil.nom : "";
-      const estMonAnnonce = ad.vendeur === monNom;
+      const monNom = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+      const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
+      const estMonAnnonce = (ad.vendeur === monNom) || (ad.vendeur === monNomFormate) || (profil && ad.vendeurId && ad.vendeurId === profil.id);
 
       // Chercher si une transaction existe pour cette annonce avec cet utilisateur
       const transactions = getTransactions();
@@ -3710,6 +4682,10 @@
 
       const messageWA = encodeURIComponent(`Bonjour ${ad.vendeur}, je vous contacte depuis EFoot Market SN pour votre compte "${ad.titre}" affiché à ${formaterPrix(ad.prix)}.`);
       const lienWhatsApp = `https://wa.me/${ad.telephoneWhatsApp}?text=${messageWA}`;
+
+      // Formatage du nom et du badge vérifié pour l'annonce
+      const nomVendeurAffiche = formaterNomAffichage(ad.vendeurPrenom || ad.vendeur, ad.vendeurNom);
+      const estVendeurVerifie = ad.verifie || validerTelephoneSenegal(ad.telephoneWhatsApp);
 
       container.innerHTML = `
         <div class="detail-top-nav">
@@ -3726,7 +4702,7 @@
         <div class="detail-content">
           <div class="detail-badges-row">
             <span class="badge-pill primary">🎮 ${ad.plateforme}</span>
-            <span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.12); border: 1px solid rgba(33, 150, 243, 0.25);">📍 ${ad.region || 'Sénégal'}</span>
+            <span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.12); border: 1px solid rgba(33, 150, 243, 0.25);">📍 ${ad.region || 'Dakar'}</span>
             ${ad.puissance ? `<span class="badge-pill" style="color: var(--primary); background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">💪 ${ad.puissance}</span>` : ''}
             ${ad.typeCompte ? `<span class="badge-pill">💎 ${ad.typeCompte}</span>` : ''}
           </div>
@@ -3754,16 +4730,16 @@
           </div>
 
           <!-- Section Vendeur avec lien vers son profil & avis -->
-          <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${ad.vendeur}')" title="Voir le profil complet et les avis de ${ad.vendeur}">
+          <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${ad.vendeur}')" title="Voir le profil complet et les avis de ${nomVendeurAffiche}">
             <div class="seller-left">
               <div class="seller-avatar">👤</div>
               <div>
                 <div class="seller-meta-name">
-                  <span>${ad.vendeur}</span>
-                  ${ad.verifie ? '<span class="verified-chip">✅ Vérifié</span>' : ''}
+                  <span>${nomVendeurAffiche}</span>
+                  ${estVendeurVerifie ? '<span class="verified-chip">✅ Vérifié</span>' : ''}
                 </div>
                 <div class="seller-meta-sub">
-                  ★ <strong style="color: var(--badge-gold);">${noteText}</strong> sur 5.0 (${totalAvis} avis vérifié${totalAvis > 1 ? 's' : ''}) • 📍 ${ad.region || 'Sénégal'}
+                  ★ <strong style="color: var(--badge-gold);">${noteText}</strong> sur 5.0 (${totalAvis} avis vérifié${totalAvis > 1 ? 's' : ''}) • 📍 ${ad.region || 'Dakar'}
                 </div>
               </div>
             </div>
@@ -4945,7 +5921,14 @@
       const annonces = getAnnonces();
 
       // Filtrer les annonces par le nom/ID du vendeur
-      const mesAnnonces = profil ? annonces.filter(a => a.vendeurId === profil.id || a.vendeur === profil.nom) : [];
+      const monNomComplet = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+      const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
+      const mesAnnonces = profil ? annonces.filter(a => 
+        (a.vendeurId && profil.id && a.vendeurId === profil.id) || 
+        a.vendeur === monNomComplet || 
+        a.vendeur === monNomFormate ||
+        (profil.prenom && a.vendeurPrenom === profil.prenom)
+      ) : [];
 
       if (mesAnnonces.length === 0) {
         container.innerHTML = `
