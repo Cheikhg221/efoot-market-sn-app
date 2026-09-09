@@ -2429,7 +2429,7 @@
     }
 
     .user-pill {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
       background: #252525;
@@ -2439,10 +2439,13 @@
       font-size: 12.5px;
       font-weight: 500;
       color: #FFFFFF;
-      max-width: 180px;
+      max-width: 240px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: var(--transition);
     }
 
     .btn-logout {
@@ -2456,10 +2459,11 @@
       font-family: inherit;
       cursor: pointer;
       transition: var(--transition);
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .btn-logout:hover {
@@ -2469,18 +2473,73 @@
     }
 
     @media (max-width: 768px) {
+      .header-nav {
+        padding: 0 12px;
+      }
+      .nav-left {
+        gap: 8px;
+        flex-shrink: 1;
+        min-width: 0;
+      }
+      .logo-brand {
+        font-size: 16px;
+        gap: 6px;
+        white-space: nowrap;
+      }
       .nav-user-container {
         margin-left: auto;
         gap: 6px;
+        flex-shrink: 0;
       }
       .user-pill {
-        max-width: 125px;
-        font-size: 11px;
-        padding: 4px 8px;
+        max-width: none; /* Empêche le tronquage sur mobile */
+        font-size: 11.5px;
+        padding: 5px 10px;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+      }
+      .user-pill-incomplete {
+        max-width: none !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        padding: 5px 10px;
       }
       .btn-logout {
         padding: 5px 8px;
+        font-size: 12px;
+      }
+      .btn-logout .btn-logout-text {
+        display: none; /* Affiche l'icône 🚪 sur mobile pour garantir tout l'espace nécessaire au libellé 'Compléter mon profil' */
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-nav {
+        padding: 0 8px;
+      }
+      .logo-brand {
+        font-size: 14.5px;
+        gap: 5px;
+      }
+      .user-pill {
         font-size: 11px;
+        padding: 4px 8px;
+        gap: 4px;
+      }
+      .btn-logout {
+        padding: 4px 6px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .logo-brand .logo-market-text {
+        display: none; /* Affichage compact 'EFoot SN' sur les très petits écrans */
+      }
+      .user-pill {
+        font-size: 10.5px;
+        padding: 3px 6px;
       }
     }
 
@@ -2740,7 +2799,7 @@
       <div class="nav-left">
         <div class="logo-brand" onclick="changerPage('accueil')">
           <span class="logo-icon">⚽</span>
-          <span>EFoot Market <span class="logo-accent">SN</span></span>
+          <span>EFoot <span class="logo-market-text">Market </span><span class="logo-accent">SN</span></span>
         </div>
 
         <!-- Recherche temps réel desktop -->
@@ -2785,7 +2844,8 @@
           <span id="user-display-name">👤 Invité</span>
         </div>
         <button type="button" class="btn-logout" id="btn-logout" onclick="afficherPopupDeconnexion()" title="Se déconnecter">
-          <span>Se déconnecter</span>
+          <span class="btn-logout-icon">🚪</span>
+          <span class="btn-logout-text">Se déconnecter</span>
         </button>
       </div>
     </header>
