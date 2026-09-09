@@ -11,6 +11,10 @@
     gtag('config', 'G-XY7D9HSC9J');
   </script>
 
+  <!-- Scripts Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EFoot Market SN - Marketplace de Comptes eFootball au Sénégal</title>
@@ -1878,49 +1882,299 @@
         bottom: 24px;
       }
     }
+
+    /* ==========================================================
+       ÉCRAN DE CONNEXION FIREBASE (ANONYME & GOOGLE)
+       ========================================================== */
+    .auth-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #121212;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .auth-card {
+      background: #1E1E1E;
+      border: 1px solid #333333;
+      border-radius: 16px;
+      padding: 44px 32px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .auth-logo {
+      font-size: 80px;
+      line-height: 1;
+      margin-bottom: 18px;
+      user-select: none;
+      filter: drop-shadow(0 6px 18px rgba(0, 200, 83, 0.35));
+    }
+
+    .auth-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .auth-subtitle {
+      font-size: 14px;
+      color: #AAAAAA;
+      margin-bottom: 32px;
+      line-height: 1.4;
+    }
+
+    .auth-buttons-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+    /* Bouton 1 : "👤 Continuer en invité" (vert #00C853, texte blanc) */
+    .btn-auth-guest {
+      background-color: #00C853;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: var(--transition);
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(0, 200, 83, 0.35);
+    }
+
+    .btn-auth-guest:hover {
+      background-color: #00E676;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 200, 83, 0.5);
+    }
+
+    .btn-auth-guest:active {
+      transform: translateY(0);
+    }
+
+    .btn-auth-guest:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Bouton 2 : "Se connecter avec Google" (fond blanc, texte noir) */
+    .btn-auth-google {
+      background-color: #FFFFFF;
+      color: #000000;
+      border: 1px solid #DDDDDD;
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: var(--transition);
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-auth-google:hover {
+      background-color: #F5F5F5;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.18);
+    }
+
+    .btn-auth-google:active {
+      transform: translateY(0);
+    }
+
+    .btn-auth-google:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .auth-hint {
+      font-size: 12.5px;
+      color: #777777;
+    }
+
+    /* Zone utilisateur dans la barre de navigation */
+    .nav-user-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: 8px;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #252525;
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #FFFFFF;
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-logout {
+      background: rgba(255, 82, 82, 0.12);
+      color: #FF5252;
+      border: 1px solid rgba(255, 82, 82, 0.35);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-logout:hover {
+      background: #FF5252;
+      color: #FFFFFF;
+      border-color: #FF5252;
+    }
+
+    @media (max-width: 768px) {
+      .nav-user-container {
+        margin-left: auto;
+        gap: 6px;
+      }
+      .user-pill {
+        max-width: 125px;
+        font-size: 11px;
+        padding: 4px 8px;
+      }
+      .btn-logout {
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>
 
   <!-- ==========================================================
-       BARRE DE NAVIGATION SUPÉRIEURE FIXE
+       ÉCRAN DE CONNEXION FIREBASE (ANONYME & GOOGLE)
        ========================================================== -->
-  <header class="header-nav">
-    <div class="nav-left">
-      <div class="logo-brand" onclick="changerPage('accueil')">
-        <span class="logo-icon">⚽</span>
-        <span>EFoot Market <span class="logo-accent">SN</span></span>
+  <div id="auth-screen" class="auth-screen" style="display: flex;">
+    <div class="auth-card">
+      <div class="auth-logo">⚽</div>
+      <h1 class="auth-title">EFOOT MARKET <span class="logo-accent">SN</span></h1>
+      <p class="auth-subtitle">Marketplace de comptes eFootball au Sénégal</p>
+
+      <div class="auth-buttons-group">
+        <!-- Bouton 1 : "👤 Continuer en invité" (vert #00C853, texte blanc) -->
+        <button type="button" class="btn-auth-guest" id="btn-auth-guest" onclick="connexionAnonyme()">
+          <span class="auth-btn-icon">👤</span>
+          <span>Continuer en invité</span>
+        </button>
+
+        <!-- Bouton 2 : "Se connecter avec Google" (fond blanc, texte noir) -->
+        <button type="button" class="btn-auth-google" id="btn-auth-google" onclick="connexionGoogle()">
+          <svg class="google-svg" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Se connecter avec Google</span>
+        </button>
       </div>
 
-      <!-- Recherche temps réel desktop -->
-      <div class="nav-search-desktop">
-        <span class="search-icon">🔍</span>
-        <input 
-          type="text" 
-          id="search-input-desktop" 
-          placeholder="Rechercher un compte (Messi, 105 OVR...)"
-          oninput="gererRecherche(this.value)"
-        >
-      </div>
+      <div class="auth-hint">Aucune inscription requise pour tester</div>
     </div>
+  </div>
 
-    <!-- Liens desktop -->
-    <nav class="nav-links-desktop">
-      <button class="nav-link-btn active" id="nav-btn-accueil" onclick="changerPage('accueil')">
-        <span>🏠</span> Accueil
-      </button>
-      <button class="nav-link-btn" id="nav-btn-messages" onclick="changerPage('messages')">
-        <span>💬</span> Messages
-        <span class="unread-bubble" id="unread-count-desktop" style="display: none;">0</span>
-      </button>
-      <button class="nav-link-btn" id="nav-btn-mes-annonces" onclick="changerPage('mes-annonces')">
-        <span>📋</span> Mes annonces
-      </button>
-      <button class="btn-publish-header" onclick="changerPage('publier')">
-        <span>➕</span> Publier
-      </button>
-    </nav>
-  </header>
+  <!-- CONTENEUR PRINCIPAL DE L'APPLICATION (affiché après connexion) -->
+  <div id="app-wrapper" style="display: none; width: 100%;">
+
+    <!-- ==========================================================
+         BARRE DE NAVIGATION SUPÉRIEURE FIXE
+         ========================================================== -->
+    <header class="header-nav">
+      <div class="nav-left">
+        <div class="logo-brand" onclick="changerPage('accueil')">
+          <span class="logo-icon">⚽</span>
+          <span>EFoot Market <span class="logo-accent">SN</span></span>
+        </div>
+
+        <!-- Recherche temps réel desktop -->
+        <div class="nav-search-desktop">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="search-input-desktop" 
+            placeholder="Rechercher un compte (Messi, 105 OVR...)"
+            oninput="gererRecherche(this.value)"
+          >
+        </div>
+      </div>
+
+      <!-- Liens desktop -->
+      <nav class="nav-links-desktop">
+        <button class="nav-link-btn active" id="nav-btn-accueil" onclick="changerPage('accueil')">
+          <span>🏠</span> Accueil
+        </button>
+        <button class="nav-link-btn" id="nav-btn-messages" onclick="changerPage('messages')">
+          <span>💬</span> Messages
+          <span class="unread-bubble" id="unread-count-desktop" style="display: none;">0</span>
+        </button>
+        <button class="nav-link-btn" id="nav-btn-mes-annonces" onclick="changerPage('mes-annonces')">
+          <span>📋</span> Mes annonces
+        </button>
+        <button class="btn-publish-header" onclick="changerPage('publier')">
+          <span>➕</span> Publier
+        </button>
+      </nav>
+
+      <!-- Zone utilisateur connecté & bouton Déconnexion -->
+      <div class="nav-user-container" id="nav-user-container">
+        <div class="user-pill" id="user-display-pill" title="Utilisateur connecté">
+          <span id="user-display-name">👤 Invité</span>
+        </div>
+        <button type="button" class="btn-logout" id="btn-logout" onclick="deconnexion()" title="Se déconnecter">
+          <span>Se déconnecter</span>
+        </button>
+      </div>
+    </header>
 
   <!-- ==========================================================
        NAVIGATION PAR ONGLETS EN BAS SUR MOBILE (DOCK)
@@ -2523,10 +2777,199 @@
     <span id="toast-text">Action effectuée avec succès</span>
   </div>
 
+  </div> <!-- Fin #app-wrapper -->
+
   <!-- ==========================================================
        SCRIPTS JAVASCRIPT PUR : LOGIQUE, STOCKAGE & INTERACTION
        ========================================================== -->
   <script>
+    /* ==========================================================
+       CONFIGURATION ET AUTHENTIFICATION FIREBASE (ANONYME & GOOGLE)
+       ========================================================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyCVIq49q1k1NKJyG03LLVjakWKOA7cVf2M",
+      authDomain: "efoot-market-sn.firebaseapp.com",
+      projectId: "efoot-market-sn",
+      storageBucket: "efoot-market-sn.firebasestorage.app",
+      messagingSenderId: "303465466943",
+      appId: "1:303465466943:web:2b099883c4ea7324f43c8a"
+    };
+
+    // Initialisation de Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    /**
+     * 2. CONNEXION ANONYME
+     */
+    function connexionAnonyme() {
+      const btn = document.getElementById('btn-auth-guest');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Connexion en cours...</span>`;
+      }
+
+      firebase.auth().signInAnonymously()
+        .then(function(userCredential) {
+          var user = userCredential.user;
+          var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
+          localStorage.setItem("efoot_nom", nomInvite);
+          mettreAJourAffichageUtilisateur(user);
+          afficherApplication();
+          afficherNotification(`Connecté : ${nomInvite}`, "👤");
+        })
+        .catch(function(error) {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="auth-btn-icon">👤</span><span>Continuer en invité</span>`;
+          }
+          alert("Erreur de connexion : " + error.message);
+        });
+    }
+
+    /**
+     * 3. CONNEXION GOOGLE
+     */
+    function connexionGoogle() {
+      const btn = document.getElementById('btn-auth-google');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Connexion Google...</span>`;
+      }
+
+      var provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(function(result) {
+          var user = result.user;
+          var nomGoogle = user.displayName || "Joueur Google";
+          localStorage.setItem("efoot_nom", nomGoogle);
+          mettreAJourAffichageUtilisateur(user);
+          afficherApplication();
+          afficherNotification(`Bienvenue ${nomGoogle} !`, "⚽");
+        })
+        .catch(function(error) {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `
+              <svg class="google-svg" viewBox="0 0 24 24" width="20" height="20">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Se connecter avec Google</span>
+            `;
+          }
+          alert("Erreur de connexion Google : " + error.message);
+        });
+    }
+
+    /**
+     * 4. VÉRIFICATION DE SESSION
+     */
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        // Utilisateur connecté (anonyme ou Google)
+        if (!localStorage.getItem("efoot_nom")) {
+          if (user.isAnonymous) {
+            var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
+            localStorage.setItem("efoot_nom", nomInvite);
+          } else if (user.displayName) {
+            localStorage.setItem("efoot_nom", user.displayName);
+          } else {
+            localStorage.setItem("efoot_nom", "Joueur eFoot");
+          }
+        }
+        mettreAJourAffichageUtilisateur(user);
+        afficherApplication();
+      } else {
+        // Pas connecté
+        afficherEcranConnexion();
+      }
+    });
+
+    /**
+     * 5. DÉCONNEXION
+     */
+    function deconnexion() {
+      firebase.auth().signOut()
+        .then(function() {
+          localStorage.removeItem("efoot_nom");
+          afficherEcranConnexion();
+          afficherNotification("Déconnexion réussie", "👋");
+        })
+        .catch(function(error) {
+          alert("Erreur de déconnexion : " + error.message);
+        });
+    }
+
+    /**
+     * 6. AFFICHAGE DU NOM D'UTILISATEUR
+     * Dans la barre de navigation :
+     * - Si connecté anonyme : "👤 " + nom stocké
+     * - Si connecté Google : "📷 " + nom Google
+     * - Bouton "Se déconnecter" à côté du nom
+     */
+    function mettreAJourAffichageUtilisateur(user) {
+      const nomStocke = localStorage.getItem("efoot_nom") || (user && user.displayName) || "Utilisateur";
+      const userElem = document.getElementById('user-display-name');
+      if (!userElem) return;
+
+      const isGoogle = user && (
+        (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) ||
+        (!user.isAnonymous && user.displayName)
+      );
+
+      if (isGoogle) {
+        userElem.textContent = "📷 " + nomStocke;
+      } else {
+        userElem.textContent = "👤 " + nomStocke;
+      }
+    }
+
+    /**
+     * Bascule l'affichage vers l'application principale
+     */
+    function afficherApplication() {
+      const authScreen = document.getElementById('auth-screen');
+      const appWrapper = document.getElementById('app-wrapper');
+      if (authScreen) authScreen.style.display = 'none';
+      if (appWrapper) appWrapper.style.display = 'block';
+
+      const user = firebase.auth().currentUser;
+      if (user) {
+        mettreAJourAffichageUtilisateur(user);
+      }
+    }
+
+    /**
+     * Bascule l'affichage vers l'écran de connexion
+     */
+    function afficherEcranConnexion() {
+      const authScreen = document.getElementById('auth-screen');
+      const appWrapper = document.getElementById('app-wrapper');
+      if (authScreen) authScreen.style.display = 'flex';
+      if (appWrapper) appWrapper.style.display = 'none';
+
+      const btnGuest = document.getElementById('btn-auth-guest');
+      if (btnGuest) {
+        btnGuest.disabled = false;
+        btnGuest.innerHTML = `<span class="auth-btn-icon">👤</span><span>Continuer en invité</span>`;
+      }
+      const btnGoogle = document.getElementById('btn-auth-google');
+      if (btnGoogle) {
+        btnGoogle.disabled = false;
+        btnGoogle.innerHTML = `
+          <svg class="google-svg" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Se connecter avec Google</span>
+        `;
+      }
+    }
+
     /* ==========================================================
        SECTION 1 : ÉTAT GLOBAL DE L'APPLICATION
        ========================================================== */
@@ -2594,21 +3037,39 @@
      */
     function getProfilUtilisateur() {
       try {
+        const nomStocke = localStorage.getItem("efoot_nom");
         const p = localStorage.getItem(STORAGE_PROFIL);
-        return p ? JSON.parse(p) : null;
+        const parsed = p ? JSON.parse(p) : {};
+        if (nomStocke) {
+          const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+          return {
+            id: (user ? user.uid : null) || parsed.id || 'usr_' + nomStocke.replace(/\s+/g, '_').toLowerCase(),
+            nom: nomStocke,
+            photoURL: (user && user.photoURL) || parsed.photoURL || null,
+            creeLe: parsed.creeLe || new Date().toISOString()
+          };
+        }
+        return (parsed && parsed.nom) ? parsed : null;
       } catch (e) {
         return null;
       }
     }
 
     /**
-     * Vérifie la présence d'un nom d'utilisateur. Si absent, ouvre la modale
+     * Vérifie la présence d'un nom d'utilisateur. Si absent, ouvre la connexion ou modale
      */
     function verifierProfilOuDemander(callbackApres) {
       const profil = getProfilUtilisateur();
       if (profil && profil.nom) {
         if (callbackApres) callbackApres(profil);
         return true;
+      }
+
+      // Si pas connecté, afficher l'écran d'accueil Firebase
+      const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user) {
+        afficherEcranConnexion();
+        return false;
       }
 
       pendingActionCallback = callbackApres;
@@ -2625,15 +3086,20 @@
       const nom = document.getElementById('modal-user-name').value.trim();
       if (!nom || nom.length < 3) return;
 
+      localStorage.setItem("efoot_nom", nom);
       const nouveauProfil = {
-        id: 'usr_' + Date.now(),
+        id: (firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'usr_' + Date.now()),
         nom: nom,
         creeLe: new Date().toISOString()
       };
 
       localStorage.setItem(STORAGE_PROFIL, JSON.stringify(nouveauProfil));
+      const user = firebase.auth().currentUser;
+      if (user) {
+        mettreAJourAffichageUtilisateur(user);
+      }
       document.getElementById('user-profile-modal').classList.remove('active');
-      afficherNotification(`Ravi de vous rencontrer, ${nom} !`, "⚽");
+      afficherNotification(`Profil mis à jour : ${nom}`, "⚽");
 
       if (pendingActionCallback) {
         const cb = pendingActionCallback;
