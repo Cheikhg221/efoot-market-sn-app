@@ -3682,6 +3682,12 @@
     // Initialisation de Firestore
     const db = firebase.firestore();
 
+    // Cache et abonnements temps réel Firestore pour les demandes d'achat
+    let demandesVendeurCache = [];
+    let demandesAcheteurCache = [];
+    let unsubscribeDemandesVendeur = null;
+    let unsubscribeDemandesAcheteur = null;
+
     /**
      * 2. CONNEXION ANONYME
      */
@@ -3775,7 +3781,9 @@
         }
         mettreAJourAffichageUtilisateur(user);
         verifierProfilApresConnexion(user);
+        demarrerEcouteDemandesFirestore();
       } else {
+        arreterEcouteDemandesFirestore();
         afficherEcranConnexion();
       }
     });
@@ -3802,6 +3810,7 @@
       if (popup) {
         popup.style.display = "none";
       }
+      arreterEcouteDemandesFirestore();
       firebase.auth().signOut()
         .then(function() {
           localStorage.removeItem("efoot_nom");
@@ -5926,21 +5935,23 @@
      * Libellé lisible pour un statut de transaction
      */
     function getLibelleStatut(statut) {
-      switch (statut) {
-        case 'DEMANDE_ENVOYEE':
-          return '🟡 Demande envoyée';
-        case 'ACCEPTEE':
-          return '🔵 Acceptée (En cours)';
-        case 'REFUSEE':
-          return '🔴 Demande refusée';
-        case 'LIVRAISON_CONFIRMEE':
-          return '🟠 Livraison confirmée';
-        case 'TERMINEE':
-          return '🟢 Terminée';
-        case 'LITIGE':
+      const s = (statut || '').toLowerCase();
+      switch (s) {
+        case 'en_attente':
+        case 'demande_envoyee':
+          return '⏳ En attente';
+        case 'acceptee':
+          return '✅ Acceptée';
+        case 'refusee':
+          return '❌ Refusée';
+        case 'livraison_confirmee':
+          return '📦 Réception confirmée';
+        case 'terminee':
+          return '🎉 Vente terminée';
+        case 'litige':
           return '🚨 Litige';
         default:
-          return '🟡 En cours';
+          return '⏳ En attente';
       }
     }
 
@@ -5948,35 +5959,36 @@
      * Génère le HTML du stepper visuel à 4 étapes
      */
     function formaterStepperHtml(statut) {
+      const s = (statut || '').toLowerCase();
       let step1Class = 'completed';
       let step2Class = '';
       let step3Class = '';
       let step4Class = '';
       let progressWidth = '0%';
 
-      if (statut === 'DEMANDE_ENVOYEE') {
+      if (s === 'en_attente' || s === 'demande_envoyee') {
         step1Class = 'active';
         progressWidth = '12%';
-      } else if (statut === 'REFUSEE') {
+      } else if (s === 'refusee') {
         step1Class = 'completed';
         step2Class = 'refused';
         progressWidth = '33%';
-      } else if (statut === 'ACCEPTEE') {
+      } else if (s === 'acceptee') {
         step1Class = 'completed';
         step2Class = 'active';
-        progressWidth = '38%';
-      } else if (statut === 'LIVRAISON_CONFIRMEE') {
+        progressWidth = '45%';
+      } else if (s === 'livraison_confirmee') {
         step1Class = 'completed';
         step2Class = 'completed';
         step3Class = 'active';
         progressWidth = '70%';
-      } else if (statut === 'TERMINEE') {
+      } else if (s === 'terminee') {
         step1Class = 'completed';
         step2Class = 'completed';
         step3Class = 'completed';
         step4Class = 'completed';
         progressWidth = '100%';
-      } else if (statut === 'LITIGE') {
+      } else if (s === 'litige') {
         step1Class = 'completed';
         step2Class = 'completed';
         step3Class = 'refused';
@@ -5994,11 +6006,11 @@
           </div>
           <div class="tx-step-item ${step2Class}">
             <div class="tx-step-circle">2</div>
-            <div class="tx-step-label">${statut === 'REFUSEE' ? 'Refusée' : 'Acceptée'}</div>
+            <div class="tx-step-label">${s === 'refusee' ? 'Refusée' : 'Acceptée'}</div>
           </div>
           <div class="tx-step-item ${step3Class}">
             <div class="tx-step-circle">3</div>
-            <div class="tx-step-label">${statut === 'LITIGE' ? 'Litige' : 'Reçue'}</div>
+            <div class="tx-step-label">${s === 'litige' ? 'Litige' : 'Reçue'}</div>
           </div>
           <div class="tx-step-item ${step4Class}">
             <div class="tx-step-circle">4</div>
@@ -6073,357 +6085,452 @@
     }
 
     /**
-     * Exécute la confirmation d'intention d'achat (crée la transaction DEMANDE_ENVOYEE)
+     * 1. ENVOYER UNE DEMANDE D'ACHAT (Firestore)
+     * Enregistre la demande dans la collection Firestore "demandes"
+     */
+    function envoyerDemande(annonceId) {
+      if (!annonceId) return;
+      var user = firebase.auth().currentUser;
+
+      if (!user) {
+        connexionAnonyme();
+        return;
+      }
+
+      const profil = getProfilUtilisateur() || {};
+      const monNom = localStorage.getItem("efoot_nom") || (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "Acheteur eFoot"));
+      const monTel = localStorage.getItem("efoot_tel") || profil.telephone || "";
+
+      // Récupérer les infos de l'annonce et du vendeur depuis Firestore
+      db.collection("annonces").doc(annonceId).get().then(function(doc) {
+        var annonce = doc.exists ? doc.data() : null;
+
+        // Fallback sur le cache local des annonces si besoin
+        if (!annonce) {
+          const annoncesLocales = getAnnonces();
+          annonce = annoncesLocales.find(a => a.id === annonceId);
+        }
+
+        if (!annonce) {
+          afficherNotification("Annonce introuvable.", "⚠️");
+          fermerModalIntentionAchat();
+          return;
+        }
+
+        // Empêcher d'acheter sa propre annonce
+        if (annonce.vendeurId === user.uid) {
+          alert("Vous êtes le vendeur de cette annonce. Vous ne pouvez pas envoyer de demande d'achat à vous-même.");
+          fermerModalIntentionAchat();
+          return;
+        }
+
+        if (annonce.statut === 'VENDU') {
+          alert("Ce compte a déjà été vendu.");
+          fermerModalIntentionAchat();
+          return;
+        }
+
+        const nouvelleDemande = {
+          annonceId: annonceId,
+          annonceTitre: annonce.titre || "Compte eFootball",
+          annoncePrix: Number(annonce.prix) || 0,
+          annonceImage: annonce.image || null,
+          annoncePlateforme: annonce.plateforme || 'Mobile',
+          annonceRegion: annonce.region || annonce.localisation || 'Dakar',
+          acheteurId: user.uid,
+          acheteurNom: monNom,
+          acheteurTelephone: monTel,
+          vendeurId: annonce.vendeurId || "",
+          vendeurNom: annonce.vendeur || "Vendeur",
+          vendeurTelephone: annonce.whatsapp || annonce.telephoneWhatsApp || "",
+          statut: "en_attente",
+          dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        return db.collection("demandes").add(nouvelleDemande).then(function(docRef) {
+          console.log("Demande Firestore créée avec succès : " + docRef.id);
+
+          // Créer ou alimenter la discussion interne de messagerie
+          let convs = getConversations();
+          let conv = convs.find(c => c.annonceId === annonceId && (c.acheteurNom === monNom || c.acheteurId === user.uid));
+          if (!conv) {
+            conv = {
+              id: 'conv_' + Date.now(),
+              annonceId: annonceId,
+              titreAnnonce: annonce.titre,
+              prixAnnonce: annonce.prix,
+              vendeurNom: annonce.vendeur,
+              acheteurNom: monNom,
+              statutTransaction: 'DEMANDE_ENVOYEE',
+              messages: []
+            };
+            convs.unshift(conv);
+          }
+          conv.statutTransaction = 'DEMANDE_ENVOYEE';
+          conv.messages.push({
+            id: 'msg_' + Date.now(),
+            expediteur: 'Système',
+            destinataire: 'Tous',
+            contenu: `🔒 Demande d'achat partagée par ${monNom} pour "${annonce.titre}" (${formaterPrix(annonce.prix)}). En attente d'acceptation du vendeur.`,
+            date: new Date().toISOString(),
+            isSystem: true
+          });
+          setConversations(convs);
+
+          fermerModalIntentionAchat();
+          afficherNotification("Demande d'achat envoyée au vendeur !", "🔒");
+
+          // Rafraîchir les écoutes
+          afficherDemandesAcheteur();
+          afficherDemandesVendeur();
+        });
+      }).catch(function(error) {
+        console.error("Erreur lors de l'envoi de la demande Firestore :", error);
+        alert("Erreur lors de l'envoi de la demande : " + error.message);
+      });
+    }
+
+    /**
+     * Exécute la confirmation d'intention d'achat (délègue vers envoyerDemande)
      */
     function executerDemandeAchat() {
       if (!currentModalAdId) return;
+      envoyerDemande(currentModalAdId);
+    }
 
-      const profil = getProfilUtilisateur();
-      if (!profil) return;
-
-      const annonces = getAnnonces();
-      const ad = annonces.find(a => a.id === currentModalAdId);
-      if (!ad) {
-        fermerModalIntentionAchat();
-        return;
-      }
-
-      const monNom = profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "Acheteur eFoot");
-      const txId = 'tx_' + Date.now();
-
-      const nouvelleTx = {
-        id: txId,
-        annonceId: ad.id,
-        titreAnnonce: ad.titre,
-        prixAnnonce: ad.prix,
-        imageAnnonce: ad.image || null,
-        plateforme: ad.plateforme || 'Mobile',
-        region: ad.region || 'Dakar',
-        puissance: ad.puissance || '',
-        telephoneWhatsAppVendeur: ad.telephoneWhatsApp || '',
-        acheteur: monNom,
-        acheteurNom: monNom,
-        acheteurPrenom: profil.prenom,
-        acheteurId: profil.id || ('usr_' + Date.now()),
-        vendeur: ad.vendeur,
-        vendeurNom: ad.vendeur,
-        vendeurPrenom: ad.vendeurPrenom || ad.vendeur,
-        vendeurId: ad.vendeurId || null,
-        statut: 'DEMANDE_ENVOYEE',
-        date: new Date().toISOString(),
-        dateCreation: new Date().toISOString(),
-        dateMiseAJour: new Date().toISOString()
+    /**
+     * 2. TRI DES DEMANDES PAR DATE DÉCROISSANTE
+     */
+    function trierDemandesParDateDesc(a, b) {
+      const getMillis = item => {
+        if (!item || !item.dateCreation) return 0;
+        if (typeof item.dateCreation.toMillis === 'function') return item.dateCreation.toMillis();
+        if (item.dateCreation.seconds) return item.dateCreation.seconds * 1000;
+        return new Date(item.dateCreation).getTime() || 0;
       };
+      return getMillis(b) - getMillis(a);
+    }
 
-      const txs = getTransactions();
-      txs.unshift(nouvelleTx);
-      setTransactions(txs);
+    /**
+     * 3. PAGE "MES TRANSACTIONS" POUR LE VENDEUR (Firestore en temps réel)
+     */
+    function afficherDemandesVendeur() {
+      var user = firebase.auth().currentUser;
+      if (!user) return;
 
-      // Créer ou alimenter la conversation de chat
-      let convs = getConversations();
-      let conv = convs.find(c => c.annonceId === ad.id && (c.acheteurNom === monNom || c.acheteurId === profil.id));
-      if (!conv) {
-        conv = {
-          id: 'conv_' + Date.now(),
-          annonceId: ad.id,
-          titreAnnonce: ad.titre,
-          prixAnnonce: ad.prix,
-          vendeurNom: ad.vendeur,
-          acheteurNom: monNom,
-          statutTransaction: 'DEMANDE_ENVOYEE',
-          messages: []
-        };
-        convs.unshift(conv);
+      if (unsubscribeDemandesVendeur) {
+        unsubscribeDemandesVendeur();
+        unsubscribeDemandesVendeur = null;
       }
-      conv.statutTransaction = 'DEMANDE_ENVOYEE';
-      conv.messages.push({
-        id: 'msg_' + Date.now(),
-        expediteur: 'Système',
-        destinataire: 'Tous',
-        contenu: `🔒 Demande d'achat envoyée par ${monNom} pour "${ad.titre}" (${formaterPrix(ad.prix)}). En attente d'acceptation du vendeur.`,
-        date: new Date().toISOString(),
-        isSystem: true
+
+      try {
+        unsubscribeDemandesVendeur = db.collection("demandes")
+          .where("vendeurId", "==", user.uid)
+          .orderBy("dateCreation", "desc")
+          .onSnapshot(function(snapshot) {
+            var demandes = [];
+            snapshot.forEach(function(doc) {
+              demandes.push({ id: doc.id, ...doc.data() });
+            });
+            demandesVendeurCache = demandes;
+            synchroniserTransactionsDepuisFirestore();
+            if (currentPage === 'transactions' && currentTransactionsTab === 'ventes') {
+              afficherListeDemandes(demandes, "vendeur");
+            }
+          }, function(error) {
+            console.warn("Snapshot vendeur avec orderBy : fallback sans index", error);
+            unsubscribeDemandesVendeur = db.collection("demandes")
+              .where("vendeurId", "==", user.uid)
+              .onSnapshot(function(snapshot) {
+                var demandes = [];
+                snapshot.forEach(function(doc) {
+                  demandes.push({ id: doc.id, ...doc.data() });
+                });
+                demandes.sort(trierDemandesParDateDesc);
+                demandesVendeurCache = demandes;
+                synchroniserTransactionsDepuisFirestore();
+                if (currentPage === 'transactions' && currentTransactionsTab === 'ventes') {
+                  afficherListeDemandes(demandes, "vendeur");
+                }
+              });
+          });
+      } catch (err) {
+        console.error("Erreur afficherDemandesVendeur :", err);
+      }
+    }
+
+    /**
+     * 4. PAGE "MES ACHATS" POUR L'ACHETEUR (Firestore en temps réel)
+     */
+    function afficherDemandesAcheteur() {
+      var user = firebase.auth().currentUser;
+      if (!user) return;
+
+      if (unsubscribeDemandesAcheteur) {
+        unsubscribeDemandesAcheteur();
+        unsubscribeDemandesAcheteur = null;
+      }
+
+      try {
+        unsubscribeDemandesAcheteur = db.collection("demandes")
+          .where("acheteurId", "==", user.uid)
+          .orderBy("dateCreation", "desc")
+          .onSnapshot(function(snapshot) {
+            var demandes = [];
+            snapshot.forEach(function(doc) {
+              demandes.push({ id: doc.id, ...doc.data() });
+            });
+            demandesAcheteurCache = demandes;
+            synchroniserTransactionsDepuisFirestore();
+            if (currentPage === 'transactions' && currentTransactionsTab === 'achats') {
+              afficherListeDemandes(demandes, "acheteur");
+            }
+          }, function(error) {
+            console.warn("Snapshot acheteur avec orderBy : fallback sans index", error);
+            unsubscribeDemandesAcheteur = db.collection("demandes")
+              .where("acheteurId", "==", user.uid)
+              .onSnapshot(function(snapshot) {
+                var demandes = [];
+                snapshot.forEach(function(doc) {
+                  demandes.push({ id: doc.id, ...doc.data() });
+                });
+                demandes.sort(trierDemandesParDateDesc);
+                demandesAcheteurCache = demandes;
+                synchroniserTransactionsDepuisFirestore();
+                if (currentPage === 'transactions' && currentTransactionsTab === 'achats') {
+                  afficherListeDemandes(demandes, "acheteur");
+                }
+              });
+          });
+      } catch (err) {
+        console.error("Erreur afficherDemandesAcheteur :", err);
+      }
+    }
+
+    /**
+     * Démarre et synchronise les écouteurs Firestore
+     */
+    function demarrerEcouteDemandesFirestore() {
+      var user = firebase.auth().currentUser;
+      if (!user) return;
+      afficherDemandesVendeur();
+      afficherDemandesAcheteur();
+    }
+
+    function arreterEcouteDemandesFirestore() {
+      if (unsubscribeDemandesVendeur) {
+        unsubscribeDemandesVendeur();
+        unsubscribeDemandesVendeur = null;
+      }
+      if (unsubscribeDemandesAcheteur) {
+        unsubscribeDemandesAcheteur();
+        unsubscribeDemandesAcheteur = null;
+      }
+      demandesVendeurCache = [];
+      demandesAcheteurCache = [];
+    }
+
+    /**
+     * 5. ACTIONS DU VENDEUR (Accepter / Refuser)
+     */
+    function repondreDemande(demandeId, action) {
+      if (!demandeId) return;
+
+      const confirmMsg = action === 'acceptee'
+        ? "Acceptez-vous cette vente ? Le compte passera en statut 'En cours' et sera réservé pour cet acheteur."
+        : "Voulez-vous vraiment refuser cette demande d'achat ? L'annonce restera active pour les autres acheteurs.";
+
+      if (!confirm(confirmMsg)) return;
+
+      db.collection("demandes").doc(demandeId).get().then(function(doc) {
+        const data = doc.exists ? doc.data() : null;
+
+        return db.collection("demandes").doc(demandeId).update({
+          statut: action,
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function() {
+          console.log("Demande mise à jour : " + action);
+
+          if (action === 'acceptee') {
+            afficherNotification("Demande acceptée ! Le compte est maintenant réservé.", "✅");
+
+            // Mettre à jour l'annonce dans Firestore (statut: EN_COURS)
+            if (data && data.annonceId) {
+              db.collection("annonces").doc(data.annonceId).update({
+                statut: "EN_COURS"
+              }).catch(function(e) {
+                console.warn("Mise à jour statut annonce EN_COURS:", e);
+              });
+
+              const annonces = getAnnonces();
+              const ad = annonces.find(a => a.id === data.annonceId);
+              if (ad) {
+                ad.statut = 'EN_COURS';
+                setAnnonces(annonces);
+              }
+            }
+          } else {
+            afficherNotification("Demande d'achat refusée.", "ℹ️");
+          }
+
+          // Rafraîchir les listes
+          afficherDemandesVendeur();
+          afficherDemandesAcheteur();
+        });
+      }).catch(function(error) {
+        alert("Erreur lors de la mise à jour : " + error.message);
       });
-      setConversations(convs);
-
-      fermerModalIntentionAchat();
-      afficherNotification("Demande d'achat envoyée au vendeur !", "🔒");
-      mettreAJourBadgeTransactions();
-
-      if (currentPage === 'detail' && currentDetailAdId === ad.id) {
-        afficherDetailAnnonce(ad.id);
-      } else if (currentPage === 'transactions') {
-        afficherPageTransactions(currentTransactionsTab);
-      }
     }
 
     /**
-     * Refus de la demande d'achat par le vendeur
+     * 6. ACTIONS DE FINALISATION (Vente conclue)
      */
-    function demanderRefusDemandeVendeur(txId) {
-      if (!confirm("Voulez-vous vraiment refuser cette demande d'achat ? L'annonce restera active pour les autres acheteurs.")) {
+    function marquerDemandeVendue(demandeId) {
+      if (!demandeId) return;
+      if (!confirm("Confirmez-vous la conclusion définitive de la vente et la bonne réception de votre paiement ?")) {
         return;
       }
 
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === txId);
-      if (!tx) return;
+      db.collection("demandes").doc(demandeId).get().then(function(doc) {
+        const data = doc.exists ? doc.data() : null;
 
-      tx.statut = 'REFUSEE';
-      tx.dateMiseAJour = new Date().toISOString();
-      setTransactions(txs);
+        return db.collection("demandes").doc(demandeId).update({
+          statut: "terminee",
+          dateTerminee: firebase.firestore.FieldValue.serverTimestamp(),
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function() {
+          if (data && data.annonceId) {
+            db.collection("annonces").doc(data.annonceId).update({
+              statut: "VENDU"
+            }).catch(function(e) {
+              console.warn("Mise à jour statut annonce VENDU:", e);
+            });
 
-      // Notification dans la conversation
-      const convs = getConversations();
-      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
-      if (conv) {
-        conv.statutTransaction = 'REFUSEE';
-        conv.messages.push({
-          id: 'msg_' + Date.now(),
-          expediteur: 'Système',
-          destinataire: 'Tous',
-          contenu: `🔴 Demande d'achat refusée par le vendeur. L'annonce reste disponible.`,
-          date: new Date().toISOString(),
-          isSystem: true
+            const annonces = getAnnonces();
+            const ad = annonces.find(a => a.id === data.annonceId);
+            if (ad) {
+              ad.statut = 'VENDU';
+              setAnnonces(annonces);
+            }
+          }
+
+          afficherNotification("Vente terminée avec succès ! L'annonce est marquée comme VENDU.", "🎉");
+          afficherDemandesVendeur();
+          afficherDemandesAcheteur();
         });
-        setConversations(convs);
-      }
+      }).catch(function(err) {
+        alert("Erreur lors de la clôture : " + err.message);
+      });
+    }
 
-      afficherNotification("Demande d'achat refusée.", "ℹ️");
-      mettreAJourBadgeTransactions();
-
-      if (currentPage === 'transactions') {
-        afficherPageTransactions(currentTransactionsTab);
-      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
-        afficherDetailAnnonce(tx.annonceId);
-      } else if (currentPage === 'messages' && activeConversationId) {
-        afficherConversations(activeConversationId);
-      }
+    function marquerCommeVendue(demandeId) {
+      marquerDemandeVendue(demandeId);
     }
 
     /**
-     * Acceptation de la demande d'achat par le vendeur (Étape 2 vendeur)
+     * 7. ANNULATION PAR L'ACHETEUR
      */
-    function demanderAcceptationVendeur(txId) {
-      if (!confirm("Acceptez-vous cette vente ? L'annonce passera en statut 'En cours de transaction' et ne sera plus visible aux autres acheteurs.")) {
-        return;
-      }
-
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === txId);
-      if (!tx) return;
-
-      tx.statut = 'ACCEPTEE';
-      tx.dateMiseAJour = new Date().toISOString();
-      setTransactions(txs);
-
-      // Mettre l'annonce en statut 'EN_COURS' pour la réserver
-      const annonces = getAnnonces();
-      const ad = annonces.find(a => a.id === tx.annonceId);
-      if (ad) {
-        ad.statut = 'EN_COURS';
-        setAnnonces(annonces);
-      }
-
-      // Notification dans la conversation
-      const convs = getConversations();
-      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
-      if (conv) {
-        conv.statutTransaction = 'ACCEPTEE';
-        conv.messages.push({
-          id: 'msg_' + Date.now(),
-          expediteur: 'Système',
-          destinataire: 'Tous',
-          contenu: `🔵 Le vendeur a accepté la vente ! Le compte est réservé. L'acheteur doit procéder à la vérification et confirmer la réception.`,
-          date: new Date().toISOString(),
-          isSystem: true
-        });
-        setConversations(convs);
-      }
-
-      afficherNotification("Demande acceptée ! Le compte est maintenant réservé pour cet acheteur.", "✅");
-      mettreAJourBadgeTransactions();
-
-      if (currentPage === 'transactions') {
-        afficherPageTransactions(currentTransactionsTab);
-      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
-        afficherDetailAnnonce(tx.annonceId);
-      } else if (currentPage === 'messages' && activeConversationId) {
-        afficherConversations(activeConversationId);
-      }
-    }
-
-    /**
-     * Confirmation de réception du compte par l'acheteur (Étape 3 acheteur)
-     */
-    function demanderConfirmationLivraison(txId) {
-      if (!confirm("Confirmez-vous avoir reçu les identifiants Konami ID (email et mot de passe), vous être connecté au jeu avec succès et avoir vérifié le compte ?")) {
-        return;
-      }
-
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === txId);
-      if (!tx) return;
-
-      tx.statut = 'LIVRAISON_CONFIRMEE';
-      tx.dateMiseAJour = new Date().toISOString();
-      setTransactions(txs);
-
-      // Notification dans la conversation
-      const convs = getConversations();
-      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
-      if (conv) {
-        conv.statutTransaction = 'LIVRAISON_CONFIRMEE';
-        conv.messages.push({
-          id: 'msg_' + Date.now(),
-          expediteur: 'Système',
-          destinataire: 'Tous',
-          contenu: `📦 L'acheteur a confirmé avoir reçu et vérifié le compte eFootball. Le vendeur peut procéder à la clôture définitive après vérification de son paiement.`,
-          date: new Date().toISOString(),
-          isSystem: true
-        });
-        setConversations(convs);
-      }
-
-      afficherNotification("Réception confirmée ! Le vendeur a été notifié pour finaliser la vente.", "📦");
-      mettreAJourBadgeTransactions();
-
-      if (currentPage === 'transactions') {
-        afficherPageTransactions(currentTransactionsTab);
-      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
-        afficherDetailAnnonce(tx.annonceId);
-      } else if (currentPage === 'messages' && activeConversationId) {
-        afficherConversations(activeConversationId);
-      }
-    }
-
-    /**
-     * Rappel des consignes de sécurité si l'acheteur clique "Non, pas encore"
-     */
-    function rappelerAttenteLivraison(txId) {
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === txId);
-      const telVendeur = tx ? (tx.telephoneWhatsAppVendeur || "") : "";
-
-      alert("CONSIGNES DE SÉCURITÉ EFOOT MARKET SN :\n\n" +
-            "1. Ne confirmez JAMAIS la réception avant d'avoir reçu le Konami ID et testé la connexion dans eFootball.\n" +
-            "2. Contactez le vendeur via WhatsApp ou la messagerie pour lui demander l'envoi des identifiants.\n" +
-            "3. Dès réception, liez immédiatement votre propre adresse email et modifiez le mot de passe.\n" +
-            "4. En cas de blocage ou d'absence de réponse, contactez l'assistance.");
-    }
-
-    /**
-     * Annulation de la demande d'achat par l'acheteur avant acceptation
-     */
-    function annulerDemandeAchat(txId) {
+    function annulerDemande(demandeId) {
+      if (!demandeId) return;
       if (!confirm("Voulez-vous vraiment annuler votre demande d'achat ?")) {
         return;
       }
 
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === txId);
-      if (!tx) return;
+      db.collection("demandes").doc(demandeId).update({
+        statut: "refusee",
+        dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        afficherNotification("Demande d'achat annulée.", "ℹ️");
+        afficherDemandesAcheteur();
+        afficherDemandesVendeur();
+      }).catch(function(err) {
+        alert("Erreur lors de l'annulation : " + err.message);
+      });
+    }
 
-      tx.statut = 'REFUSEE';
-      tx.dateMiseAJour = new Date().toISOString();
-      setTransactions(txs);
-
-      afficherNotification("Demande d'achat annulée.", "ℹ️");
-      mettreAJourBadgeTransactions();
-
-      if (currentPage === 'transactions') {
-        afficherPageTransactions(currentTransactionsTab);
-      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
-        afficherDetailAnnonce(tx.annonceId);
+    /**
+     * 8. CONFIRMATION DE RÉCEPTION PAR L'ACHETEUR
+     */
+    function confirmerReceptionCompte(demandeId) {
+      if (!demandeId) return;
+      if (!confirm("Confirmez-vous avoir reçu les identifiants Konami ID, vous être connecté au jeu avec succès et avoir vérifié le compte ?")) {
+        return;
       }
+
+      db.collection("demandes").doc(demandeId).get().then(function(doc) {
+        const data = doc.exists ? doc.data() : null;
+
+        return db.collection("demandes").doc(demandeId).update({
+          statut: "terminee",
+          dateTerminee: firebase.firestore.FieldValue.serverTimestamp(),
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function() {
+          if (data && data.annonceId) {
+            db.collection("annonces").doc(data.annonceId).update({
+              statut: "VENDU"
+            }).catch(function(e) {
+              console.warn("Mise à jour statut annonce VENDU:", e);
+            });
+
+            const annonces = getAnnonces();
+            const ad = annonces.find(a => a.id === data.annonceId);
+            if (ad) {
+              ad.statut = 'VENDU';
+              setAnnonces(annonces);
+            }
+          }
+
+          afficherNotification("Réception confirmée ! La transaction est finalisée.", "📦");
+          afficherDemandesAcheteur();
+          afficherDemandesVendeur();
+        });
+      }).catch(function(err) {
+        alert("Erreur lors de la confirmation : " + err.message);
+      });
     }
 
-    /**
-     * Ouvre la modale de double confirmation définitive (Étape 4 vendeur)
-     */
+    // Fonctions de compatibilité avec les boutons existants
+    function demanderRefusDemandeVendeur(txId) {
+      repondreDemande(txId, 'refusee');
+    }
+
+    function demanderAcceptationVendeur(txId) {
+      repondreDemande(txId, 'acceptee');
+    }
+
+    function demanderConfirmationLivraison(txId) {
+      confirmerReceptionCompte(txId);
+    }
+
+    function annulerDemandeAchat(txId) {
+      annulerDemande(txId);
+    }
+
+    function rappelerAttenteLivraison(txId) {
+      alert("CONSIGNES DE SÉCURITÉ EFOOT MARKET SN :\n\n" +
+            "1. Ne confirmez JAMAIS la réception avant d'avoir reçu le Konami ID et testé la connexion dans eFootball.\n" +
+            "2. Contactez le vendeur via WhatsApp pour lui demander l'envoi des identifiants.\n" +
+            "3. Dès réception, liez immédiatement votre propre adresse email et modifiez le mot de passe.\n" +
+            "4. En cas de problème, contactez le vendeur ou l'assistance.");
+    }
+
     function ouvrirModalTerminerTransaction(txId) {
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === txId);
-      if (!tx) return;
-
-      currentModalTxId = txId;
-      const titreEl = document.getElementById('modal-terminer-titre');
-      const acheteurEl = document.getElementById('modal-terminer-acheteur');
-
-      if (titreEl) titreEl.textContent = `${tx.titreAnnonce} (${formaterPrix(tx.prixAnnonce)})`;
-      if (acheteurEl) acheteurEl.textContent = `Acheteur : ${tx.acheteur}`;
-
-      const modal = document.getElementById('modal-double-confirmation-terminer');
-      if (modal) modal.style.display = 'flex';
+      marquerDemandeVendue(txId);
     }
 
-    /**
-     * Ferme la modale de clôture définitive
-     */
     function fermerModalTerminerTransaction() {
       currentModalTxId = null;
       const modal = document.getElementById('modal-double-confirmation-terminer');
       if (modal) modal.style.display = 'none';
     }
 
-    /**
-     * Clôture définitive de la transaction (Étape 4 validée par le vendeur)
-     */
     function executerTerminerTransaction() {
-      if (!currentModalTxId) return;
-
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === currentModalTxId);
-      if (!tx) {
+      if (currentModalTxId) {
+        marquerDemandeVendue(currentModalTxId);
         fermerModalTerminerTransaction();
-        return;
-      }
-
-      tx.statut = 'TERMINEE';
-      tx.dateMiseAJour = new Date().toISOString();
-      tx.dateTerminee = new Date().toISOString();
-      setTransactions(txs);
-
-      // Marquer définitivement l'annonce comme "VENDU"
-      const annonces = getAnnonces();
-      const ad = annonces.find(a => a.id === tx.annonceId);
-      if (ad) {
-        ad.statut = 'VENDU';
-        setAnnonces(annonces);
-      }
-
-      // Notification dans la conversation
-      const convs = getConversations();
-      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
-      if (conv) {
-        conv.statutTransaction = 'TERMINEE';
-        conv.messages.push({
-          id: 'msg_' + Date.now(),
-          expediteur: 'Système',
-          destinataire: 'Tous',
-          contenu: `🎉 Transaction finalisée et close par le vendeur ! Le compte est officiellement marqué comme VENDU. Merci de votre confiance sur EFoot Market SN.`,
-          date: new Date().toISOString(),
-          isSystem: true
-        });
-        setConversations(convs);
-      }
-
-      fermerModalTerminerTransaction();
-      afficherNotification("Transaction terminée avec succès ! L'annonce est marquée comme VENDU.", "🎉");
-      mettreAJourBadgeTransactions();
-
-      if (currentPage === 'transactions') {
-        afficherPageTransactions(currentTransactionsTab);
-      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
-        afficherDetailAnnonce(tx.annonceId);
-      } else if (currentPage === 'messages' && activeConversationId) {
-        afficherConversations(activeConversationId);
       }
     }
 
-    /**
-     * Ouvre la modale de signalement de litige
-     */
     function ouvrirModalLitige(txId) {
       currentModalTxId = txId;
       const detailsInput = document.getElementById('litige-details-input');
@@ -6432,65 +6539,133 @@
       if (modal) modal.style.display = 'flex';
     }
 
-    /**
-     * Ferme la modale de litige
-     */
     function fermerModalLitige() {
       currentModalTxId = null;
       const modal = document.getElementById('modal-signaler-litige');
       if (modal) modal.style.display = 'none';
     }
 
-    /**
-     * Enregistre le litige (Étape 5)
-     */
     function executerSignalerLitige() {
       if (!currentModalTxId) return;
 
       const motifSelect = document.getElementById('litige-motif-select');
       const detailsInput = document.getElementById('litige-details-input');
-      const motif = motifSelect ? motifSelect.value : "Paiement non reçu";
+      const motif = motifSelect ? motifSelect.value : "Problème de compte";
       const details = detailsInput ? detailsInput.value.trim() : "";
       const texteLitige = details ? `${motif} (${details})` : motif;
 
-      const txs = getTransactions();
-      const tx = txs.find(t => t.id === currentModalTxId);
-      if (!tx) {
+      db.collection("demandes").doc(currentModalTxId).update({
+        statut: 'litige',
+        motifLitige: texteLitige,
+        dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
         fermerModalLitige();
-        return;
-      }
+        afficherNotification("Litige signalé. La transaction est suspendue.", "🚨");
+        afficherDemandesAcheteur();
+        afficherDemandesVendeur();
+      }).catch(function(err) {
+        alert("Erreur signalement litige : " + err.message);
+      });
+    }
 
-      tx.statut = 'LITIGE';
-      tx.motifLitige = texteLitige;
-      tx.dateMiseAJour = new Date().toISOString();
-      setTransactions(txs);
+    /**
+     * Synchronise le cache des transactions avec Firestore
+     */
+    function synchroniserTransactionsDepuisFirestore() {
+      const user = firebase.auth().currentUser;
+      const profil = getProfilUtilisateur();
+      const monNom = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+      const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
 
-      // Notification dans la discussion
-      const convs = getConversations();
-      const conv = convs.find(c => c.annonceId === tx.annonceId && (c.acheteurNom === tx.acheteur || c.acheteurNom === tx.acheteurNom));
-      if (conv) {
-        conv.statutTransaction = 'LITIGE';
-        conv.messages.push({
-          id: 'msg_' + Date.now(),
-          expediteur: 'Système',
-          destinataire: 'Tous',
-          contenu: `🚨 Transaction passée en LITIGE. Motif : ${texteLitige}. La transaction est temporairement suspendue.`,
-          date: new Date().toISOString(),
-          isSystem: true
-        });
-        setConversations(convs);
-      }
+      const mapDemandeToTx = (d, roleDefaut) => {
+        let dateStr = new Date().toISOString();
+        if (d.dateCreation) {
+          if (typeof d.dateCreation.toDate === 'function') {
+            dateStr = d.dateCreation.toDate().toISOString();
+          } else if (d.dateCreation.seconds) {
+            dateStr = new Date(d.dateCreation.seconds * 1000).toISOString();
+          } else if (typeof d.dateCreation === 'string') {
+            dateStr = d.dateCreation;
+          }
+        }
 
-      fermerModalLitige();
-      afficherNotification("Litige signalé. La transaction est suspendue.", "🚨");
+        let dateMajStr = dateStr;
+        if (d.dateMiseAJour) {
+          if (typeof d.dateMiseAJour.toDate === 'function') {
+            dateMajStr = d.dateMiseAJour.toDate().toISOString();
+          } else if (d.dateMiseAJour.seconds) {
+            dateMajStr = new Date(d.dateMiseAJour.seconds * 1000).toISOString();
+          } else if (typeof d.dateMiseAJour === 'string') {
+            dateMajStr = d.dateMiseAJour;
+          }
+        }
+
+        const estVendeur = (user && d.vendeurId === user.uid) || (roleDefaut === 'vendeur') || d.vendeurNom === monNom || d.vendeurNom === monNomFormate;
+        const estAcheteur = (user && d.acheteurId === user.uid) || (roleDefaut === 'acheteur') || d.acheteurNom === monNom || d.acheteurNom === monNomFormate;
+
+        return {
+          id: d.id,
+          demandeId: d.id,
+          annonceId: d.annonceId,
+          titreAnnonce: d.annonceTitre || "Compte eFootball",
+          prixAnnonce: Number(d.annoncePrix) || 0,
+          imageAnnonce: d.annonceImage || null,
+          plateforme: d.annoncePlateforme || 'Mobile',
+          region: d.annonceRegion || 'Dakar',
+          telephoneWhatsAppVendeur: d.vendeurTelephone || '',
+          telephoneWhatsAppAcheteur: d.acheteurTelephone || '',
+          acheteur: d.acheteurNom || 'Acheteur',
+          acheteurNom: d.acheteurNom || 'Acheteur',
+          acheteurTelephone: d.acheteurTelephone || '',
+          acheteurId: d.acheteurId || '',
+          vendeur: d.vendeurNom || 'Vendeur',
+          vendeurNom: d.vendeurNom || 'Vendeur',
+          vendeurTelephone: d.vendeurTelephone || '',
+          vendeurId: d.vendeurId || '',
+          statut: d.statut || 'en_attente',
+          date: dateStr,
+          dateCreation: dateStr,
+          dateMiseAJour: dateMajStr,
+          estVendeur: estVendeur,
+          estAcheteur: estAcheteur
+        };
+      };
+
+      const txsVendeur = (demandesVendeurCache || []).map(d => mapDemandeToTx(d, 'vendeur'));
+      const txsAcheteur = (demandesAcheteurCache || []).map(d => mapDemandeToTx(d, 'acheteur'));
+
+      const mapUniq = new Map();
+      txsVendeur.forEach(t => mapUniq.set(t.id, t));
+      txsAcheteur.forEach(t => mapUniq.set(t.id, t));
+
+      const txsToutes = Array.from(mapUniq.values());
+      txsToutes.sort(function(a, b) {
+        return new Date(b.dateMiseAJour || b.date).getTime() - new Date(a.dateMiseAJour || a.date).getTime();
+      });
+
+      setTransactions(txsToutes);
       mettreAJourBadgeTransactions();
 
-      if (currentPage === 'transactions') {
-        afficherPageTransactions(currentTransactionsTab);
-      } else if (currentPage === 'detail' && currentDetailAdId === tx.annonceId) {
-        afficherDetailAnnonce(tx.annonceId);
-      } else if (currentPage === 'messages' && activeConversationId) {
-        afficherConversations(activeConversationId);
+      // Mettre à jour la vue détail si l'utilisateur y est actuellement
+      if (currentPage === 'detail' && currentDetailAdId) {
+        const annonces = getAnnonces();
+        const ad = annonces.find(a => a.id === currentDetailAdId);
+        if (ad) {
+          const estMonAnnonce = (user && ad.vendeurId && ad.vendeurId === user.uid) || (ad.vendeur === monNom) || (ad.vendeur === monNomFormate);
+          const maTx = txsToutes.find(t => t.annonceId === ad.id && t.estAcheteur);
+          const txsVendeurAd = txsToutes.filter(t => t.annonceId === ad.id);
+          const tousAvis = getAvis();
+          const monAvis = tousAvis.find(a => (maTx && a.transactionId === maTx.id) || (a.vendeurNom === ad.vendeur && a.acheteurNom === monNom && a.annonceId === ad.id));
+          const trackingEl = document.querySelector('.detail-transaction-card');
+          if (trackingEl && trackingEl.parentElement) {
+            trackingEl.outerHTML = genererCarteTransactionDetail(ad, estMonAnnonce, maTx, txsVendeurAd, monAvis);
+          }
+        }
+      }
+
+      // Si l'onglet toutes est actif, rafraîchir l'affichage
+      if (currentPage === 'transactions' && currentTransactionsTab === 'toutes') {
+        afficherListeDemandes(txsToutes, 'toutes');
       }
     }
 
@@ -6774,57 +6949,39 @@
     }
 
     /**
-     * Affiche l'onglet "Mes Transactions" avec filtrage et stepper interactif
+     * FONCTION COMMUNE D'AFFICHAGE DES DEMANDES (Firestore)
+     * role = "vendeur" | "acheteur" | "toutes"
      */
-    function afficherPageTransactions(filtre = 'toutes') {
-      currentTransactionsTab = filtre;
+    function afficherListeDemandes(demandes, role) {
       const container = document.getElementById('transactions-content-wrapper');
       if (!container) return;
 
+      const user = firebase.auth().currentUser;
       const profil = getProfilUtilisateur();
       const monNom = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
       const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
 
-      const toutesTxs = getTransactions();
-
-      // Identifier le rôle de l'utilisateur pour chaque transaction
-      const txsAvecRole = toutesTxs.map(t => {
-        const estVendeur = (profil && profil.id && t.vendeurId === profil.id) ||
-                           t.vendeur === monNom || t.vendeur === monNomFormate ||
-                           (profil && profil.prenom && t.vendeurPrenom === profil.prenom);
-        const estAcheteur = (profil && profil.id && t.acheteurId === profil.id) ||
-                            t.acheteur === monNom || t.acheteur === monNomFormate ||
-                            t.acheteurNom === monNom;
-        return { ...t, estVendeur, estAcheteur };
-      });
-
       // Calcul des compteurs
-      const countVentes = txsAvecRole.filter(t => t.estVendeur).length;
-      const countAchats = txsAvecRole.filter(t => t.estAcheteur).length;
-      const countTotal = txsAvecRole.length;
+      const countDemandes = (demandesVendeurCache || []).concat(demandesAcheteurCache || [])
+        .filter(d => (d.statut || '').toLowerCase() === 'en_attente' || (d.statut || '').toLowerCase() === 'demande_envoyee').length;
+      const countEnCours = (demandesVendeurCache || []).concat(demandesAcheteurCache || [])
+        .filter(d => (d.statut || '').toLowerCase() === 'acceptee' || (d.statut || '').toLowerCase() === 'livraison_confirmee').length;
+      const countTerminees = (demandesVendeurCache || []).concat(demandesAcheteurCache || [])
+        .filter(d => (d.statut || '').toLowerCase() === 'terminee').length;
 
-      const countDemandes = txsAvecRole.filter(t => (t.estVendeur && t.statut === 'DEMANDE_ENVOYEE') || (t.estAcheteur && t.statut === 'DEMANDE_ENVOYEE')).length;
-      const countEnCours = txsAvecRole.filter(t => t.statut === 'ACCEPTEE' || t.statut === 'LIVRAISON_CONFIRMEE').length;
-      const countTerminees = txsAvecRole.filter(t => t.statut === 'TERMINEE').length;
+      const countVentes = (demandesVendeurCache || []).length;
+      const countAchats = (demandesAcheteurCache || []).length;
+      const countTotal = getTransactions().length;
 
-      // Filtrer la liste selon l'onglet
-      let txsFiltrees = txsAvecRole;
-      if (filtre === 'ventes') {
-        txsFiltrees = txsAvecRole.filter(t => t.estVendeur);
-      } else if (filtre === 'achats') {
-        txsFiltrees = txsAvecRole.filter(t => t.estAcheteur);
-      }
-
-      // Génération du HTML
       let html = `
         <div class="transactions-hero">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
               <h2 style="font-size: 20px; font-weight: 800; color: var(--text-white); margin-bottom: 4px;">
-                🤝 Mes Transactions Sécurisées
+                🤝 Demandes d'Achat & Transactions Partagées
               </h2>
               <p style="font-size: 13px; color: var(--text-gray); line-height: 1.4;">
-                Système à double confirmation : achetez et vendez vos comptes eFootball au Sénégal sans risque de vol ou d'annulation abusive.
+                Connecté en temps réel avec Firebase Firestore : acheteurs et vendeurs partagent chaque demande instantanément.
               </p>
             </div>
             <button type="button" class="btn-publish-header" onclick="changerPage('accueil')">
@@ -6849,29 +7006,29 @@
         </div>
 
         <div class="tx-filter-tabs">
-          <button type="button" class="tx-filter-btn ${filtre === 'toutes' ? 'active' : ''}" onclick="afficherPageTransactions('toutes')">
+          <button type="button" class="tx-filter-btn ${currentTransactionsTab === 'toutes' ? 'active' : ''}" onclick="afficherPageTransactions('toutes')">
             📋 Toutes (${countTotal})
           </button>
-          <button type="button" class="tx-filter-btn ${filtre === 'ventes' ? 'active' : ''}" onclick="afficherPageTransactions('ventes')">
+          <button type="button" class="tx-filter-btn ${currentTransactionsTab === 'ventes' ? 'active' : ''}" onclick="afficherPageTransactions('ventes')">
             📥 Mes Ventes / Demandes reçues (${countVentes})
           </button>
-          <button type="button" class="tx-filter-btn ${filtre === 'achats' ? 'active' : ''}" onclick="afficherPageTransactions('achats')">
+          <button type="button" class="tx-filter-btn ${currentTransactionsTab === 'achats' ? 'active' : ''}" onclick="afficherPageTransactions('achats')">
             📤 Mes Achats / Demandes envoyées (${countAchats})
           </button>
         </div>
       `;
 
-      if (txsFiltrees.length === 0) {
+      if (!demandes || demandes.length === 0) {
         html += `
           <div class="empty-state-box" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 40px 20px; text-align: center;">
             <div style="font-size: 48px; margin-bottom: 12px;">🤝</div>
             <h3 style="font-size: 16px; font-weight: 700; color: var(--text-white); margin-bottom: 6px;">
-              Aucune transaction dans cette section
+              Aucune demande dans cette section
             </h3>
             <p style="font-size: 13px; color: var(--text-gray); max-width: 440px; margin: 0 auto 18px;">
-              ${filtre === 'ventes' ? 'Vous n\'avez pas encore reçu de demande d\'achat pour vos annonces.' : 
-                (filtre === 'achats' ? 'Vous n\'avez pas encore demandé à acheter de compte eFootball.' : 
-                'Vos demandes d\'achat et vos ventes apparaîtront ici avec le suivi sécurisé.')}
+              ${role === 'vendeur' ? 'Vous n\'avez pas encore reçu de demande d\'achat pour vos annonces.' : 
+                (role === 'acheteur' ? 'Vous n\'avez pas encore formulé de demande d\'achat pour un compte eFootball.' : 
+                'Vos demandes d\'achat partagées apparaîtront ici dès leur création.')}
             </p>
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
               <button class="btn-primary" onclick="changerPage('accueil')">
@@ -6886,154 +7043,192 @@
       } else {
         html += `<div class="tx-list">`;
 
-        txsFiltrees.forEach(t => {
-          const stepperHtml = formaterStepperHtml(t.statut);
-          const libelleStatut = getLibelleStatut(t.statut);
-          const dateTexte = t.dateMiseAJour ? formaterDate(t.dateMiseAJour) : formaterDate(t.date);
+        demandes.forEach(d => {
+          const st = (d.statut || 'en_attente').toLowerCase();
+          const stepperHtml = formaterStepperHtml(st);
+          const libelleStatut = getLibelleStatut(st);
 
-          // Rôle de l'utilisateur
-          const estVendeur = t.estVendeur;
-          const roleLabel = estVendeur ? 
+          let dateStr = "";
+          if (d.dateCreation) {
+            if (typeof d.dateCreation.toDate === 'function') {
+              dateStr = formaterDate(d.dateCreation.toDate().toISOString());
+            } else if (d.dateCreation.seconds) {
+              dateStr = formaterDate(new Date(d.dateCreation.seconds * 1000).toISOString());
+            } else if (typeof d.dateCreation === 'string') {
+              dateStr = formaterDate(d.dateCreation);
+            }
+          } else if (d.date) {
+            dateStr = formaterDate(d.date);
+          }
+
+          // Déterminer le rôle effectif pour l'affichage de cet item
+          const estVendeurEffectif = (role === 'vendeur') || 
+            (user && d.vendeurId && d.vendeurId === user.uid) || 
+            (d.vendeurNom && (d.vendeurNom === monNom || d.vendeurNom === monNomFormate));
+
+          const roleLabel = estVendeurEffectif ? 
             `<span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.15); border: 1px solid rgba(33, 150, 243, 0.3);">Vendeur</span>` : 
             `<span class="badge-pill" style="color: #00E676; background: rgba(0, 200, 83, 0.15); border: 1px solid rgba(0, 200, 83, 0.3);">Acheteur</span>`;
 
-          const interlocuteurTexte = estVendeur ? `Acheteur : <strong>${escapeHtml(t.acheteur)}</strong>` : `Vendeur : <strong>${escapeHtml(t.vendeur)}</strong>`;
+          const interlocuteurTexte = estVendeurEffectif ? 
+            `Acheteur : <strong>${escapeHtml(d.acheteurNom || d.acheteur || 'Acheteur')}</strong>` : 
+            `Vendeur : <strong>${escapeHtml(d.vendeurNom || d.vendeur || 'Vendeur')}</strong>`;
+
+          const titre = d.annonceTitre || d.titreAnnonce || "Compte eFootball";
+          const prix = Number(d.annoncePrix || d.prixAnnonce) || 0;
+          const imgUrl = d.annonceImage || d.imageAnnonce || null;
+          const plateforme = d.annoncePlateforme || d.plateforme || 'Mobile';
+          const region = d.annonceRegion || d.region || 'Dakar';
 
           // Image miniature
-          const thumbHtml = t.imageAnnonce ? 
-            `<img src="${t.imageAnnonce}" alt="${escapeHtml(t.titreAnnonce)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">` : 
+          const thumbHtml = imgUrl ? 
+            `<img src="${imgUrl}" alt="${escapeHtml(titre)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">` : 
             `<div style="width: 70px; height: 70px; background: #242424; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 26px; border: 1px solid var(--border-color);">⚽</div>`;
 
           // WhatsApp link
-          const waNum = t.telephoneWhatsAppVendeur || "";
-          const msgWa = encodeURIComponent(`Bonjour, je vous contacte sur EFoot Market SN à propos de la transaction sécurisée pour "${t.titreAnnonce}".`);
+          const waNum = estVendeurEffectif ? (d.acheteurTelephone || "") : (d.vendeurTelephone || d.telephoneWhatsAppVendeur || "");
+          const msgWa = encodeURIComponent(`Bonjour, je vous contacte sur EFoot Market SN à propos de la transaction pour "${titre}".`);
           const waLink = waNum ? `https://wa.me/${waNum}?text=${msgWa}` : null;
 
           // Boîte d'actions contextuelles
           let actionBoxHtml = '';
 
-          if (estVendeur) {
-            // Actions vendeur
-            if (t.statut === 'DEMANDE_ENVOYEE') {
+          if (estVendeurEffectif) {
+            // Vue Vendeur
+            if (st === 'en_attente' || st === 'demande_envoyee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-demande">
                   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">📥 Demande d'achat en attente de votre réponse</div>
+                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">📥 Demande d'achat en attente de votre décision</div>
                       <div style="font-size: 12px; color: #fff; margin-top: 2px;">
-                        ${escapeHtml(t.acheteur)} propose d'acheter pour <strong>${formaterPrix(t.prixAnnonce)}</strong>.
+                        ${escapeHtml(d.acheteurNom || d.acheteur || 'Un joueur')} souhaite acquérir ce compte pour <strong>${formaterPrix(prix)}</strong>.
                       </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                      <button type="button" class="btn-danger" style="padding: 7px 14px; font-size: 12px;" onclick="demanderRefusDemandeVendeur('${t.id}')">
+                      <button type="button" class="btn-danger" style="padding: 7px 14px; font-size: 12px;" onclick="repondreDemande('${d.id}', 'refusee')">
                         ❌ Refuser
                       </button>
-                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 7px 16px; font-size: 12px;" onclick="demanderAcceptationVendeur('${t.id}')">
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 7px 16px; font-size: 12px;" onclick="repondreDemande('${d.id}', 'acceptee')">
                         ✅ Accepter la vente
                       </button>
                     </div>
                   </div>
                 </div>
               `;
-            } else if (t.statut === 'ACCEPTEE') {
+            } else if (st === 'acceptee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-acceptee">
-                  <div style="font-weight: 700; color: #60a5fa; font-size: 13px;">🔵 Vente acceptée • En attente de vérification par l'acheteur</div>
-                  <div style="font-size: 12px; color: #ccc; margin-top: 3px;">
-                    Transmettez le Konami ID et mot de passe à ${escapeHtml(t.acheteur)}. Dès qu'il aura vérifié, il confirmera la réception.
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #60a5fa; font-size: 13px;">🔵 Vente acceptée • Compte réservé</div>
+                      <div style="font-size: 12px; color: #ccc; margin-top: 2px;">
+                        Transmettez les identifiants Konami ID à l'acheteur. Une fois le paiement vérifié, marquez la vente comme terminée.
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 7px 14px; font-size: 12px;" onclick="marquerCommeVendue('${d.id}')">
+                        🎉 Marquer comme vendue
+                      </button>
+                      <button type="button" class="btn-danger" style="padding: 7px 12px; font-size: 12px;" onclick="ouvrirModalLitige('${d.id}')">
+                        🚨 Litige
+                      </button>
+                    </div>
                   </div>
                 </div>
               `;
-            } else if (t.statut === 'LIVRAISON_CONFIRMEE') {
+            } else if (st === 'livraison_confirmee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-livraison">
                   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                      <div style="font-weight: 700; color: #fb923c; font-size: 13.5px;">✅ L'acheteur a confirmé avoir reçu le compte !</div>
+                      <div style="font-weight: 700; color: #fb923c; font-size: 13.5px;">📦 L'acheteur a confirmé la bonne réception !</div>
                       <div style="font-size: 12px; color: #fff; margin-top: 2px;">
-                        Vérifiez votre paiement Wave / OM puis finalisez la vente définitive.
+                        Vérifiez votre paiement Wave / OM et clôturez la vente définitivement.
                       </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12.5px;" onclick="ouvrirModalTerminerTransaction('${t.id}')">
-                        ✅ Marquer comme terminée
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12.5px;" onclick="marquerCommeVendue('${d.id}')">
+                        🎉 Marquer comme vendue
                       </button>
-                      <button type="button" class="btn-danger" style="padding: 8px 12px; font-size: 12px;" onclick="ouvrirModalLitige('${t.id}')">
-                        🚨 Signaler un problème
+                      <button type="button" class="btn-danger" style="padding: 8px 12px; font-size: 12px;" onclick="ouvrirModalLitige('${d.id}')">
+                        🚨 Problème
                       </button>
                     </div>
                   </div>
                 </div>
               `;
-            } else if (t.statut === 'TERMINEE') {
+            } else if (st === 'terminee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-terminee">
-                  <div style="font-weight: 700; color: #34d399; font-size: 13px;">🟢 Vente terminée et clôturée</div>
-                  <div style="font-size: 12px; color: var(--text-gray); margin-top: 2px;">L'annonce est marquée comme VENDU.</div>
+                  <div style="font-weight: 700; color: #34d399; font-size: 13px;">🟢 Vente terminée avec succès</div>
+                  <div style="font-size: 12px; color: var(--text-gray); margin-top: 2px;">L'annonce a été marquée définitivement comme VENDU.</div>
                 </div>
               `;
-            } else if (t.statut === 'REFUSEE') {
+            } else if (st === 'refusee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-litige">
                   <div style="font-weight: 600; color: #f87171; font-size: 12.5px;">🔴 Demande d'achat refusée</div>
                 </div>
               `;
-            } else if (t.statut === 'LITIGE') {
+            } else if (st === 'litige') {
               actionBoxHtml = `
                 <div class="tx-action-box box-litige">
-                  <div style="font-weight: 700; color: #ef4444; font-size: 13px;">🚨 Litige : ${escapeHtml(t.motifLitige || 'Signalé')}</div>
+                  <div style="font-weight: 700; color: #ef4444; font-size: 13px;">🚨 Litige : ${escapeHtml(d.motifLitige || 'Signalé')}</div>
                 </div>
               `;
             }
           } else {
-            // Actions acheteur
-            if (t.statut === 'DEMANDE_ENVOYEE') {
+            // Vue Acheteur
+            if (st === 'en_attente' || st === 'demande_envoyee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-demande">
                   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">⏳ En attente que le vendeur accepte votre demande</div>
-                      <div style="font-size: 12px; color: #bbb; margin-top: 2px;">Le vendeur doit valider votre demande d'achat.</div>
+                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">⏳ En attente de la réponse du vendeur...</div>
+                      <div style="font-size: 12px; color: #bbb; margin-top: 2px;">Le vendeur a reçu votre demande d'achat dans son tableau de bord.</div>
                     </div>
-                    <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemandeAchat('${t.id}')">
-                      Annuler la demande
+                    <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemande('${d.id}')">
+                      Annuler ma demande
                     </button>
                   </div>
                 </div>
               `;
-            } else if (t.statut === 'ACCEPTEE') {
+            } else if (st === 'acceptee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-acceptee">
                   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
                       <div style="font-weight: 700; color: #60a5fa; font-size: 13.5px;">🎉 Le vendeur a accepté votre demande !</div>
                       <div style="font-size: 12px; color: #fff; margin-top: 2px;">
-                        Avez-vous bien reçu les identifiants Konami ID et vérifié le compte eFootball ?
+                        Contactez le vendeur sur WhatsApp pour recevoir vos identifiants Konami ID, puis confirmez la réception.
                       </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12.5px;" onclick="demanderConfirmationLivraison('${t.id}')">
-                        📦 Oui, j'ai reçu le compte
-                      </button>
-                      <button type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="rappelerAttenteLivraison('${t.id}')">
-                        Non, pas encore
+                      ${waLink ? `
+                        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #25D366; color: #fff; font-weight: 700; padding: 8px 14px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                          <span>💬 WhatsApp</span>
+                        </a>
+                      ` : ''}
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12px;" onclick="confirmerReceptionCompte('${d.id}')">
+                        📦 Confirmer réception
                       </button>
                     </div>
                   </div>
                 </div>
               `;
-            } else if (t.statut === 'LIVRAISON_CONFIRMEE') {
+            } else if (st === 'livraison_confirmee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-livraison">
                   <div style="font-weight: 700; color: #fb923c; font-size: 13px;">📦 Réception confirmée par vos soins</div>
                   <div style="font-size: 12px; color: #ccc; margin-top: 2px;">
-                    Le vendeur vérifie la réception de son paiement Wave/OM pour clore la transaction.
+                    Le vendeur valide son paiement pour clôturer la transaction.
                   </div>
                 </div>
               `;
-            } else if (t.statut === 'TERMINEE') {
+            } else if (st === 'terminee') {
               const tousAvis = getAvis();
-              const monAvis = tousAvis.find(a => a.transactionId === t.id || (a.vendeurNom === t.vendeur && a.acheteurNom === monNom && a.annonceId === t.annonceId));
+              const monAvis = tousAvis.find(a => (d.id && a.transactionId === d.id) || (a.vendeurNom === d.vendeurNom && a.acheteurNom === monNom && a.annonceId === d.annonceId));
 
               actionBoxHtml = `
                 <div class="tx-action-box box-terminee">
@@ -7044,22 +7239,22 @@
                         ${monAvis ? `Vous avez noté ce vendeur ${monAvis.note}/5 ★ : « ${escapeHtml(monAvis.commentaire)} »` : 'Vous pouvez évaluer votre expérience avec ce vendeur.'}
                       </div>
                     </div>
-                    <button type="button" class="btn-tx-review" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirModalAvisPourAnnonce('${t.annonceId}')">
+                    <button type="button" class="btn-tx-review" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirModalAvisPourAnnonce('${d.annonceId}')">
                       ${monAvis ? '✏️ Modifier mon avis' : '⭐ Laisser un avis'}
                     </button>
                   </div>
                 </div>
               `;
-            } else if (t.statut === 'REFUSEE') {
+            } else if (st === 'refusee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-litige">
                   <div style="font-weight: 600; color: #f87171; font-size: 12.5px;">🔴 Demande d'achat refusée par le vendeur</div>
                 </div>
               `;
-            } else if (t.statut === 'LITIGE') {
+            } else if (st === 'litige') {
               actionBoxHtml = `
                 <div class="tx-action-box box-litige">
-                  <div style="font-weight: 700; color: #ef4444; font-size: 13px;">🚨 Litige : ${escapeHtml(t.motifLitige || 'Signalé')}</div>
+                  <div style="font-weight: 700; color: #ef4444; font-size: 13px;">🚨 Litige : ${escapeHtml(d.motifLitige || 'Signalé')}</div>
                 </div>
               `;
             }
@@ -7069,27 +7264,27 @@
             <div class="tx-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="tx-status-badge ${t.statut}">
+                  <span class="tx-status-badge ${st}">
                     ${libelleStatut}
                   </span>
                   ${roleLabel}
                 </div>
                 <div style="font-size: 11.5px; color: var(--text-muted);">
-                  ${dateTexte}
+                  ${dateStr}
                 </div>
               </div>
 
               <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
                 ${thumbHtml}
                 <div style="flex: 1; min-width: 200px;">
-                  <div style="font-weight: 700; font-size: 15px; color: var(--text-white); margin-bottom: 4px; cursor: pointer;" onclick="changerPage('detail', { annonceId: '${t.annonceId}' })" title="Voir l'annonce">
-                    ${escapeHtml(t.titreAnnonce)}
+                  <div style="font-weight: 700; font-size: 15px; color: var(--text-white); margin-bottom: 4px; cursor: pointer;" onclick="changerPage('detail', { annonceId: '${d.annonceId}' })" title="Voir l'annonce">
+                    ${escapeHtml(titre)}
                   </div>
                   <div style="font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">
-                    ${formaterPrix(t.prixAnnonce)}
+                    ${formaterPrix(prix)}
                   </div>
                   <div style="font-size: 12px; color: var(--text-gray);">
-                    ${interlocuteurTexte} • 🎮 ${escapeHtml(t.plateforme || 'Mobile')} • 📍 ${escapeHtml(t.region || 'Dakar')}
+                    ${interlocuteurTexte} • 🎮 ${escapeHtml(plateforme)} • 📍 ${escapeHtml(region)}
                   </div>
                 </div>
 
@@ -7099,10 +7294,10 @@
                       <span>💬 WhatsApp</span>
                     </a>
                   ` : ''}
-                  <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="initierDiscussion('${t.annonceId}')" title="Messagerie interne">
+                  <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="initierDiscussion('${d.annonceId}')" title="Messagerie interne">
                     <span>✉️ Chat</span>
                   </button>
-                  <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="changerPage('detail', { annonceId: '${t.annonceId}' })" title="Détails de l'annonce">
+                  <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="changerPage('detail', { annonceId: '${d.annonceId}' })" title="Détails de l'annonce">
                     <span>👁️ Annonce</span>
                   </button>
                 </div>
@@ -7119,6 +7314,27 @@
 
       container.innerHTML = html;
       mettreAJourBadgeTransactions();
+    }
+
+    /**
+     * Affiche l'onglet "Mes Transactions" avec synchronisation Firestore
+     */
+    function afficherPageTransactions(filtre = 'toutes') {
+      currentTransactionsTab = filtre;
+
+      // Déclencher les écoutes Firestore si connectés
+      demarrerEcouteDemandesFirestore();
+
+      if (filtre === 'ventes') {
+        afficherDemandesVendeur();
+        afficherListeDemandes(demandesVendeurCache, 'vendeur');
+      } else if (filtre === 'achats') {
+        afficherDemandesAcheteur();
+        afficherListeDemandes(demandesAcheteurCache, 'acheteur');
+      } else {
+        const txsToutes = getTransactions();
+        afficherListeDemandes(txsToutes, 'toutes');
+      }
     }
 
     /**
