@@ -14,6 +14,7 @@
   <!-- Scripts Firebase SDK Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -3678,6 +3679,9 @@
     // Initialisation de Firebase
     firebase.initializeApp(firebaseConfig);
 
+    // Initialisation de Firestore
+    const db = firebase.firestore();
+
     /**
      * 2. CONNEXION ANONYME
      */
@@ -4188,11 +4192,20 @@
     }
 
     /**
-     * Formate une date ISO en chaîne lisible au format sénégalais/français
+     * Formate une date ISO ou Timestamp Firestore en chaîne lisible au format sénégalais/français
      */
     function formaterDate(isoStr) {
-      if (!isoStr) return "";
+      if (!isoStr) return "Aujourd'hui";
+      if (typeof isoStr === 'object' && isoStr !== null) {
+        if (typeof isoStr.toDate === 'function') {
+          return isoStr.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        if (isoStr.seconds) {
+          return new Date(isoStr.seconds * 1000).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+      }
       const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return "Aujourd'hui";
       return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
@@ -4741,42 +4754,24 @@
     }
 
     /* ==========================================================
-       SECTION 5 : GESTION DES ANNONCES (CRUD & FILTRES)
+       SECTION 5 : GESTION DES ANNONCES (FIRESTORE EN TEMPS RÉEL)
        ========================================================== */
 
+    // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
+    let annoncesFirestore = [];
+
     /**
-     * Récupère la liste brute des annonces depuis localStorage
+     * Récupère la liste des annonces synchronisées depuis Firestore
      */
     function getAnnonces() {
-      try {
-        const raw = localStorage.getItem(STORAGE_ANNONCES);
-        const liste = raw ? JSON.parse(raw) : [];
-        let modifie = false;
-        const mapped = liste.map(item => {
-          if (!item.region) {
-            modifie = true;
-            if (item.id === 'efoot_demo_1') item.region = 'Dakar';
-            else if (item.id === 'efoot_demo_2') item.region = 'Thiès';
-            else if (item.id === 'efoot_demo_3') item.region = 'Saint-Louis';
-            else item.region = 'Dakar';
-          }
-          return item;
-        });
-        if (modifie) {
-          localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(mapped));
-        }
-        return mapped;
-      } catch (e) {
-        console.error("Erreur de lecture des annonces", e);
-        return [];
-      }
+      return annoncesFirestore;
     }
 
     /**
-     * Sauvegarde la liste complète des annonces dans localStorage
+     * Met à jour le cache mémoire des annonces
      */
     function setAnnonces(liste) {
-      localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(liste));
+      annoncesFirestore = liste;
     }
 
     /**
@@ -4961,19 +4956,23 @@
         resultats.sort((a, b) => b.prix - a.prix);
       } else {
         // Par date décroissante (plus récent d'abord)
-        resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
+        resultats.sort((a, b) => {
+          const timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.date || 0).getTime();
+          const timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.date || 0).getTime();
+          return timeB - timeA;
+        });
       }
 
-      afficherAnnonces(resultats);
+      afficherCartes(resultats);
     }
 
     /**
      * Génère le rendu HTML des cartes dans la grille d'accueil
      */
-    function afficherAnnonces(liste) {
+    function afficherCartes(liste) {
       const container = document.getElementById('products-grid-container');
       const counter = document.getElementById('ads-counter');
-      if (counter) counter.textContent = liste.length;
+      if (counter) counter.textContent = liste ? liste.length : 0;
 
       // Si aucune annonce ne correspond
       if (!liste || liste.length === 0) {
@@ -5024,9 +5023,9 @@
               <div class="card-location-row" style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin: 6px 0 8px 0;">
                 <span style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-gray); font-weight: 500;">
                   <span>📍</span>
-                  <span>${ad.region || 'Sénégal'}</span>
+                  <span>${ad.region || ad.localisation || 'Sénégal'}</span>
                 </span>
-                <span style="font-size: 11px;">Publié le ${formaterDate(ad.date)}</span>
+                <span style="font-size: 11px;">Publié le ${formaterDate(ad.datePublication || ad.date)}</span>
               </div>
               <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')" style="cursor: pointer;" title="Voir le profil et les avis de ${ad.vendeur}">
                 <div class="card-seller-info">
@@ -5044,6 +5043,162 @@
           </article>
         `;
       }).join('');
+    }
+
+    /**
+     * 2. AFFICHER LES ANNONCES (temps réel avec Firebase Firestore)
+     */
+    let firestoreUnsubscribeAnnonces = null;
+
+    function afficherAnnonces(arg) {
+      // Si une liste filtrée est passée directement en paramètre
+      if (Array.isArray(arg)) {
+        afficherCartes(arg);
+        return;
+      }
+
+      if (firestoreUnsubscribeAnnonces) {
+        return;
+      }
+
+      try {
+        firestoreUnsubscribeAnnonces = db.collection("annonces")
+          .where("statut", "==", "active")
+          .orderBy("datePublication", "desc")
+          .onSnapshot(function(snapshot) {
+            var annonces = [];
+            snapshot.forEach(function(doc) {
+              annonces.push({ id: doc.id, ...doc.data() });
+            });
+
+            annoncesFirestore = annonces;
+
+            // Seeding initial si la collection Firestore est vide
+            if (annonces.length === 0 && !localStorage.getItem('efoot_firestore_seeded')) {
+              initialiserAnnoncesInitialesFirestore();
+              return;
+            }
+
+            // Rafraîchir l'affichage en temps réel
+            if (currentPage === 'accueil') {
+              appliquerFiltres();
+            } else if (currentPage === 'mes-annonces') {
+              afficherMesAnnonces();
+            } else if (currentPage === 'detail' && currentDetailAdId) {
+              afficherDetailAnnonce(currentDetailAdId);
+            }
+            verifierLienPartageUrl();
+          }, function(error) {
+            console.warn("Firestore snapshot avec orderBy nécessite un index ou a échoué, repli sans orderBy :", error);
+            // Repli automatique sans clause orderBy
+            db.collection("annonces")
+              .where("statut", "==", "active")
+              .onSnapshot(function(snapshot) {
+                var annonces = [];
+                snapshot.forEach(function(doc) {
+                  annonces.push({ id: doc.id, ...doc.data() });
+                });
+                annonces.sort(function(a, b) {
+                  const timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.date || 0).getTime();
+                  const timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.date || 0).getTime();
+                  return timeB - timeA;
+                });
+                annoncesFirestore = annonces;
+                if (currentPage === 'accueil') {
+                  appliquerFiltres();
+                } else if (currentPage === 'mes-annonces') {
+                  afficherMesAnnonces();
+                }
+              }, function(err2) {
+                console.error("Erreur critique écoute Firestore :", err2);
+              });
+          });
+      } catch (e) {
+        console.error("Erreur initialisation Firestore :", e);
+      }
+    }
+
+    /**
+     * Initialise les annonces de démonstration dans Firestore si la base est vide
+     */
+    function initialiserAnnoncesInitialesFirestore() {
+      if (localStorage.getItem('efoot_firestore_seeded')) return;
+      localStorage.setItem('efoot_firestore_seeded', 'true');
+
+      const exemples = [
+        {
+          titre: "Compte Mobile Légendes & Big Time 103 OVR",
+          description: "Équipe complète avec Messi Big Time 103, Neymar Showtime, Mbappé booster, Vieira et Ronaldinho. 2800 pièces eFootball et 3.5M GP disponibles.",
+          prix: 35000,
+          plateforme: "Mobile",
+          region: "Dakar",
+          localisation: "Dakar",
+          typeCompte: "Big Time & Epics",
+          puissance: "3100 - 3300",
+          whatsapp: "221778901234",
+          telephoneWhatsApp: "221778901234",
+          image: null,
+          vendeur: "Sadio_Efoot",
+          vendeurPrenom: "Sadio",
+          vendeurNom: "Mané",
+          vendeurId: "usr_demo_1",
+          note: 4.9,
+          verifie: true,
+          date: new Date(Date.now() - 3600000 * 4).toISOString(),
+          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
+          statut: "active"
+        },
+        {
+          titre: "Compte PS5 Full Epics & Show Time",
+          description: "Effectif premium avec Rummenigge, Cruyff, Gullit et Maldini maxés. Idéal pour Division 1 compétitive.",
+          prix: 50000,
+          plateforme: "PS5",
+          region: "Thiès",
+          localisation: "Thiès",
+          typeCompte: "Full Epics",
+          puissance: "Plus de 3300",
+          whatsapp: "221781234567",
+          telephoneWhatsApp: "221781234567",
+          image: null,
+          vendeur: "DakarGamer221",
+          vendeurPrenom: "Cheikh",
+          vendeurNom: "Seck",
+          vendeurId: "usr_demo_2",
+          note: 5.0,
+          verifie: true,
+          date: new Date(Date.now() - 3600000 * 24).toISOString(),
+          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
+          statut: "active"
+        },
+        {
+          titre: "Compte Starter Mobile Division 2",
+          description: "Très bon compte pour débuter avec plusieurs joueurs phares et managers de haut niveau. Transfert rapide Konami ID.",
+          prix: 18000,
+          plateforme: "Mobile",
+          region: "Saint-Louis",
+          localisation: "Saint-Louis",
+          typeCompte: "Division 2",
+          puissance: "2700 - 2900",
+          whatsapp: "221762345678",
+          telephoneWhatsApp: "221762345678",
+          image: null,
+          vendeur: "Modou_Pro",
+          vendeurPrenom: "Modou",
+          vendeurNom: "Fall",
+          vendeurId: "usr_demo_3",
+          note: 4.8,
+          verifie: false,
+          date: new Date(Date.now() - 3600000 * 48).toISOString(),
+          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
+          statut: "active"
+        }
+      ];
+
+      exemples.forEach(function(ad) {
+        db.collection("annonces").add(ad).catch(function(e) {
+          console.warn("Seeding initial Firestore", e);
+        });
+      });
     }
 
     /* ==========================================================
@@ -5172,11 +5327,50 @@
     }
 
     /**
-     * Enregistre l'annonce dans le localStorage et redirige vers l'accueil
+     * 1. PUBLIER UNE ANNONCE (Firestore)
+     * Compatible avec un objet annonce direct ou un événement formulaire
      */
-    function publierAnnonce(event) {
-      event.preventDefault();
+    function publierAnnonce(arg) {
+      if (arg && typeof arg.preventDefault === 'function') {
+        arg.preventDefault();
+      }
 
+      // Si un objet annonce complet est passé directement (signature du prompt)
+      if (arg && typeof arg === 'object' && typeof arg.preventDefault !== 'function') {
+        // Ajouter dans Firestore
+        db.collection("annonces").add({
+          titre: arg.titre,
+          description: arg.description,
+          prix: Number(arg.prix),
+          plateforme: arg.plateforme,
+          typeCompte: arg.typeCompte || "Standard",
+          puissance: arg.puissance || "",
+          whatsapp: arg.whatsapp || arg.telephoneWhatsApp || "",
+          telephoneWhatsApp: arg.telephoneWhatsApp || arg.whatsapp || "",
+          vendeur: arg.vendeur,
+          vendeurPrenom: arg.vendeurPrenom || "",
+          vendeurNom: arg.vendeurNom || "",
+          vendeurId: arg.vendeurId || "",
+          localisation: arg.localisation || arg.region || "Dakar",
+          region: arg.region || arg.localisation || "Dakar",
+          image: arg.image || null,
+          note: arg.note !== undefined ? arg.note : 5.0,
+          verifie: Boolean(arg.verifie),
+          date: arg.date || new Date().toISOString(),
+          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
+          statut: "active"
+        })
+        .then(function(docRef) {
+          console.log("Annonce publiée : " + docRef.id);
+          afficherAccueil();
+        })
+        .catch(function(error) {
+          alert("Erreur : " + error.message);
+        });
+        return;
+      }
+
+      // Soumission via le formulaire de publication UI
       if (!validerChamp()) {
         const errImg = document.getElementById('err-pub-image');
         const dropzone = document.getElementById('pub-image-dropzone');
@@ -5211,48 +5405,78 @@
         // Nom du vendeur = Prénom + Initiale du nom (ex: "Cheikh S.")
         const nomVendeurFormate = formaterNomAffichage(profil.prenom, profil.nom);
         const aTelephone = Boolean(telephone && validerTelephoneSenegal(telephone));
+        const currentUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
 
-        const nouvelleAnnonce = {
-          id: 'efoot_' + Date.now(),
+        const submitBtn = document.getElementById('btn-submit-publish');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `<span>⏳ Publication en cours...</span>`;
+        }
+
+        // Ajouter dans Firestore
+        db.collection("annonces").add({
           titre: titre,
           description: description,
           prix: prix,
           plateforme: plateforme,
-          region: region,
+          typeCompte: plateforme === 'Mobile' ? 'Mobile' : (plateforme.includes('PS') ? 'Console' : 'Standard'),
           puissance: puissance,
+          whatsapp: telephone,
           telephoneWhatsApp: telephone,
-          image: uploadedImageBase64 || null,
           vendeur: nomVendeurFormate,
-          vendeurPrenom: profil.prenom,
-          vendeurNom: profil.nom,
-          vendeurId: profil.id,
+          vendeurPrenom: profil.prenom || '',
+          vendeurNom: profil.nom || '',
+          vendeurId: (currentUser && currentUser.uid) || profil.id || 'usr_' + Date.now(),
+          localisation: region,
+          region: region,
+          image: uploadedImageBase64 || null,
           note: 5.0,
-          verifie: aTelephone, // Badge vérifié si téléphone renseigné
-          date: new Date().toISOString()
-        };
+          verifie: aTelephone,
+          date: new Date().toISOString(),
+          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
+          statut: "active"
+        })
+        .then(function(docRef) {
+          console.log("Annonce publiée : " + docRef.id);
+          afficherNotification("Compte eFootball publié avec succès !", "🚀");
 
-        const liste = getAnnonces();
-        liste.unshift(nouvelleAnnonce);
-        setAnnonces(liste);
+          // Réinitialiser le formulaire
+          const form = document.getElementById('publish-ad-form');
+          if (form) form.reset();
+          const customWrap = document.getElementById('pub-power-custom-wrap');
+          if (customWrap) customWrap.style.display = 'none';
+          supprimerImageApercu();
+          const dropzone = document.getElementById('pub-image-dropzone');
+          if (dropzone) dropzone.classList.remove('invalid');
+          const errImg = document.getElementById('err-pub-image');
+          if (errImg) errImg.classList.remove('visible');
+          const errReg = document.getElementById('err-pub-region');
+          if (errReg) errReg.classList.remove('visible');
+          const regField = document.getElementById('pub-region');
+          if (regField) regField.classList.remove('invalid');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>➕</span> Publier l'annonce`;
+          }
 
-        // Réinitialiser le formulaire
-        document.getElementById('publish-ad-form').reset();
-        const customWrap = document.getElementById('pub-power-custom-wrap');
-        if (customWrap) customWrap.style.display = 'none';
-        supprimerImageApercu();
-        const dropzone = document.getElementById('pub-image-dropzone');
-        if (dropzone) dropzone.classList.remove('invalid');
-        const errImg = document.getElementById('err-pub-image');
-        if (errImg) errImg.classList.remove('visible');
-        const errReg = document.getElementById('err-pub-region');
-        if (errReg) errReg.classList.remove('visible');
-        const regField = document.getElementById('pub-region');
-        if (regField) regField.classList.remove('invalid');
-        document.getElementById('btn-submit-publish').disabled = true;
-
-        afficherNotification("Compte eFootball publié avec succès !", "🚀");
-        changerPage('accueil');
+          afficherAccueil();
+        })
+        .catch(function(error) {
+          console.error("Erreur de publication Firestore :", error);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>➕</span> Publier l'annonce`;
+          }
+          alert("Erreur : " + error.message);
+        });
       });
+    }
+
+    /**
+     * Redirige l'utilisateur vers l'accueil de la marketplace
+     */
+    function afficherAccueil() {
+      changerPage('accueil');
     }
 
     /* ==========================================================
@@ -7945,79 +8169,36 @@
     }
 
     /**
-     * Supprime une annonce avec confirmation explicite
+     * 3. SUPPRIMER UNE ANNONCE (Firestore)
+     * Supprime définitivement le document de la collection "annonces"
      */
     function supprimerAnnonce(id) {
       if (!confirm("Êtes-vous sûr de vouloir supprimer définitivement cette annonce ?")) {
         return;
       }
 
-      let annonces = getAnnonces();
-      annonces = annonces.filter(item => item.id !== id);
-      setAnnonces(annonces);
-
-      afficherMesAnnonces();
-      afficherNotification("Annonce supprimée avec succès", "🗑️");
+      db.collection("annonces").doc(id).delete()
+        .then(function() {
+          console.log("Annonce supprimée : " + id);
+          afficherNotification("Annonce supprimée avec succès", "🗑️");
+          if (currentPage === 'detail' && currentDetailAdId === id) {
+            changerPage('accueil');
+          }
+        })
+        .catch(function(error) {
+          console.error("Erreur de suppression Firestore :", error);
+          alert("Erreur : " + error.message);
+        });
     }
 
     /* ==========================================================
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
     document.addEventListener('DOMContentLoaded', () => {
-      // Vérifier et initialiser les clés localStorage nécessaires
-      if (!localStorage.getItem(STORAGE_ANNONCES)) {
-        const exemplesInitiaux = [
-          {
-            id: 'efoot_demo_1',
-            titre: "Compte Mobile Légendes & Big Time 103 OVR",
-            description: "Équipe complète avec Messi Big Time 103, Neymar Showtime, Mbappé booster, Vieira et Ronaldinho. 2800 pièces eFootball et 3.5M GP disponibles.",
-            prix: 35000,
-            plateforme: "Mobile",
-            region: "Dakar",
-            puissance: "3100 - 3300",
-            telephoneWhatsApp: "221778901234",
-            image: null,
-            vendeur: "Sadio_Efoot",
-            vendeurId: "usr_demo_1",
-            note: 4.9,
-            verifie: true,
-            date: new Date(Date.now() - 3600000 * 4).toISOString()
-          },
-          {
-            id: 'efoot_demo_2',
-            titre: "Compte PS5 Full Epics & Show Time",
-            description: "Effectif premium avec Rummenigge, Cruyff, Gullit et Maldini maxés. Idéal pour Division 1 compétitive.",
-            prix: 50000,
-            plateforme: "PS5",
-            region: "Thiès",
-            puissance: "Plus de 3300",
-            telephoneWhatsApp: "221781234567",
-            image: null,
-            vendeur: "DakarGamer221",
-            vendeurId: "usr_demo_2",
-            note: 5.0,
-            verifie: true,
-            date: new Date(Date.now() - 3600000 * 24).toISOString()
-          },
-          {
-            id: 'efoot_demo_3',
-            titre: "Compte Starter Mobile Division 2",
-            description: "Très bon compte pour débuter avec plusieurs joueurs phares et managers de haut niveau. Transfert rapide Konami ID.",
-            prix: 18000,
-            plateforme: "Mobile",
-            region: "Saint-Louis",
-            puissance: "2700 - 2900",
-            telephoneWhatsApp: "221762345678",
-            image: null,
-            vendeur: "Modou_Pro",
-            vendeurId: "usr_demo_3",
-            note: 4.8,
-            verifie: false,
-            date: new Date(Date.now() - 3600000 * 48).toISOString()
-          }
-        ];
-        localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(exemplesInitiaux));
-      }
+      // Démarrer l'écoute temps réel de la collection Firestore "annonces"
+      afficherAnnonces();
+
+      // Initialiser le stockage local pour la messagerie, transactions et avis
       if (!localStorage.getItem(STORAGE_MESSAGES)) {
         localStorage.setItem(STORAGE_MESSAGES, JSON.stringify([]));
       }
