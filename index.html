@@ -3837,9 +3837,13 @@
         }
         mettreAJourAffichageUtilisateur(user);
         verifierProfilApresConnexion(user);
-        demarrerEcouteDemandesFirestore();
+        if (typeof demarrerEcouteDemandesFirestore === 'function') {
+          demarrerEcouteDemandesFirestore();
+        }
       } else {
-        arreterEcouteDemandesFirestore();
+        if (typeof arreterEcouteDemandesFirestore === 'function') {
+          arreterEcouteDemandesFirestore();
+        }
         afficherEcranConnexion();
       }
     });
@@ -3866,7 +3870,9 @@
       if (popup) {
         popup.style.display = "none";
       }
-      arreterEcouteDemandesFirestore();
+      if (typeof arreterEcouteDemandesFirestore === 'function') {
+        arreterEcouteDemandesFirestore();
+      }
       firebase.auth().signOut()
         .then(function() {
           localStorage.removeItem("efoot_nom");
