@@ -1954,6 +1954,61 @@
       border-color: rgba(239, 68, 68, 0.3);
     }
 
+    /* Page Mes Transactions (Firestore temps réel) */
+    #pageTransactions {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 10px 0 30px;
+    }
+
+    #pageTransactions h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 20px;
+    }
+
+    #sectionDemandesRecues,
+    #sectionDemandesEnvoyees {
+      margin-bottom: 24px;
+    }
+
+    #sectionDemandesRecues h3,
+    #sectionDemandesEnvoyees h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 12px;
+    }
+
+    .carte-demande {
+      border: 1px solid #333;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      background: #1E1E1E;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      transition: border-color 0.2s;
+    }
+
+    .carte-demande:hover {
+      border-color: #444;
+    }
+
+    .carte-demande h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+
+    .carte-demande p {
+      font-size: 13.5px;
+      color: #CCC;
+      margin: 4px 0;
+      line-height: 1.4;
+    }
+
     /* Page Mes Transactions */
     .transactions-page-container {
       max-width: 900px;
@@ -3333,12 +3388,13 @@
     </section>
 
     <!-- --------------------------------------------------------
-         PAGE 7 : MES TRANSACTIONS (SYSTÈME SÉCURISÉ DOUBLE CONFIRMATION)
+         PAGE 7 : MES TRANSACTIONS (DEMANDES EN TEMPS RÉEL FIRESTORE)
          -------------------------------------------------------- -->
     <section id="page-transactions" class="page-view">
-      <div class="transactions-page-container">
-        <!-- Rendu dynamique via afficherPageTransactions() -->
-        <div id="transactions-content-wrapper"></div>
+      <div id="pageTransactions">
+        <h2>📋 Mes transactions</h2>
+        <div id="sectionDemandesRecues"></div>
+        <div id="sectionDemandesEnvoyees"></div>
       </div>
     </section>
 
@@ -4728,7 +4784,7 @@
         preRemplirFormulairePublication();
       } else if (pageId === 'transactions') {
         nettoyerHashAnnonce();
-        afficherPageTransactions((params && params.filtre) || currentTransactionsTab || 'toutes');
+        afficherMesTransactions();
       }
 
       mettreAJourBadgeTransactions();
@@ -6085,236 +6141,170 @@
     }
 
     /**
-     * 1. ENVOYER UNE DEMANDE D'ACHAT (Firestore)
-     * Enregistre la demande dans la collection Firestore "demandes"
+     * 1. QUAND L'ACHETEUR CLIQUE "JE VEUX ACHETER" :
+     * Remplacer le localStorage par Firestore
      */
     function envoyerDemande(annonceId) {
-      if (!annonceId) return;
       var user = firebase.auth().currentUser;
-
       if (!user) {
-        connexionAnonyme();
+        alert("Veuillez vous connecter pour envoyer une demande d'achat.");
+        if (typeof connexionAnonyme === 'function') {
+          connexionAnonyme();
+        }
         return;
       }
 
-      const profil = getProfilUtilisateur() || {};
-      const monNom = localStorage.getItem("efoot_nom") || (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "Acheteur eFoot"));
-      const monTel = localStorage.getItem("efoot_tel") || profil.telephone || "";
+      var profil = null;
+      try {
+        profil = JSON.parse(localStorage.getItem("efoot_profil"));
+      } catch (e) {
+        profil = null;
+      }
 
-      // Récupérer les infos de l'annonce et du vendeur depuis Firestore
-      db.collection("annonces").doc(annonceId).get().then(function(doc) {
+      // Si le profil local n'est pas encore complété
+      if (!profil || !profil.prenom) {
+        if (typeof verifierProfilOuDemander === 'function') {
+          verifierProfilOuDemander(function() {
+            envoyerDemande(annonceId);
+          });
+          return;
+        }
+      }
+
+      var p = profil || {};
+      var nomPrenom = (p.prenom || (user.displayName ? user.displayName.split(" ")[0] : "Acheteur")) + " " + (p.nom ? p.nom.charAt(0) + "." : "");
+      var tel = p.telephone || localStorage.getItem("efoot_tel") || "";
+
+      // Récupérer l'annonce
+      db.collection("annonces").doc(annonceId).get()
+      .then(function(doc) {
         var annonce = doc.exists ? doc.data() : null;
-
-        // Fallback sur le cache local des annonces si besoin
-        if (!annonce) {
-          const annoncesLocales = getAnnonces();
-          annonce = annoncesLocales.find(a => a.id === annonceId);
+        if (!annonce && typeof getAnnonces === 'function') {
+          var adsLocales = getAnnonces();
+          annonce = adsLocales.find(function(a) { return a.id === annonceId; });
         }
 
         if (!annonce) {
-          afficherNotification("Annonce introuvable.", "⚠️");
-          fermerModalIntentionAchat();
-          return;
+          throw new Error("Annonce introuvable.");
         }
 
-        // Empêcher d'acheter sa propre annonce
-        if (annonce.vendeurId === user.uid) {
-          alert("Vous êtes le vendeur de cette annonce. Vous ne pouvez pas envoyer de demande d'achat à vous-même.");
-          fermerModalIntentionAchat();
-          return;
+        if (annonce.vendeurId && user.uid && annonce.vendeurId === user.uid) {
+          throw new Error("Vous êtes le vendeur de cette annonce. Vous ne pouvez pas envoyer de demande d'achat à vous-même.");
         }
 
-        if (annonce.statut === 'VENDU') {
-          alert("Ce compte a déjà été vendu.");
-          fermerModalIntentionAchat();
-          return;
-        }
-
-        const nouvelleDemande = {
+        // Créer la demande dans Firestore
+        return db.collection("demandes").add({
           annonceId: annonceId,
           annonceTitre: annonce.titre || "Compte eFootball",
           annoncePrix: Number(annonce.prix) || 0,
-          annonceImage: annonce.image || null,
-          annoncePlateforme: annonce.plateforme || 'Mobile',
-          annonceRegion: annonce.region || annonce.localisation || 'Dakar',
           acheteurId: user.uid,
-          acheteurNom: monNom,
-          acheteurTelephone: monTel,
+          acheteurNom: nomPrenom.trim(),
+          acheteurTelephone: tel,
           vendeurId: annonce.vendeurId || "",
           vendeurNom: annonce.vendeur || "Vendeur",
-          vendeurTelephone: annonce.whatsapp || annonce.telephoneWhatsApp || "",
           statut: "en_attente",
           dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        return db.collection("demandes").add(nouvelleDemande).then(function(docRef) {
-          console.log("Demande Firestore créée avec succès : " + docRef.id);
-
-          // Créer ou alimenter la discussion interne de messagerie
-          let convs = getConversations();
-          let conv = convs.find(c => c.annonceId === annonceId && (c.acheteurNom === monNom || c.acheteurId === user.uid));
-          if (!conv) {
-            conv = {
-              id: 'conv_' + Date.now(),
-              annonceId: annonceId,
-              titreAnnonce: annonce.titre,
-              prixAnnonce: annonce.prix,
-              vendeurNom: annonce.vendeur,
-              acheteurNom: monNom,
-              statutTransaction: 'DEMANDE_ENVOYEE',
-              messages: []
-            };
-            convs.unshift(conv);
-          }
-          conv.statutTransaction = 'DEMANDE_ENVOYEE';
-          conv.messages.push({
-            id: 'msg_' + Date.now(),
-            expediteur: 'Système',
-            destinataire: 'Tous',
-            contenu: `🔒 Demande d'achat partagée par ${monNom} pour "${annonce.titre}" (${formaterPrix(annonce.prix)}). En attente d'acceptation du vendeur.`,
-            date: new Date().toISOString(),
-            isSystem: true
-          });
-          setConversations(convs);
-
-          fermerModalIntentionAchat();
-          afficherNotification("Demande d'achat envoyée au vendeur !", "🔒");
-
-          // Rafraîchir les écoutes
-          afficherDemandesAcheteur();
-          afficherDemandesVendeur();
         });
-      }).catch(function(error) {
-        console.error("Erreur lors de l'envoi de la demande Firestore :", error);
-        alert("Erreur lors de l'envoi de la demande : " + error.message);
+      })
+      .then(function() {
+        alert("✅ Demande envoyée ! Le vendeur va être notifié.");
+        if (typeof fermerModalIntentionAchat === 'function') {
+          fermerModalIntentionAchat();
+        }
+        if (typeof changerPage === 'function') {
+          changerPage('transactions');
+        }
+      })
+      .catch(function(error) {
+        alert("Erreur : " + error.message);
       });
     }
 
-    /**
-     * Exécute la confirmation d'intention d'achat (délègue vers envoyerDemande)
-     */
     function executerDemandeAchat() {
       if (!currentModalAdId) return;
       envoyerDemande(currentModalAdId);
     }
 
-    /**
-     * 2. TRI DES DEMANDES PAR DATE DÉCROISSANTE
-     */
-    function trierDemandesParDateDesc(a, b) {
-      const getMillis = item => {
-        if (!item || !item.dateCreation) return 0;
-        if (typeof item.dateCreation.toMillis === 'function') return item.dateCreation.toMillis();
-        if (item.dateCreation.seconds) return item.dateCreation.seconds * 1000;
-        return new Date(item.dateCreation).getTime() || 0;
-      };
-      return getMillis(b) - getMillis(a);
+    function ouvrirModalIntentionAchat(annonceId) {
+      if (!annonceId) return;
+      envoyerDemande(annonceId);
     }
 
     /**
-     * 3. PAGE "MES TRANSACTIONS" POUR LE VENDEUR (Firestore en temps réel)
+     * 2. PAGE "MES TRANSACTIONS" - 2 SECTIONS
      */
-    function afficherDemandesVendeur() {
+    function afficherMesTransactions() {
       var user = firebase.auth().currentUser;
-      if (!user) return;
-
+      if (!user) {
+        var secRec = document.getElementById("sectionDemandesRecues");
+        var secEnv = document.getElementById("sectionDemandesEnvoyees");
+        if (secRec) secRec.innerHTML = '<h3>📩 Demandes reçues</h3><p style="color:#888;">Connectez-vous pour consulter vos demandes reçues.</p>';
+        if (secEnv) secEnv.innerHTML = '<h3>📤 Demandes envoyées</h3><p style="color:#888;">Connectez-vous pour consulter vos demandes envoyées.</p>';
+        return;
+      }
+      
+      // SECTION 1 : Demandes reçues (je suis vendeur)
       if (unsubscribeDemandesVendeur) {
         unsubscribeDemandesVendeur();
         unsubscribeDemandesVendeur = null;
       }
-
-      try {
-        unsubscribeDemandesVendeur = db.collection("demandes")
-          .where("vendeurId", "==", user.uid)
-          .orderBy("dateCreation", "desc")
-          .onSnapshot(function(snapshot) {
-            var demandes = [];
-            snapshot.forEach(function(doc) {
-              demandes.push({ id: doc.id, ...doc.data() });
-            });
-            demandesVendeurCache = demandes;
-            synchroniserTransactionsDepuisFirestore();
-            if (currentPage === 'transactions' && currentTransactionsTab === 'ventes') {
-              afficherListeDemandes(demandes, "vendeur");
-            }
-          }, function(error) {
-            console.warn("Snapshot vendeur avec orderBy : fallback sans index", error);
-            unsubscribeDemandesVendeur = db.collection("demandes")
-              .where("vendeurId", "==", user.uid)
-              .onSnapshot(function(snapshot) {
-                var demandes = [];
-                snapshot.forEach(function(doc) {
-                  demandes.push({ id: doc.id, ...doc.data() });
-                });
-                demandes.sort(trierDemandesParDateDesc);
-                demandesVendeurCache = demandes;
-                synchroniserTransactionsDepuisFirestore();
-                if (currentPage === 'transactions' && currentTransactionsTab === 'ventes') {
-                  afficherListeDemandes(demandes, "vendeur");
-                }
-              });
+      unsubscribeDemandesVendeur = db.collection("demandes")
+        .where("vendeurId", "==", user.uid)
+        .onSnapshot(function(snapshot) {
+          var demandes = [];
+          snapshot.forEach(function(doc) {
+            demandes.push({ id: doc.id, ...doc.data() });
           });
-      } catch (err) {
-        console.error("Erreur afficherDemandesVendeur :", err);
-      }
-    }
-
-    /**
-     * 4. PAGE "MES ACHATS" POUR L'ACHETEUR (Firestore en temps réel)
-     */
-    function afficherDemandesAcheteur() {
-      var user = firebase.auth().currentUser;
-      if (!user) return;
-
+          // Trier par date de création descendante
+          demandes.sort(function(a, b) {
+            var dateA = a.dateCreation ? (a.dateCreation.seconds || 0) : 0;
+            var dateB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
+            return dateB - dateA;
+          });
+          demandesVendeurCache = demandes;
+          afficherSectionDemandesRecues(demandes);
+          if (typeof synchroniserTransactionsDepuisFirestore === 'function') {
+            synchroniserTransactionsDepuisFirestore();
+          }
+        }, function(error) {
+          console.error("Erreur écoute demandes reçues :", error);
+        });
+      
+      // SECTION 2 : Demandes envoyées (je suis acheteur)
       if (unsubscribeDemandesAcheteur) {
         unsubscribeDemandesAcheteur();
         unsubscribeDemandesAcheteur = null;
       }
-
-      try {
-        unsubscribeDemandesAcheteur = db.collection("demandes")
-          .where("acheteurId", "==", user.uid)
-          .orderBy("dateCreation", "desc")
-          .onSnapshot(function(snapshot) {
-            var demandes = [];
-            snapshot.forEach(function(doc) {
-              demandes.push({ id: doc.id, ...doc.data() });
-            });
-            demandesAcheteurCache = demandes;
-            synchroniserTransactionsDepuisFirestore();
-            if (currentPage === 'transactions' && currentTransactionsTab === 'achats') {
-              afficherListeDemandes(demandes, "acheteur");
-            }
-          }, function(error) {
-            console.warn("Snapshot acheteur avec orderBy : fallback sans index", error);
-            unsubscribeDemandesAcheteur = db.collection("demandes")
-              .where("acheteurId", "==", user.uid)
-              .onSnapshot(function(snapshot) {
-                var demandes = [];
-                snapshot.forEach(function(doc) {
-                  demandes.push({ id: doc.id, ...doc.data() });
-                });
-                demandes.sort(trierDemandesParDateDesc);
-                demandesAcheteurCache = demandes;
-                synchroniserTransactionsDepuisFirestore();
-                if (currentPage === 'transactions' && currentTransactionsTab === 'achats') {
-                  afficherListeDemandes(demandes, "acheteur");
-                }
-              });
+      unsubscribeDemandesAcheteur = db.collection("demandes")
+        .where("acheteurId", "==", user.uid)
+        .onSnapshot(function(snapshot) {
+          var demandes = [];
+          snapshot.forEach(function(doc) {
+            demandes.push({ id: doc.id, ...doc.data() });
           });
-      } catch (err) {
-        console.error("Erreur afficherDemandesAcheteur :", err);
-      }
+          // Trier par date de création descendante
+          demandes.sort(function(a, b) {
+            var dateA = a.dateCreation ? (a.dateCreation.seconds || 0) : 0;
+            var dateB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
+            return dateB - dateA;
+          });
+          demandesAcheteurCache = demandes;
+          afficherSectionDemandesEnvoyees(demandes);
+          if (typeof synchroniserTransactionsDepuisFirestore === 'function') {
+            synchroniserTransactionsDepuisFirestore();
+          }
+        }, function(error) {
+          console.error("Erreur écoute demandes envoyées :", error);
+        });
     }
 
     /**
-     * Démarre et synchronise les écouteurs Firestore
+     * Démarrage et arrêt des écouteurs Firestore
      */
     function demarrerEcouteDemandesFirestore() {
-      var user = firebase.auth().currentUser;
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       if (!user) return;
-      afficherDemandesVendeur();
-      afficherDemandesAcheteur();
+      afficherMesTransactions();
     }
 
     function arreterEcouteDemandesFirestore() {
@@ -6330,56 +6320,124 @@
       demandesAcheteurCache = [];
     }
 
+    function afficherDemandesVendeur() {
+      afficherMesTransactions();
+    }
+
+    function afficherDemandesAcheteur() {
+      afficherMesTransactions();
+    }
+
     /**
-     * 5. ACTIONS DU VENDEUR (Accepter / Refuser)
+     * Alias de compatibilité
      */
-    function repondreDemande(demandeId, action) {
-      if (!demandeId) return;
+    function afficherPageTransactions() {
+      afficherMesTransactions();
+    }
 
-      const confirmMsg = action === 'acceptee'
-        ? "Acceptez-vous cette vente ? Le compte passera en statut 'En cours' et sera réservé pour cet acheteur."
-        : "Voulez-vous vraiment refuser cette demande d'achat ? L'annonce restera active pour les autres acheteurs.";
-
-      if (!confirm(confirmMsg)) return;
-
-      db.collection("demandes").doc(demandeId).get().then(function(doc) {
-        const data = doc.exists ? doc.data() : null;
-
-        return db.collection("demandes").doc(demandeId).update({
-          statut: action,
-          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(function() {
-          console.log("Demande mise à jour : " + action);
-
-          if (action === 'acceptee') {
-            afficherNotification("Demande acceptée ! Le compte est maintenant réservé.", "✅");
-
-            // Mettre à jour l'annonce dans Firestore (statut: EN_COURS)
-            if (data && data.annonceId) {
-              db.collection("annonces").doc(data.annonceId).update({
-                statut: "EN_COURS"
-              }).catch(function(e) {
-                console.warn("Mise à jour statut annonce EN_COURS:", e);
-              });
-
-              const annonces = getAnnonces();
-              const ad = annonces.find(a => a.id === data.annonceId);
-              if (ad) {
-                ad.statut = 'EN_COURS';
-                setAnnonces(annonces);
-              }
-            }
-          } else {
-            afficherNotification("Demande d'achat refusée.", "ℹ️");
+    /**
+     * 3. AFFICHAGE DES DEMANDES REÇUES (VENDEUR)
+     */
+    function afficherSectionDemandesRecues(demandes) {
+      var html = '<h3>📩 Demandes reçues</h3>';
+      
+      if (!demandes || demandes.length === 0) {
+        html += '<p style="color:#888;">Aucune demande reçue</p>';
+      } else {
+        demandes.forEach(function(d) {
+          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E;">';
+          html += '<h4>' + escapeHtml(d.annonceTitre || "Compte eFootball") + '</h4>';
+          html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
+          html += '<p>👤 Acheteur : ' + escapeHtml(d.acheteurNom || "Acheteur") + '</p>';
+          html += '<p>📞 ' + escapeHtml(d.acheteurTelephone || "Non renseigné") + '</p>';
+          
+          if (d.statut === "en_attente") {
+            html += '<p style="color:#FFC107;">🟡 En attente de votre réponse</p>';
+            html += '<button onclick="accepterDemande(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
+            html += '<button onclick="refuserDemande(\'' + d.id + '\')" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
+          } else if (d.statut === "acceptee") {
+            html += '<p style="color:#00C853;">✅ Acceptée</p>';
+          } else if (d.statut === "refusee") {
+            html += '<p style="color:#F44336;">❌ Refusée</p>';
           }
-
-          // Rafraîchir les listes
-          afficherDemandesVendeur();
-          afficherDemandesAcheteur();
+          
+          html += '</div>';
         });
-      }).catch(function(error) {
-        alert("Erreur lors de la mise à jour : " + error.message);
+      }
+      
+      var section = document.getElementById("sectionDemandesRecues");
+      if (section) section.innerHTML = html;
+    }
+
+    /**
+     * 4. AFFICHAGE DES DEMANDES ENVOYÉES (ACHETEUR)
+     */
+    function afficherSectionDemandesEnvoyees(demandes) {
+      var html = '<h3>📤 Demandes envoyées</h3>';
+      
+      if (!demandes || demandes.length === 0) {
+        html += '<p style="color:#888;">Aucune demande envoyée</p>';
+      } else {
+        demandes.forEach(function(d) {
+          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E;">';
+          html += '<h4>' + escapeHtml(d.annonceTitre || "Compte eFootball") + '</h4>';
+          html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
+          html += '<p>👤 Vendeur : ' + escapeHtml(d.vendeurNom || "Vendeur") + '</p>';
+          
+          if (d.statut === "en_attente") {
+            html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
+          } else if (d.statut === "acceptee") {
+            html += '<p style="color:#00C853;">✅ Acceptée !</p>';
+            html += '<p>Le vendeur va vous contacter</p>';
+          } else if (d.statut === "refusee") {
+            html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
+          }
+          
+          html += '</div>';
+        });
+      }
+      
+      var section = document.getElementById("sectionDemandesEnvoyees");
+      if (section) section.innerHTML = html;
+    }
+
+    /**
+     * 5. ACTIONS DU VENDEUR
+     */
+    function accepterDemande(demandeId) {
+      db.collection("demandes").doc(demandeId).update({
+        statut: "acceptee",
+        dateAcceptation: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(function() {
+        alert("✅ Demande acceptée !");
+      })
+      .catch(function(error) {
+        alert("Erreur : " + error.message);
       });
+    }
+
+    function refuserDemande(demandeId) {
+      if (confirm("Refuser cette demande ?")) {
+        db.collection("demandes").doc(demandeId).update({
+          statut: "refusee",
+          dateRefus: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(function() {
+          alert("Demande refusée");
+        })
+        .catch(function(error) {
+          alert("Erreur : " + error.message);
+        });
+      }
+    }
+
+    function repondreDemande(demandeId, action) {
+      if (action === 'acceptee') {
+        accepterDemande(demandeId);
+      } else {
+        refuserDemande(demandeId);
+      }
     }
 
     /**
@@ -6823,8 +6881,8 @@
             <p style="font-size: 12.5px; color: var(--text-gray); margin-bottom: 14px; line-height: 1.5;">
               Système à double confirmation : envoyez votre demande d'achat, le vendeur valide, puis vous confirmez la bonne réception du Konami ID avant clôture définitive.
             </p>
-            <button type="button" class="btn-buy-intent" onclick="ouvrirModalIntentionAchat('${ad.id}')">
-              <span>🔒</span> <span>Je veux acheter ce compte</span>
+            <button type="button" class="btn-buy-intent" onclick="envoyerDemande('${ad.id}')">
+              <span>🔒</span> <span>Je veux acheter</span>
             </button>
           </div>
         `;
@@ -7321,20 +7379,7 @@
      */
     function afficherPageTransactions(filtre = 'toutes') {
       currentTransactionsTab = filtre;
-
-      // Déclencher les écoutes Firestore si connectés
-      demarrerEcouteDemandesFirestore();
-
-      if (filtre === 'ventes') {
-        afficherDemandesVendeur();
-        afficherListeDemandes(demandesVendeurCache, 'vendeur');
-      } else if (filtre === 'achats') {
-        afficherDemandesAcheteur();
-        afficherListeDemandes(demandesAcheteurCache, 'acheteur');
-      } else {
-        const txsToutes = getTransactions();
-        afficherListeDemandes(txsToutes, 'toutes');
-      }
+      afficherMesTransactions();
     }
 
     /**
