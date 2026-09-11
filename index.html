@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XY7D9HSC9J"></script>
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-XY7D9HSC9J');
+    // Interception défensive des erreurs cross-origin ("Script error.")
+    window.addEventListener('error', function(e) {
+      if (e && (e.message === 'Script error.' || !e.message)) {
+        console.warn('Erreur script tiers/CORS interceptée sans blocage de l\'application.');
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        return true;
+      }
+    }, true);
   </script>
 
   <!-- Scripts Firebase SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -3074,6 +3075,7 @@
           <div class="filter-item">
             <label for="filter-sort">Trier par</label>
             <select id="filter-sort" class="filter-select" onchange="appliquerFiltres()">
+              <option value="fiabilite" selected>Fiabilité vendeur (Badge & Notes)</option>
               <option value="date-desc">Plus récent en premier</option>
               <option value="price-asc">Prix croissant</option>
               <option value="price-desc">Prix décroissant</option>
@@ -3604,74 +3606,60 @@
   </div>
 
   <!-- ==========================================================
-       MODALE : LAISSER UN AVIS ÉTOILÉ & COMMENTAIRE SUR LE VENDEUR
+       MODALE : NOTATION OBLIGATOIRE DU VENDEUR
        ========================================================== -->
-  <div class="modal-backdrop" id="review-modal">
-    <div class="modal-card">
-      <div class="modal-header-row">
-        <div class="modal-title" style="margin-bottom: 0;">
+  <div class="modal-backdrop" id="review-modal" onclick="gererClicBackdropAvis(event)">
+    <div class="modal-card" style="max-width: 440px; padding: 24px; border-radius: 14px; background: #181818; border: 1px solid #333;">
+      <div class="modal-header-row" style="margin-bottom: 8px;">
+        <div class="modal-title" style="margin-bottom: 0; font-size: 17px; font-weight: 800; color: #FFD700; display: flex; align-items: center; gap: 8px;">
           <span>⭐</span>
-          <span id="review-modal-title">Évaluer le vendeur</span>
+          <span id="review-modal-title">NOTEZ CE VENDEUR</span>
         </div>
-        <button type="button" class="modal-close-btn" onclick="fermerModalAvis()" title="Fermer">✕</button>
+        <button type="button" class="modal-close-btn" id="review-modal-close-btn" onclick="fermerModalAvis()" title="Fermer">✕</button>
       </div>
 
-      <div style="background: rgba(0, 200, 83, 0.08); border: 1px solid rgba(0, 200, 83, 0.25); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 12.5px;">
-        <div style="font-weight: 600; color: var(--primary);" id="review-modal-account-title">Compte eFootball</div>
-        <div style="color: var(--text-gray); margin-top: 2px;">
-          Transaction marquée comme <strong style="color: var(--primary);">Terminée</strong>. Évaluez votre expérience pour aider les autres joueurs.
-        </div>
+      <div style="text-align: center; margin: 12px 0 16px 0;">
+        <p id="review-modal-question" style="font-size: 15px; color: #fff; font-weight: 600; margin: 0 0 6px 0;">
+          Comment s'est passée la transaction avec Moussa D. ?
+        </p>
+        <p id="review-modal-account-title" style="font-size: 12px; color: var(--text-muted); margin: 0;">
+          Compte eFootball
+        </p>
       </div>
 
       <!-- Sélecteur d'étoiles interactif (1 à 5) -->
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label>Votre note globale <span class="required-star">*</span></label>
-        <div class="stars-select-box">
-          <div class="stars-row" id="star-picker-row">
+      <div class="form-group" style="margin-bottom: 16px; text-align: center;">
+        <div class="stars-select-box" style="justify-content: center;">
+          <div class="stars-row" id="star-picker-row" style="justify-content: center; font-size: 34px; gap: 10px; cursor: pointer;">
             <span class="star-btn active" data-value="1" onmouseover="survolEtoile(1)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(1)">★</span>
             <span class="star-btn active" data-value="2" onmouseover="survolEtoile(2)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(2)">★</span>
             <span class="star-btn active" data-value="3" onmouseover="survolEtoile(3)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(3)">★</span>
             <span class="star-btn active" data-value="4" onmouseover="survolEtoile(4)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(4)">★</span>
             <span class="star-btn active" data-value="5" onmouseover="survolEtoile(5)" onmouseout="quitterEtoiles()" onclick="choisirEtoile(5)">★</span>
           </div>
-          <div class="star-feedback-label" id="star-rating-feedback">⭐️⭐️⭐️⭐️⭐️ 5.0 - Excellent ! Vendeur très recommandé</div>
+          <div class="star-feedback-label" id="star-rating-feedback" style="font-size: 12.5px; margin-top: 6px; color: #FFD700; font-weight: 600;">⭐️⭐️⭐️⭐️⭐️ 5.0 - Excellent ! Vendeur très recommandé</div>
         </div>
       </div>
 
-      <!-- Commentaire textuel -->
-      <div class="form-group">
-        <label for="review-comment-text">
-          <span>Votre commentaire textuel <span class="required-star">*</span></span>
-          <span style="font-size: 11px; color: var(--text-muted);" id="review-chars-counter">0/500</span>
+      <!-- Commentaire (optionnel) -->
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label for="review-comment-text" style="font-size: 13px; color: #ddd; display: block; margin-bottom: 6px; font-weight: 500;">
+          Commentaire (optionnel) :
         </label>
         <textarea 
           id="review-comment-text" 
           class="form-control" 
-          rows="4" 
-          placeholder="Ex : Vendeur rapide et honnête, compte Konami ID transféré en 5 min. Équipe et joueurs conformes, paiement Wave sécurisé. Je recommande !" 
+          rows="3" 
+          placeholder="Écrivez votre avis ici..." 
           maxlength="500"
-          oninput="gererSaisieCommentaire(this.value)"
+          style="background: #242424; border: 1px solid #444; border-radius: 8px; color: #fff; padding: 10px; font-size: 13.5px; width: 100%; box-sizing: border-box; resize: vertical;"
         ></textarea>
-        <div class="error-msg" id="err-review-comment">Veuillez rédiger un commentaire d'au moins 6 caractères pour valider votre avis.</div>
-
-        <!-- Mots-clés rapides -->
-        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Idées de commentaires en 1 clic :</div>
-        <div class="review-tags-row">
-          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('⚡ Transfert Konami ID très rapide')">⚡ Transfert rapide</button>
-          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('🤝 Vendeur honnête et disponible')">🤝 Vendeur honnête</button>
-          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('⚽ Effectif conforme aux captures')">⚽ Effectif conforme</button>
-          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('🌊 Paiement Wave fluide')">🌊 Paiement Wave fluide</button>
-          <button type="button" class="review-quick-chip" onclick="ajouterTagCommentaire('⭐️ Je recommande fort')">⭐️ Je recommande</button>
-        </div>
       </div>
 
-      <!-- Actions -->
-      <div style="display: flex; gap: 8px; margin-top: 10px;">
-        <button type="button" class="btn-secondary" style="flex: 1;" onclick="fermerModalAvis()">
-          Annuler
-        </button>
-        <button type="button" id="btn-submit-review" class="btn-primary" style="flex: 2;" onclick="confirmerEnvoiAvis()" disabled>
-          <span>⭐</span> Publier mon avis
+      <!-- Bouton d'envoi -->
+      <div>
+        <button type="button" id="btn-submit-review" class="btn-primary" style="width: 100%; padding: 13px; font-size: 15px; font-weight: 700; border-radius: 8px; background: #00C853; border: none; cursor: pointer; color: white;" onclick="confirmerEnvoiAvis()">
+          Envoyer mon avis
         </button>
       </div>
     </div>
@@ -3712,6 +3700,42 @@
        ========================================================== -->
   <script>
     /* ==========================================================
+       SECTION 1 : ÉTAT GLOBAL DE L'APPLICATION & CONSTANTES
+       ========================================================== */
+    var currentPage = 'accueil';
+    var currentDetailAdId = null;
+    var activeConversationId = null;
+    var uploadedImageBase64 = null;
+    var pendingActionCallback = null;
+
+    // État spécifique aux transactions & avis
+    var currentReviewTransactionId = null;
+    var currentReviewVendeurNom = null;
+    var currentReviewAnnonceId = null;
+    var currentReviewTitreAnnonce = null;
+    var currentRatingSelected = 5;
+    var currentModalAdId = null;
+    var currentModalTxId = null;
+    var currentTransactionsTab = 'toutes';
+
+    // Constantes de stockage local
+    var STORAGE_ANNONCES = 'efoot_annonces';
+    var STORAGE_MESSAGES = 'efoot_messages';
+    var STORAGE_PROFIL = 'efoot_profil';
+    var STORAGE_TRANSACTIONS = 'efoot_transactions';
+    var STORAGE_AVIS = 'efoot_avis';
+
+    // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
+    var annoncesFirestore = [];
+    var firestoreUnsubscribeAnnonces = null;
+
+    // Cache et abonnements temps réel Firestore pour les demandes d'achat
+    var demandesVendeurCache = [];
+    var demandesAcheteurCache = [];
+    var unsubscribeDemandesVendeur = null;
+    var unsubscribeDemandesAcheteur = null;
+
+    /* ==========================================================
        CONFIGURATION ET AUTHENTIFICATION FIREBASE (ANONYME & GOOGLE)
        ========================================================== */
     const firebaseConfig = {
@@ -3723,17 +3747,19 @@
       appId: "1:303465466943:web:2b099883c4ea7324f43c8a"
     };
 
-    // Initialisation de Firebase
-    firebase.initializeApp(firebaseConfig);
-
-    // Initialisation de Firestore
-    const db = firebase.firestore();
-
-    // Cache et abonnements temps réel Firestore pour les demandes d'achat
-    let demandesVendeurCache = [];
-    let demandesAcheteurCache = [];
-    let unsubscribeDemandesVendeur = null;
-    let unsubscribeDemandesAcheteur = null;
+    var db = null;
+    var auth = null;
+    try {
+      if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+        if (!firebase.apps || !firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.firestore();
+        auth = firebase.auth();
+      }
+    } catch (e) {
+      console.warn("Initialisation Firebase en mode dégradé/local :", e);
+    }
 
     /**
      * 2. CONNEXION ANONYME
@@ -3745,7 +3771,19 @@
         btn.innerHTML = `<span>⏳ Connexion en cours...</span>`;
       }
 
-      firebase.auth().signInAnonymously()
+      if (!auth) {
+        var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
+        localStorage.setItem("efoot_nom", nomInvite);
+        mettreAJourAffichageUtilisateur({ isAnonymous: true, displayName: nomInvite, uid: "guest_" + Date.now() });
+        afficherNotification("Connecté en invité", "👤");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<span class="auth-btn-icon">👤</span><span>Continuer en invité</span>`;
+        }
+        return;
+      }
+
+      auth.signInAnonymously()
         .then(function(userCredential) {
           var user = userCredential.user;
           if (!localStorage.getItem("efoot_nom")) {
@@ -3775,8 +3813,17 @@
         btn.innerHTML = `<span>⏳ Connexion Google...</span>`;
       }
 
+      if (!auth || typeof firebase.auth.GoogleAuthProvider !== 'function') {
+        alert("La connexion Google nécessite la connexion aux services Firebase.");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<span>Se connecter avec Google</span>`;
+        }
+        return;
+      }
+
       var provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider)
+      auth.signInWithPopup(provider)
         .then(function(result) {
           var user = result.user;
           var nomGoogle = user.displayName || "Joueur Google";
@@ -3814,38 +3861,42 @@
     /**
      * 4. VÉRIFICATION DE SESSION AU CHARGEMENT
      */
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (user) {
-        if (!localStorage.getItem("efoot_nom")) {
-          if (user.isAnonymous) {
-            var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
-            localStorage.setItem("efoot_nom", nomInvite);
-          } else if (user.displayName) {
-            localStorage.setItem("efoot_nom", user.displayName);
-          } else {
-            localStorage.setItem("efoot_nom", "Joueur eFoot");
+    if (auth) {
+      auth.onAuthStateChanged(function(user) {
+        if (user) {
+          if (!localStorage.getItem("efoot_nom")) {
+            if (user.isAnonymous) {
+              var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
+              localStorage.setItem("efoot_nom", nomInvite);
+            } else if (user.displayName) {
+              localStorage.setItem("efoot_nom", user.displayName);
+            } else {
+              localStorage.setItem("efoot_nom", "Joueur eFoot");
+            }
           }
+          mettreAJourAffichageUtilisateur(user);
+          verifierProfilApresConnexion(user);
+          if (typeof demarrerEcouteDemandesFirestore === 'function') {
+            demarrerEcouteDemandesFirestore();
+          }
+          if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
+            var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
+            if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
+          }
+        } else {
+          if (typeof arreterEcouteDemandesFirestore === 'function') {
+            arreterEcouteDemandesFirestore();
+          }
+          if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
+            var adCurLogout = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
+            if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
+          }
+          afficherEcranConnexion();
         }
-        mettreAJourAffichageUtilisateur(user);
-        verifierProfilApresConnexion(user);
-        if (typeof demarrerEcouteDemandesFirestore === 'function') {
-          demarrerEcouteDemandesFirestore();
-        }
-        if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
-          var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
-          if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
-        }
-      } else {
-        if (typeof arreterEcouteDemandesFirestore === 'function') {
-          arreterEcouteDemandesFirestore();
-        }
-        if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
-          var adCurLogout = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
-          if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
-        }
-        afficherEcranConnexion();
-      }
-    });
+      });
+    } else {
+      afficherEcranConnexion();
+    }
 
     /**
      * 5. GESTION DE LA DÉCONNEXION AVEC CONFIRMATION
@@ -4159,32 +4210,6 @@
         `;
       }
     }
-
-    /* ==========================================================
-       SECTION 1 : ÉTAT GLOBAL DE L'APPLICATION
-       ========================================================== */
-    let currentPage = 'accueil';
-    let currentDetailAdId = null;
-    let activeConversationId = null;
-    let uploadedImageBase64 = null;
-    let pendingActionCallback = null;
-
-    // État spécifique aux transactions & avis
-    let currentReviewTransactionId = null;
-    let currentReviewVendeurNom = null;
-    let currentReviewAnnonceId = null;
-    let currentReviewTitreAnnonce = null;
-    let currentRatingSelected = 5;
-    let currentModalAdId = null;
-    let currentModalTxId = null;
-    let currentTransactionsTab = 'toutes';
-
-    // Constantes de stockage local
-    const STORAGE_ANNONCES = 'efoot_annonces';
-    const STORAGE_MESSAGES = 'efoot_messages';
-    const STORAGE_PROFIL = 'efoot_profil';
-    const STORAGE_TRANSACTIONS = 'efoot_transactions';
-    const STORAGE_AVIS = 'efoot_avis';
 
     /* ==========================================================
        SECTION 2 : UTILITAIRES & NOTIFICATIONS
@@ -4827,9 +4852,6 @@
        SECTION 5 : GESTION DES ANNONCES (FIRESTORE EN TEMPS RÉEL)
        ========================================================== */
 
-    // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
-    let annoncesFirestore = [];
-
     /**
      * Récupère la liste des annonces synchronisées depuis Firestore
      */
@@ -5024,13 +5046,16 @@
         resultats.sort((a, b) => a.prix - b.prix);
       } else if (tri === 'price-desc') {
         resultats.sort((a, b) => b.prix - a.prix);
-      } else {
+      } else if (tri === 'date-desc') {
         // Par date décroissante (plus récent d'abord)
         resultats.sort((a, b) => {
-          const timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.date || 0).getTime();
-          const timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.date || 0).getTime();
+          const timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.datePublication || a.date || 0).getTime();
+          const timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.datePublication || b.date || 0).getTime();
           return timeB - timeA;
         });
+      } else {
+        // Par défaut : tri par Fiabilité vendeur (1. Badge, 2. Note moyenne, 3. Date publication)
+        resultats = trierAnnoncesParFiabilite(resultats);
       }
 
       afficherCartes(resultats);
@@ -5070,9 +5095,9 @@
              <span class="placeholder-label">eFootball</span>
            </div>`;
 
-        const statsVendeur = getNoteEtAvisVendeur(ad.vendeur);
-        const noteAffichage = statsVendeur.noteMoyenne.toFixed(1);
-        const totalAvis = statsVendeur.totalAvis;
+        const statsVendeur = getNoteEtAvisVendeur(ad.vendeurId || ad.vendeur);
+        const infoBadge = afficherBadge(statsVendeur.badge);
+        const noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
 
         return `
           <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
@@ -5083,6 +5108,7 @@
                 <span>${ad.plateforme}</span>
               </div>
               ${ad.typeCompte ? `<div class="card-type-badge">${ad.typeCompte}</div>` : ''}
+              ${(ad.statut === 'vendue' || ad.statut === 'VENDU') ? `<div style="position: absolute; top: 10px; right: 10px; background: #F44336; color: white; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🔴 VENDU</div>` : (ad.statut === 'en_cours' ? `<div style="position: absolute; top: 10px; right: 10px; background: #FFC107; color: black; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🟡 En cours</div>` : '')}
             </div>
             <div class="card-body">
               <h3 class="card-title">${ad.titre}</h3>
@@ -5090,23 +5116,23 @@
                 <div class="card-price">${formaterPrix(ad.prix)}</div>
                 ${ad.puissance ? `<div class="card-power-badge">💪 ${ad.puissance}</div>` : ''}
               </div>
-              <div class="card-location-row" style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin: 6px 0 8px 0;">
-                <span style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-gray); font-weight: 500;">
-                  <span>📍</span>
-                  <span>${ad.region || ad.localisation || 'Sénégal'}</span>
-                </span>
-                <span style="font-size: 11px;">Publié le ${formaterDate(ad.datePublication || ad.date)}</span>
-              </div>
-              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')" style="cursor: pointer;" title="Voir le profil et les avis de ${ad.vendeur}">
-                <div class="card-seller-info">
-                  <span>👤</span>
-                  <span class="card-seller-name">${ad.vendeur}</span>
-                  ${ad.verifie ? '<span style="color: var(--primary);" title="Vendeur vérifié">✅</span>' : ''}
+              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);" title="Voir le profil et les avis de ${ad.vendeur}">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: var(--text-white);">
+                    <span title="${infoBadge.texte}" style="font-size: 14px;">${infoBadge.icone}</span>
+                    <span class="card-seller-name">${ad.vendeur}</span>
+                    ${statsVendeur.totalAvis > 0 ? `
+                      <span style="color: #FFD700; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; margin-left: 2px;">
+                        ⭐ ${noteAffichage} <span style="color: var(--text-muted); font-size: 11px; font-weight: normal;">(${statsVendeur.totalAvis} avis)</span>
+                      </span>
+                    ` : `
+                      <span style="color: #888; font-size: 11px; font-weight: normal;">• Nouveau</span>
+                    `}
+                  </div>
                 </div>
-                <div class="card-seller-rating" style="display: inline-flex; align-items: center; gap: 3px;">
-                  <span>★</span>
-                  <span>${noteAffichage}</span>
-                  <span style="font-size: 10px; color: var(--text-muted);">(${totalAvis})</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 11.5px; color: var(--text-muted);">
+                  <span>📍 ${ad.region || ad.localisation || 'Dakar'}</span>
+                  <span style="font-size: 10.5px;">${formaterDate(ad.datePublication || ad.date)}</span>
                 </div>
               </div>
             </div>
@@ -5118,8 +5144,6 @@
     /**
      * 2. AFFICHER LES ANNONCES (temps réel avec Firebase Firestore)
      */
-    let firestoreUnsubscribeAnnonces = null;
-
     function afficherAnnonces(arg) {
       // Si une liste filtrée est passée directement en paramètre
       if (Array.isArray(arg)) {
@@ -5128,6 +5152,16 @@
       }
 
       if (firestoreUnsubscribeAnnonces) {
+        return;
+      }
+
+      if (!db) {
+        console.warn("Firestore non disponible, utilisation du stockage local");
+        var locales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
+        if (locales.length > 0) {
+          annoncesFirestore = locales;
+          if (currentPage === 'accueil') appliquerFiltres();
+        }
         return;
       }
 
@@ -5192,6 +5226,7 @@
      * Initialise les annonces de démonstration dans Firestore si la base est vide
      */
     function initialiserAnnoncesInitialesFirestore() {
+      if (!db) return;
       if (localStorage.getItem('efoot_firestore_seeded')) return;
       localStorage.setItem('efoot_firestore_seeded', 'true');
 
@@ -5581,8 +5616,9 @@
            <span class="placeholder-label">eFootball Sénégal</span>
          </div>`;
 
-      const statsVendeur = getNoteEtAvisVendeur(ad.vendeur);
-      const noteText = statsVendeur.noteMoyenne.toFixed(1);
+      const statsVendeur = getNoteEtAvisVendeur(ad.vendeurId || ad.vendeur);
+      const infoBadge = afficherBadge(statsVendeur.badge);
+      const noteText = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
       const totalAvis = statsVendeur.totalAvis;
       const listeAvis = statsVendeur.avis;
 
@@ -5655,17 +5691,19 @@
             <div class="seller-left">
               <div class="seller-avatar">👤</div>
               <div>
-                <div class="seller-meta-name">
+                <div class="seller-meta-name" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span>${nomVendeurAffiche}</span>
-                  ${estVendeurVerifie ? '<span class="verified-chip">✅ Vérifié</span>' : ''}
+                  <span style="background: rgba(255,255,255,0.06); border: 1px solid ${infoBadge.couleur}; color: ${infoBadge.couleur}; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    ${infoBadge.icone} ${infoBadge.texte}
+                  </span>
                 </div>
-                <div class="seller-meta-sub">
-                  ★ <strong style="color: var(--badge-gold);">${noteText}</strong> sur 5.0 (${totalAvis} avis vérifié${totalAvis > 1 ? 's' : ''}) • 📍 ${ad.region || 'Dakar'}
+                <div class="seller-meta-sub" style="margin-top: 4px;">
+                  ${totalAvis > 0 ? `★ <strong style="color: #FFD700;">${noteText}</strong> sur 5.0 (${totalAvis} avis reçu${totalAvis > 1 ? 's' : ''})` : `<span style="color: #888;">Nouveau vendeur (0 avis)</span>`} • 📍 ${ad.region || 'Dakar'}
                 </div>
               </div>
             </div>
             <div>
-              <button class="btn-secondary" style="font-size: 11.5px; padding: 4px 10px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')">
+              <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')">
                 Voir profil & avis (${totalAvis}) →
               </button>
             </div>
@@ -5725,27 +5763,62 @@
     /**
      * Gère l'affichage des boutons sur la page détail d'une annonce
      * Règle : Le bouton "Partager" est réservé UNIQUEMENT au vendeur
+     * Statuts gérés :
+     * - CAS 0 : Annonce VENDUE
+     * - CAS 0bis : Annonce EN COURS + FERMÉE (accepteAutresOffres === false)
+     * - CAS 0ter : Annonce EN COURS + OUVERTE (accepteAutresOffres === true) -> bandeau d'info + flux normal
+     * - CAS 1 : Visiteur non connecté
+     * - CAS 2 : Vendeur (bouton Partager uniquement)
+     * - CAS 3 à 6 : Acheteur selon statut demande Firestore
      */
     function afficherBoutonsAnnonce(annonceId, annonce) {
       var user = firebase.auth().currentUser;
       var conteneur = document.getElementById("boutonsAnnonce");
       
       if (!conteneur) return;
+
+      if (!annonce && annonceId) {
+        annonce = typeof getAnnonces === 'function' ? getAnnonces().find(function(a) { return a.id === annonceId; }) : null;
+      }
+
+      // CAS 0 : Annonce VENDUE
+      if (annonce && (annonce.statut === "vendue" || annonce.statut === "VENDU")) {
+        conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; opacity:0.7;"><p style="color:#F44336; font-weight:bold; font-size:20px; margin:0 0 6px 0;">🔴 VENDU</p><p style="color:#888; margin:0;">Cet article a été vendu</p></div>';
+        return;
+      }
+
+      // CAS 0bis : Annonce EN COURS + FERMÉE
+      if (annonce && annonce.statut === "en_cours" && annonce.accepteAutresOffres === false) {
+        conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#FFC107; font-weight:bold; font-size:16px; margin:0 0 6px 0;">🟡 Transaction en cours</p><p style="color:#888; margin:0;">Fermé aux nouvelles offres</p></div>';
+        return;
+      }
+
+      // CAS 0ter : Annonce EN COURS + OUVERTE
+      // Afficher un bandeau d'info PUIS continuer le flux normal
+      var bandeauInfo = "";
+      if (annonce && annonce.statut === "en_cours" && annonce.accepteAutresOffres === true) {
+        bandeauInfo = '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border-left:4px solid #FFC107;"><p style="color:#FFC107; font-weight:bold; margin:0 0 4px 0;">🟡 Transaction en cours</p><p style="color:#888; font-size:12px; margin:0;">Le vendeur accepte d\'autres offres</p></div>';
+      }
       
       // 1. VISITEUR NON CONNECTÉ
       if (!user) {
-        conteneur.innerHTML = '<p style="color:#FFC107; text-align:center; padding:15px; background:#1E1E1E; border-radius:10px; border:1px solid #333; margin:0;">🔒 Connectez-vous pour contacter le vendeur</p>';
+        conteneur.innerHTML = bandeauInfo + '<p style="color:#FFC107; text-align:center; padding:15px; background:#1E1E1E; border-radius:10px; border:1px solid #333; margin:0;">🔒 Connectez-vous pour contacter le vendeur</p>';
         return;
       }
       
       // 2. VENDEUR (user.uid === annonce.vendeurId) -> SEUL CAS avec le bouton Partager
-      if (user.uid === annonce.vendeurId) {
-        conteneur.innerHTML = '<button onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:15px;">📤 Partager mon annonce</button>';
+      if (annonce && user.uid === annonce.vendeurId) {
+        conteneur.innerHTML = bandeauInfo + '<button onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:15px;">📤 Partager mon annonce</button>';
         return;
       }
       
       var telWhatsApp = (annonce && (annonce.whatsapp || annonce.telephoneWhatsApp)) ? (annonce.whatsapp || annonce.telephoneWhatsApp) : '';
       
+      if (!db) {
+        conteneur.innerHTML = bandeauInfo + '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
+        return;
+      }
+
       // 3 à 6. ACHETEUR (vérifier l'état de la demande dans Firestore)
       db.collection("demandes")
         .where("annonceId", "==", annonceId)
@@ -5754,7 +5827,7 @@
           
           // 3. ACHETEUR sans demande (bouton supprimé pour éviter la redondance avec l'encadré Achat Sécurisé)
           if (snapshot.empty) {
-            conteneur.innerHTML = '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
+            conteneur.innerHTML = bandeauInfo + '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
             return;
           }
           
@@ -5762,19 +5835,19 @@
           
           // 4. ACHETEUR avec demande "en_attente"
           if (demande.statut === "en_attente") {
-            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
+            conteneur.innerHTML = bandeauInfo + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
             return;
           }
           
           // 5. ACHETEUR avec demande "acceptee"
           if (demande.statut === "acceptee") {
-            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);"><p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p><p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p></div><button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>';
+            conteneur.innerHTML = bandeauInfo + '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);"><p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p><p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p></div><button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>';
             return;
           }
           
           // 6. ACHETEUR avec demande "refusee"
           if (demande.statut === "refusee") {
-            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#F44336; font-weight:bold; margin:0 0 6px 0;">❌ Demande refusée</p><p style="color:#888; font-size:12px; margin:0;">Le vendeur n\'a pas accepté votre demande</p></div>';
+            conteneur.innerHTML = bandeauInfo + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#F44336; font-weight:bold; margin:0 0 6px 0;">❌ Demande refusée</p><p style="color:#888; font-size:12px; margin:0;">Le vendeur n\'a pas accepté votre demande</p></div>';
             return;
           }
         }, function(error) {
@@ -5931,11 +6004,118 @@
     }
 
     /**
-     * Calcule la note moyenne, le nombre total d'avis et la distribution pour un vendeur donné
+     * Calcule le badge du vendeur selon les 4 niveaux basés sur les notes et avis :
+     * 1. 🆕 NOUVEAU (0 avis)
+     * 2. 🟢 RECOMMANDÉ (1-2 avis, note ≥ 4.0)
+     * 3. 🔵 TRÈS FIABLE (3-4 avis, note ≥ 4.5)
+     * 4. 👑 EXCELLENT (5+ avis, note ≥ 4.7)
      */
-    function getNoteEtAvisVendeur(vendeurNom) {
+    function calculerBadge(vendeur) {
+      var avis = (vendeur && (vendeur.nombreAvis !== undefined ? vendeur.nombreAvis : (vendeur.totalAvis !== undefined ? vendeur.totalAvis : 0))) || 0;
+      var note = (vendeur && (vendeur.noteMoyenne !== undefined ? vendeur.noteMoyenne : (vendeur.note !== undefined ? vendeur.note : 0))) || 0;
+
+      if (avis >= 5 && note >= 4.7) return "excellent";
+      if (avis >= 3 && note >= 4.5) return "tres_fiable";
+      if (avis >= 1 && note >= 4.0) return "recommande";
+      return "nouveau";
+    }
+
+    /**
+     * Renvoie les métadonnées visuelles du badge vendeur
+     */
+    function afficherBadge(badge) {
+      var badges = {
+        "nouveau": { icone: "🆕", texte: "Nouveau vendeur", couleur: "#888" },
+        "recommande": { icone: "🟢", texte: "Recommandé", couleur: "#00C853" },
+        "tres_fiable": { icone: "🔵", texte: "Très fiable", couleur: "#2196F3" },
+        "excellent": { icone: "👑", texte: "Excellent", couleur: "#FFD700" }
+      };
+      return badges[badge] || badges["nouveau"];
+    }
+
+    /**
+     * Génère l'affichage visuel en étoiles
+     */
+    function genererEtoilesVisuelles(note) {
+      var n = Number(note) || 0;
+      if (n <= 0) return "☆☆☆☆☆";
+      var pleines = Math.floor(n);
+      var demi = (n - pleines) >= 0.3 && (n - pleines) <= 0.8;
+      var ajustPleines = (n - pleines) > 0.8 ? pleines + 1 : pleines;
+      var res = '⭐'.repeat(Math.min(5, Math.max(0, ajustPleines)));
+      if (demi && ajustPleines < 5) res += '½';
+      return res || '☆☆☆☆☆';
+    }
+
+    /**
+     * Formate une date relative en français (ex : "il y a 3 semaines")
+     */
+    function formaterDateRelative(dateStr) {
+      if (!dateStr) return "récemment";
+      var d = (dateStr && dateStr.toDate) ? dateStr.toDate() : new Date(dateStr);
+      if (isNaN(d.getTime())) return "récemment";
+      var diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (diffSec < 60) return "à l'instant";
+      var diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return "il y a " + diffMin + " min";
+      var diffH = Math.floor(diffMin / 60);
+      if (diffH < 24) return "il y a " + diffH + " h";
+      var diffJours = Math.floor(diffH / 24);
+      if (diffJours === 1) return "hier";
+      if (diffJours < 7) return "il y a " + diffJours + " jours";
+      var diffSemaines = Math.floor(diffJours / 7);
+      if (diffSemaines < 4) return "il y a " + diffSemaines + " semaine" + (diffSemaines > 1 ? "s" : "");
+      var diffMois = Math.floor(diffJours / 30);
+      if (diffMois < 12) return "il y a " + diffMois + " mois";
+      var diffAnnees = Math.floor(diffJours / 365);
+      return "il y a " + diffAnnees + " an" + (diffAnnees > 1 ? "s" : "");
+    }
+
+    /**
+     * Trie les annonces par :
+     * 1. Badge (excellent > très fiable > recommandé > nouveau)
+     * 2. Note moyenne (plus haute en premier)
+     * 3. Date de publication (plus récent en premier)
+     */
+    function trierAnnoncesParFiabilite(liste) {
+      var badgePoids = {
+        "excellent": 4,
+        "tres_fiable": 3,
+        "recommande": 2,
+        "nouveau": 1
+      };
+
+      return liste.sort(function(a, b) {
+        var statsA = getNoteEtAvisVendeur(a.vendeurId || a.vendeur);
+        var statsB = getNoteEtAvisVendeur(b.vendeurId || b.vendeur);
+
+        var poidsA = badgePoids[statsA.badge] || 1;
+        var poidsB = badgePoids[statsB.badge] || 1;
+
+        if (poidsB !== poidsA) {
+          return poidsB - poidsA;
+        }
+
+        if (statsB.noteMoyenne !== statsA.noteMoyenne) {
+          return statsB.noteMoyenne - statsA.noteMoyenne;
+        }
+
+        var timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.datePublication || a.date || 0).getTime();
+        var timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.datePublication || b.date || 0).getTime();
+        return timeB - timeA;
+      });
+    }
+
+    /**
+     * Calcule la note moyenne, le nombre total d'avis et le badge pour un vendeur donné
+     */
+    function getNoteEtAvisVendeur(vendeurIdentifiant) {
       const tousAvis = getAvis();
-      const avisVendeur = tousAvis.filter(a => a.vendeurNom === vendeurNom);
+      const avisVendeur = tousAvis.filter(a => 
+        a.vendeurNom === vendeurIdentifiant || 
+        (a.vendeurId && a.vendeurId === vendeurIdentifiant) ||
+        (a.vendeur && a.vendeur === vendeurIdentifiant)
+      );
 
       const statsEtoiles = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
       avisVendeur.forEach(a => {
@@ -5945,8 +6125,11 @@
 
       if (avisVendeur.length === 0) {
         return {
-          noteMoyenne: 5.0,
+          noteMoyenne: 0,
+          noteTotale: 0,
           totalAvis: 0,
+          nombreAvis: 0,
+          badge: "nouveau",
           avis: [],
           statsEtoiles
         };
@@ -5954,11 +6137,15 @@
 
       const somme = avisVendeur.reduce((acc, a) => acc + (Number(a.note) || 5), 0);
       const moyenne = Number((somme / avisVendeur.length).toFixed(1));
+      const badge = calculerBadge({ nombreAvis: avisVendeur.length, noteMoyenne: moyenne });
 
       return {
         noteMoyenne: moyenne,
+        noteTotale: somme,
         totalAvis: avisVendeur.length,
-        avis: avisVendeur.sort((a, b) => new Date(b.date) - new Date(a.date)),
+        nombreAvis: avisVendeur.length,
+        badge: badge,
+        avis: avisVendeur.sort((a, b) => new Date(b.date || b.dateCreation || 0) - new Date(a.date || a.dateCreation || 0)),
         statsEtoiles
       };
     }
@@ -6448,14 +6635,40 @@
      * 5. ACTIONS DU VENDEUR
      */
     function accepterDemande(demandeId) {
-      db.collection("demandes").doc(demandeId).update({
-        statut: "acceptee",
-        dateAcceptation: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(function() {
-        alert("✅ Demande acceptée !");
-      })
-      .catch(function(error) {
+      if (!db) {
+        afficherNotification("Demande acceptée", "✅");
+        return;
+      }
+      db.collection("demandes").doc(demandeId).get().then(function(doc) {
+        var data = doc.exists ? doc.data() : null;
+        var annonceId = data ? data.annonceId : null;
+
+        return db.collection("demandes").doc(demandeId).update({
+          statut: "acceptee",
+          dateAcceptation: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function() {
+          if (annonceId) {
+            db.collection("annonces").doc(annonceId).update({
+              statut: "en_cours",
+              accepteAutresOffres: true
+            }).catch(function(e) { console.warn("Mise à jour statut annonce:", e); });
+
+            var annonces = getAnnonces();
+            var ad = annonces.find(function(a) { return a.id === annonceId; });
+            if (ad) {
+              ad.statut = "en_cours";
+              ad.accepteAutresOffres = true;
+              setAnnonces(annonces);
+            }
+          }
+          afficherNotification("Demande acceptée ! Transaction en cours.", "✅");
+          if (typeof afficherDemandesVendeur === 'function') afficherDemandesVendeur();
+          if (currentPage === 'mes-annonces') afficherMesAnnonces();
+          if (currentPage === 'detail' && currentDetailAdId === annonceId) {
+            afficherDetailAnnonce(annonceId);
+          }
+        });
+      }).catch(function(error) {
         alert("Erreur : " + error.message);
       });
     }
@@ -6467,7 +6680,8 @@
           dateRefus: firebase.firestore.FieldValue.serverTimestamp()
         })
         .then(function() {
-          alert("Demande refusée");
+          afficherNotification("Demande refusée", "ℹ️");
+          if (typeof afficherDemandesVendeur === 'function') afficherDemandesVendeur();
         })
         .catch(function(error) {
           alert("Erreur : " + error.message);
@@ -6492,25 +6706,29 @@
         return;
       }
 
+      var nowTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
+
       db.collection("demandes").doc(demandeId).get().then(function(doc) {
         const data = doc.exists ? doc.data() : null;
 
         return db.collection("demandes").doc(demandeId).update({
           statut: "terminee",
-          dateTerminee: firebase.firestore.FieldValue.serverTimestamp(),
-          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+          dateTerminee: nowTimestamp,
+          dateMiseAJour: nowTimestamp
         }).then(function() {
           if (data && data.annonceId) {
             db.collection("annonces").doc(data.annonceId).update({
-              statut: "VENDU"
+              statut: "vendue",
+              dateVente: nowTimestamp
             }).catch(function(e) {
-              console.warn("Mise à jour statut annonce VENDU:", e);
+              console.warn("Mise à jour statut annonce vendue:", e);
             });
 
             const annonces = getAnnonces();
             const ad = annonces.find(a => a.id === data.annonceId);
             if (ad) {
-              ad.statut = 'VENDU';
+              ad.statut = 'vendue';
+              ad.dateVente = new Date().toISOString();
               setAnnonces(annonces);
             }
           }
@@ -6518,6 +6736,7 @@
           afficherNotification("Vente terminée avec succès ! L'annonce est marquée comme VENDU.", "🎉");
           afficherDemandesVendeur();
           afficherDemandesAcheteur();
+          if (currentPage === 'mes-annonces') afficherMesAnnonces();
         });
       }).catch(function(err) {
         alert("Erreur lors de la clôture : " + err.message);
@@ -6584,6 +6803,18 @@
           afficherNotification("Réception confirmée ! La transaction est finalisée.", "📦");
           afficherDemandesAcheteur();
           afficherDemandesVendeur();
+
+          // Déclenchement automatique de la notation obligatoire du vendeur
+          setTimeout(function() {
+            ouvrirModalAvis({
+              transactionId: demandeId,
+              vendeurNom: (data && (data.vendeurNom || data.vendeur)) || "Vendeur",
+              vendeurId: (data && data.vendeurId) || "",
+              annonceId: (data && data.annonceId) || "",
+              titreAnnonce: (data && data.titreAnnonce) || "Compte eFootball",
+              obligatoire: true
+            });
+          }, 600);
         });
       }).catch(function(err) {
         alert("Erreur lors de la confirmation : " + err.message);
@@ -7508,41 +7739,54 @@
     /**
      * Ouvre la modale de notation étoilée et commentaire
      */
+    let reviewModalObligatoire = false;
+    let currentReviewVendeurId = "";
+
+    /**
+     * Ouvre la modale de notation étoilée et commentaire
+     */
     function ouvrirModalAvis(params = {}) {
       const profil = getProfilUtilisateur();
-      if (!profil) {
-        demanderNomUtilisateur(() => ouvrirModalAvis(params));
-        return;
-      }
+      var user = firebase.auth().currentUser;
 
       currentReviewTransactionId = params.transactionId || ('tx_' + Date.now());
       currentReviewVendeurNom = params.vendeurNom || "Vendeur";
+      currentReviewVendeurId = params.vendeurId || "";
       currentReviewAnnonceId = params.annonceId || null;
       currentReviewTitreAnnonce = params.titreAnnonce || "Compte eFootball";
+      reviewModalObligatoire = params.obligatoire === true;
 
-      const titleEl = document.getElementById('review-modal-title');
-      const accountEl = document.getElementById('review-modal-account-title');
-      if (titleEl) titleEl.textContent = `Évaluer ${currentReviewVendeurNom}`;
-      if (accountEl) accountEl.textContent = `⚽ Transaction terminée : ${currentReviewTitreAnnonce}`;
-
-      // Vérifier si un avis existe déjà
+      // Règle : 1 seul avis par transaction (définitif et non modifiable)
       const avisListe = getAvis();
       const avisExistant = avisListe.find(a => 
         (a.transactionId && a.transactionId === currentReviewTransactionId) ||
-        (a.vendeurNom === currentReviewVendeurNom && a.acheteurNom === profil.nom && a.annonceId === currentReviewAnnonceId)
+        (user && a.acheteurId && a.acheteurId === user.uid && a.transactionId === currentReviewTransactionId)
       );
 
-      const textarea = document.getElementById('review-comment-text');
       if (avisExistant) {
-        currentRatingSelected = Number(avisExistant.note) || 5;
-        if (textarea) textarea.value = avisExistant.commentaire;
-      } else {
-        currentRatingSelected = 5;
-        if (textarea) textarea.value = "";
+        afficherNotification("Vous avez déjà noté cette transaction. L'avis est définitif.", "ℹ️");
+        return;
       }
 
-      actualiserAffichageEtoiles(currentRatingSelected);
-      gererSaisieCommentaire(textarea ? textarea.value : "");
+      const questionEl = document.getElementById('review-modal-question');
+      const accountEl = document.getElementById('review-modal-account-title');
+      const closeBtn = document.getElementById('review-modal-close-btn');
+
+      if (questionEl) {
+        questionEl.textContent = `Comment s'est passée la transaction avec ${currentReviewVendeurNom} ?`;
+      }
+      if (accountEl) {
+        accountEl.textContent = `Compte : ${currentReviewTitreAnnonce}`;
+      }
+      if (closeBtn) {
+        closeBtn.style.display = reviewModalObligatoire ? 'none' : 'block';
+      }
+
+      const textarea = document.getElementById('review-comment-text');
+      if (textarea) textarea.value = "";
+      currentRatingSelected = 5;
+      actualiserAffichageEtoiles(5);
+      validerFormulaireAvis();
 
       const modal = document.getElementById('review-modal');
       if (modal) modal.classList.add('active');
@@ -7552,8 +7796,22 @@
      * Ferme la modale d'avis
      */
     function fermerModalAvis() {
+      if (reviewModalObligatoire) {
+        afficherNotification("La notation est obligatoire pour évaluer le vendeur et clore la transaction.", "⚠️");
+        return;
+      }
       const modal = document.getElementById('review-modal');
       if (modal) modal.classList.remove('active');
+    }
+
+    /**
+     * Clic sur le fond sombre de la modale
+     */
+    function gererClicBackdropAvis(event) {
+      if (reviewModalObligatoire) return;
+      if (event && event.target && event.target.id === 'review-modal') {
+        fermerModalAvis();
+      }
     }
 
     /**
@@ -7598,11 +7856,11 @@
       const feedback = document.getElementById('star-rating-feedback');
       if (!feedback) return;
       const descriptions = {
-        1: "⭐️ 1.0 - Décevant / Transaction non conforme",
-        2: "⭐️⭐️ 2.0 - Passable / Retard ou difficulté",
-        3: "⭐️⭐️⭐️ 3.0 - Correct / Compte bien reçu",
-        4: "⭐️⭐️⭐️⭐️ 4.0 - Très bon vendeur / Réactif",
-        5: "⭐️⭐️⭐️⭐️⭐️ 5.0 - Excellent ! Vendeur très recommandé"
+        1: "⭐️ 1.0 - Mauvaise expérience",
+        2: "⭐️⭐️ 2.0 - Passable",
+        3: "⭐️⭐️⭐️ 3.0 - Correct",
+        4: "⭐️⭐️⭐️⭐️ 4.0 - Très bien",
+        5: "⭐️⭐️⭐️⭐️⭐️ 5.0 - Excellent ! Vendeur au top"
       };
       feedback.textContent = descriptions[note] || "Attribuez une note";
     }
@@ -7634,270 +7892,263 @@
 
     /**
      * Valide le formulaire pour débloquer le bouton d'envoi
+     * Note obligatoire (>=1), commentaire optionnel
      */
     function validerFormulaireAvis() {
-      const textarea = document.getElementById('review-comment-text');
       const btnSubmit = document.getElementById('btn-submit-review');
-      const err = document.getElementById('err-review-comment');
-      if (!textarea || !btnSubmit) return;
-
-      const texte = textarea.value.trim();
-      const isValid = currentRatingSelected >= 1 && texte.length >= 6;
-
-      if (texte.length > 0 && texte.length < 6) {
-        if (err) err.style.display = 'block';
-      } else {
-        if (err) err.style.display = 'none';
-      }
-
-      btnSubmit.disabled = !isValid;
+      if (!btnSubmit) return;
+      btnSubmit.disabled = (currentRatingSelected < 1);
     }
 
     /**
-     * Enregistre l'avis étoilé et le commentaire dans localStorage
+     * Met à jour le profil vendeur dans Firestore collection "vendeurs"
+     */
+    function mettreAJourProfilVendeurFirestore(vendeurId, vendeurNom) {
+      if (!db) return;
+      const stats = getNoteEtAvisVendeur(vendeurId || vendeurNom);
+      const badge = stats.badge;
+      const docId = vendeurId || ("vendeur_" + (vendeurNom || "inconnu").replace(/\s+/g, '_'));
+
+      const dataVendeur = {
+        userId: vendeurId || "",
+        nom: vendeurNom,
+        noteTotale: stats.noteTotale,
+        noteMoyenne: stats.noteMoyenne,
+        nombreAvis: stats.nombreAvis,
+        badge: badge,
+        dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      db.collection("vendeurs").doc(docId).set(dataVendeur, { merge: true }).catch(function(e) {
+        console.warn("Erreur mise à jour profil vendeur Firestore:", e);
+      });
+    }
+
+    /**
+     * Enregistre l'avis définitif sur le vendeur
      */
     function confirmerEnvoiAvis() {
       const profil = getProfilUtilisateur();
-      if (!profil) {
-        demanderNomUtilisateur();
-        return;
-      }
+      var user = firebase.auth().currentUser;
 
       const textarea = document.getElementById('review-comment-text');
       const commentaire = textarea ? textarea.value.trim() : "";
-      if (commentaire.length < 6) {
-        afficherNotification("Le commentaire doit faire au moins 6 caractères.", "⚠️");
-        return;
-      }
+      const noteChoisie = Number(currentRatingSelected) || 5;
 
-      const avisListe = getAvis();
-
-      const indexExistant = avisListe.findIndex(a => 
-        (a.transactionId && a.transactionId === currentReviewTransactionId) ||
-        (a.vendeurNom === currentReviewVendeurNom && a.acheteurNom === profil.nom && a.annonceId === currentReviewAnnonceId)
-      );
-
-      const reviewId = indexExistant >= 0 ? avisListe[indexExistant].id : ('rev_' + Date.now());
+      const acheteurNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "Acheteur")) : (localStorage.getItem("efoot_nom") || "Acheteur");
+      const acheteurId = user ? user.uid : "anonyme";
+      const reviewId = 'rev_' + Date.now();
 
       const reviewData = {
         id: reviewId,
-        transactionId: currentReviewTransactionId || ('tx_' + Date.now()),
+        vendeurId: currentReviewVendeurId || "",
         vendeurNom: currentReviewVendeurNom,
-        acheteurNom: profil.nom,
+        acheteurId: acheteurId,
+        acheteurNom: acheteurNom,
+        note: noteChoisie,
+        commentaire: commentaire || "Transaction réussie et conforme",
+        transactionId: currentReviewTransactionId,
         annonceId: currentReviewAnnonceId,
         titreAnnonce: currentReviewTitreAnnonce || "Compte eFootball",
-        note: currentRatingSelected,
-        commentaire: commentaire,
+        dateCreation: new Date().toISOString(),
         date: new Date().toISOString()
       };
 
-      if (indexExistant >= 0) {
-        avisListe[indexExistant] = reviewData;
-      } else {
-        avisListe.unshift(reviewData);
-      }
+      // 1. Sauvegarde locale immédiate
+      const avisListe = getAvis();
+      avisListe.unshift(reviewData);
       setAvis(avisListe);
 
+      // 2. Mise à jour de la note statique des annonces locales
       mettreAJourNoteVendeurDansAnnonces(currentReviewVendeurNom);
 
-      fermerModalAvis();
-      afficherNotification(`Votre avis (${currentRatingSelected}★) a été publié sur le profil de ${currentReviewVendeurNom} !`, "⭐️");
+      // 3. Persistance dans Firestore : collection "avis"
+      if (db) {
+        const firestorePayload = {
+          vendeurId: currentReviewVendeurId || "",
+          vendeurNom: currentReviewVendeurNom,
+          acheteurId: acheteurId,
+          acheteurNom: acheteurNom,
+          note: noteChoisie,
+          commentaire: commentaire || "Transaction réussie et conforme",
+          transactionId: currentReviewTransactionId,
+          annonceId: currentReviewAnnonceId || "",
+          titreAnnonce: currentReviewTitreAnnonce || "Compte eFootball",
+          dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+        };
 
-      // Actualiser la vue en cours
-      if (currentPage === 'messages' && activeConversationId) {
-        afficherConversations(activeConversationId);
-      } else if (currentPage === 'detail' && currentDetailAdId) {
-        afficherDetailAnnonce(currentDetailAdId);
-      } else if (currentPage === 'accueil') {
-        appliquerFiltres();
+        db.collection("avis").add(firestorePayload).then(function(docRef) {
+          reviewData.id = docRef.id;
+          mettreAJourProfilVendeurFirestore(currentReviewVendeurId, currentReviewVendeurNom);
+        }).catch(function(err) {
+          console.warn("Erreur ajout avis Firestore:", err);
+        });
+
+        // Marquer la transaction comme notée
+        if (currentReviewTransactionId && currentReviewTransactionId.indexOf('tx_') !== 0) {
+          db.collection("demandes").doc(currentReviewTransactionId).update({
+            avisDonne: true,
+            noteAvis: noteChoisie,
+            commentaireAvis: commentaire || ""
+          }).catch(function(e) {
+            console.warn("Erreur mise à jour demande avisDonne:", e);
+          });
+        }
       }
 
-      // Afficher le profil du vendeur pour visualiser l'avis nouvellement publié
-      setTimeout(() => {
+      // 4. Fermer la modale
+      reviewModalObligatoire = false;
+      const modal = document.getElementById('review-modal');
+      if (modal) modal.classList.remove('active');
+
+      afficherNotification(`Votre avis (${noteChoisie}★) a été publié sur le profil de ${currentReviewVendeurNom} !`, "⭐");
+
+      // 5. Actualiser la vue en cours
+      if (currentPage === 'accueil') {
+        appliquerFiltres();
+      } else if (currentPage === 'detail' && currentDetailAdId) {
+        afficherDetailAnnonce(currentDetailAdId);
+      } else if (currentPage === 'transactions') {
+        afficherMesTransactions();
+      }
+
+      // 6. Ouvrir le profil du vendeur pour visualiser son badge et ses avis actualisés
+      setTimeout(function() {
         ouvrirProfilVendeur(currentReviewVendeurNom);
-      }, 400);
+      }, 350);
     }
 
     /**
-     * Ouvre la modale avec le profil complet du vendeur (note, stats, distribution et tous les avis textuels)
+     * Ouvre la modale avec le profil du vendeur :
+     * 👤 Moussa D.
+     * 🔵 Vendeur très fiable
+     * ⭐⭐⭐⭐½ 4.8 sur 5
+     * 📊 3 avis reçus
+     * 📍 Dakar
+     * 📅 Membre depuis ...
+     * 💬 Derniers avis (3 derniers avec commentaire, étoiles, acheteur, date relative)
      */
     function ouvrirProfilVendeur(vendeurNom) {
       const stats = getNoteEtAvisVendeur(vendeurNom);
-      const annonces = getAnnonces().filter(a => a.vendeur === vendeurNom);
-      const profil = getProfilUtilisateur();
-      const monNom = profil ? profil.nom : "";
-
-      const txs = getTransactions().filter(t => t.vendeurNom === vendeurNom && t.statut === 'terminee');
-      const totalTransactions = Math.max(txs.length, stats.totalAvis);
-
-      const maTransaction = txs.find(t => t.acheteurNom === monNom);
-      const monAvis = stats.avis.find(a => a.acheteurNom === monNom);
+      const annonces = getAnnonces().filter(a => a.vendeur === vendeurNom || a.vendeurNom === vendeurNom);
+      const badgeKey = calculerBadge(stats);
+      const infoBadge = afficherBadge(badgeKey);
 
       const modal = document.getElementById('seller-profile-modal');
       const container = document.getElementById('seller-profile-modal-content');
       if (!modal || !container) return;
 
-      const totalNotes = stats.totalAvis || 1;
-      const bar5 = Math.round(((stats.statsEtoiles[5] || 0) / totalNotes) * 100);
-      const bar4 = Math.round(((stats.statsEtoiles[4] || 0) / totalNotes) * 100);
-      const bar3 = Math.round(((stats.statsEtoiles[3] || 0) / totalNotes) * 100);
-      const bar2 = Math.round(((stats.statsEtoiles[2] || 0) / totalNotes) * 100);
-      const bar1 = Math.round(((stats.statsEtoiles[1] || 0) / totalNotes) * 100);
+      const regionVendeur = (annonces.length > 0 && (annonces[0].region || annonces[0].localisation)) ? (annonces[0].region || annonces[0].localisation) : 'Dakar';
 
-      const regionVendeur = annonces.length > 0 && annonces[0].region ? annonces[0].region : 'Dakar';
-      const telVendeur = annonces.length > 0 && annonces[0].telephoneWhatsApp ? annonces[0].telephoneWhatsApp : '221770000000';
-
-      let boutonAvisHtml = '';
-      if (monNom && monNom !== vendeurNom) {
-        if (maTransaction) {
-          if (monAvis) {
-            boutonAvisHtml = `
-              <div style="background: rgba(255, 214, 0, 0.1); border: 1px solid rgba(255, 214, 0, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
-                <div>
-                  <div style="font-size: 12px; font-weight: 600; color: var(--badge-gold);">⭐ Vous avez déjà noté ce vendeur (${monAvis.note}/5)</div>
-                  <div style="font-size: 11.5px; color: var(--text-gray); margin-top: 2px;">« ${monAvis.commentaire.substring(0, 70)}${monAvis.commentaire.length > 70 ? '...' : ''} »</div>
-                </div>
-                <button class="btn-secondary" style="font-size: 11.5px; padding: 5px 12px;" onclick="ouvrirModalAvis({ transactionId: '${maTransaction.id}', vendeurNom: '${vendeurNom}', annonceId: '${maTransaction.annonceId}', titreAnnonce: '${maTransaction.titreAnnonce}' })">
-                  ✏️ Modifier mon avis
-                </button>
-              </div>
-            `;
-          } else {
-            boutonAvisHtml = `
-              <div style="background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
-                <div>
-                  <div style="font-size: 13px; font-weight: 700; color: #00E676;">🤝 Transaction terminée avec ${vendeurNom}</div>
-                  <div style="font-size: 11.5px; color: var(--text-gray); margin-top: 2px;">Partagez votre avis étoilé et commentaire sur le compte "${maTransaction.titreAnnonce}".</div>
-                </div>
-                <button class="btn-tx-review" onclick="ouvrirModalAvis({ transactionId: '${maTransaction.id}', vendeurNom: '${vendeurNom}', annonceId: '${maTransaction.annonceId}', titreAnnonce: '${maTransaction.titreAnnonce}' })">
-                  ⭐ Laisser mon avis
-                </button>
-              </div>
-            `;
-          }
+      // Calcul de l'ancienneté du membre
+      let datePlusAncienne = Date.now();
+      if (annonces.length > 0) {
+        annonces.forEach(a => {
+          const d = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.datePublication || a.date || Date.now()).getTime();
+          if (d < datePlusAncienne) datePlusAncienne = d;
+        });
+      }
+      if (stats.avis && stats.avis.length > 0) {
+        stats.avis.forEach(a => {
+          const d = new Date(a.date || a.dateCreation || Date.now()).getTime();
+          if (d < datePlusAncienne) datePlusAncienne = d;
+        });
+      }
+      const diffJours = Math.max(1, Math.round((Date.now() - datePlusAncienne) / (1000 * 60 * 60 * 24)));
+      let ancienneteMembre = "récent";
+      if (diffJours < 30) {
+        ancienneteMembre = `${diffJours} jour${diffJours > 1 ? 's' : ''}`;
+      } else {
+        const diffMois = Math.round(diffJours / 30);
+        if (diffMois < 12) {
+          ancienneteMembre = `${diffMois} mois`;
+        } else {
+          const diffAns = Math.floor(diffMois / 12);
+          ancienneteMembre = `${diffAns} an${diffAns > 1 ? 's' : ''}`;
         }
       }
 
+      // 3 derniers avis
+      const derniersAvis = (stats.avis || []).slice(0, 3);
+
       container.innerHTML = `
-        <div class="seller-profile-hero">
-          <div class="seller-avatar-large">⚽</div>
-          <div style="flex: 1;">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <h2 style="font-size: 20px; font-weight: 700; color: var(--text-white); margin: 0;">${vendeurNom}</h2>
-              <span style="background: rgba(0, 200, 83, 0.15); color: #00E676; border: 1px solid rgba(0, 200, 83, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">
-                ✅ Vendeur Vérifié
-              </span>
-              <span style="background: rgba(33, 150, 243, 0.15); color: #64b5f6; border: 1px solid rgba(33, 150, 243, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 12px;">
-                📍 ${regionVendeur}
-              </span>
+        <div style="background: #181818; border-radius: 12px; padding: 20px; border: 1px solid #2e2e2e; margin-bottom: 16px;">
+          <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: #262626; display: flex; align-items: center; justify-content: center; font-size: 26px; border: 1px solid #444; flex-shrink: 0;">
+              👤
             </div>
-            <div style="font-size: 12px; color: var(--text-gray); margin-top: 4px;">
-              Membre actif de la communauté eFootball Sénégal • Tel : +${telVendeur}
+            <div style="flex: 1;">
+              <h2 style="font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">${escapeHtml(vendeurNom)}</h2>
+              <div style="margin-bottom: 12px;">
+                <span style="background: rgba(255,255,255,0.06); border: 1px solid ${infoBadge.couleur}; color: ${infoBadge.couleur}; font-size: 12.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                  ${infoBadge.icone} ${infoBadge.texte}
+                </span>
+              </div>
+              
+              <div style="font-size: 18px; font-weight: 700; color: #FFD700; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span>${stats.totalAvis > 0 ? genererEtoilesVisuelles(stats.noteMoyenne) : '☆☆☆☆☆'}</span>
+                <span>${stats.totalAvis > 0 ? `${stats.noteMoyenne.toFixed(1)} sur 5` : '0.0 sur 5'}</span>
+              </div>
+              
+              <div style="font-size: 13.5px; color: #ddd; margin-top: 4px;">
+                📊 ${stats.totalAvis} avis reçu${stats.totalAvis > 1 ? 's' : ''}
+              </div>
+              <div style="font-size: 13px; color: var(--text-gray); margin-top: 3px;">
+                📍 ${escapeHtml(regionVendeur)}
+              </div>
+              <div style="font-size: 13px; color: var(--text-muted); margin-top: 3px;">
+                📅 Membre depuis ${ancienneteMembre}
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="seller-stats-strip">
-          <div class="seller-stat-box">
-            <div class="seller-stat-val" style="color: var(--badge-gold);">★ ${stats.noteMoyenne.toFixed(1)}</div>
-            <div class="seller-stat-lbl">Note moyenne (/5.0)</div>
-          </div>
-          <div class="seller-stat-box">
-            <div class="seller-stat-val" style="color: #64b5f6;">${stats.totalAvis}</div>
-            <div class="seller-stat-lbl">Avis clients vérifiés</div>
-          </div>
-          <div class="seller-stat-box">
-            <div class="seller-stat-val" style="color: #00E676;">${totalTransactions}</div>
-            <div class="seller-stat-lbl">Ventes terminées</div>
-          </div>
-        </div>
-
-        <div class="rating-bars-box">
-          <div style="font-size: 12.5px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between;">
-            <span>Distribution des notes</span>
-            <span style="color: var(--badge-gold);">${stats.totalAvis} avis vérifié(s)</span>
-          </div>
-          <div class="bar-row">
-            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">5 ★</span>
-            <div class="bar-track"><div class="bar-progress" style="width: ${bar5}%;"></div></div>
-            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[5] || 0}</span>
-          </div>
-          <div class="bar-row">
-            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">4 ★</span>
-            <div class="bar-track"><div class="bar-progress" style="width: ${bar4}%;"></div></div>
-            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[4] || 0}</span>
-          </div>
-          <div class="bar-row">
-            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">3 ★</span>
-            <div class="bar-track"><div class="bar-progress" style="width: ${bar3}%;"></div></div>
-            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[3] || 0}</span>
-          </div>
-          <div class="bar-row">
-            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">2 ★</span>
-            <div class="bar-track"><div class="bar-progress" style="width: ${bar2}%;"></div></div>
-            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[2] || 0}</span>
-          </div>
-          <div class="bar-row">
-            <span style="width: 40px; font-size: 11px; color: var(--text-gray);">1 ★</span>
-            <div class="bar-track"><div class="bar-progress" style="width: ${bar1}%;"></div></div>
-            <span style="width: 32px; font-size: 11px; text-align: right; color: var(--text-muted);">${stats.statsEtoiles[1] || 0}</span>
-          </div>
-        </div>
-
-        ${boutonAvisHtml}
-
+        <!-- Section Derniers avis -->
         <div style="margin-bottom: 20px;">
-          <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">
-            💬 Avis et commentaires des acheteurs (${stats.totalAvis})
+          <h3 style="font-size: 15px; font-weight: 700; color: #fff; margin: 0 0 12px 0;">
+            💬 Derniers avis :
           </h3>
 
-          <div class="reviews-list">
-            ${stats.avis.length === 0 ? `
-              <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; background: #202020; border-radius: 8px;">
-                Aucun avis pour l'instant. Marquez une transaction comme terminée pour laisser votre avis !
+          ${derniersAvis.length === 0 ? `
+            <div style="background: #181818; border: 1px dashed #333; border-radius: 10px; padding: 22px; text-align: center; color: var(--text-muted); font-size: 13px;">
+              Aucun avis pour le moment sur ce vendeur.<br>
+              Les avis sont automatiquement enregistrés à la fin des transactions.
+            </div>
+          ` : derniersAvis.map(a => `
+            <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 10px; padding: 14px; margin-bottom: 10px;">
+              <div style="font-size: 14px; color: #fff; font-style: italic; margin-bottom: 8px;">
+                "${escapeHtml(a.commentaire || 'Transaction réussie et conforme')}"
               </div>
-            ` : stats.avis.map(a => `
-              <div class="review-card">
-                <div class="review-header">
-                  <div class="review-author-info">
-                    <span style="font-size: 18px;">👤</span>
-                    <div>
-                      <div class="review-author-name">${a.acheteurNom}</div>
-                      <div class="review-date">${formaterDate(a.date)}</div>
-                    </div>
-                  </div>
-                  <div class="review-stars-gold">
-                    ${'★'.repeat(Math.min(5, Math.max(1, Math.round(Number(a.note) || 5))))}${'☆'.repeat(5 - Math.min(5, Math.max(1, Math.round(Number(a.note) || 5))))}
-                    <span style="font-size: 12px; font-weight: 700; margin-left: 4px; color: var(--badge-gold);">${Number(a.note).toFixed(1)}</span>
-                  </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; flex-wrap: wrap; gap: 4px;">
+                <div style="color: #FFD700; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
+                  <span>${'⭐'.repeat(Math.min(5, Math.max(1, Math.round(Number(a.note) || 5))))}</span>
+                  <span style="color: var(--text-gray); font-size: 12px;">- ${escapeHtml(a.acheteurNom || 'Acheteur')}</span>
                 </div>
-                ${a.titreAnnonce ? `
-                  <div>
-                    <span class="review-verified-pill">
-                      <span>✅</span> Achat vérifié : ${a.titreAnnonce}
-                    </span>
-                  </div>
-                ` : ''}
-                <div class="review-comment-text">« ${a.commentaire} »</div>
+                <div style="color: var(--text-muted); font-size: 11px;">
+                  ${formaterDateRelative(a.date || a.dateCreation)}
+                </div>
               </div>
-            `).join('')}
-          </div>
+            </div>
+          `).join('')}
         </div>
 
-        <div>
-          <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">
-            ⚽ Comptes publiés par ${vendeurNom} (${annonces.length})
-          </h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
-            ${annonces.map(ad => `
-              <div style="background: #202020; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; cursor: pointer; transition: transform 0.15s ease;" onclick="fermerProfilVendeur(); changerPage('detail', { annonceId: '${ad.id}' })">
-                <div style="font-size: 12px; font-weight: 700; color: var(--text-white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${ad.titre}</div>
-                <div style="font-size: 13px; font-weight: 700; color: var(--primary); margin-top: 4px;">${formaterPrix(ad.prix)}</div>
-                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">🎮 ${ad.plateforme} • 📍 ${ad.region || 'Dakar'}</div>
-              </div>
-            `).join('')}
+        <!-- Comptes publiés par le vendeur -->
+        ${annonces.length > 0 ? `
+          <div>
+            <h3 style="font-size: 14.5px; font-weight: 700; color: #fff; margin: 0 0 10px 0;">
+              ⚽ Comptes publiés par ${escapeHtml(vendeurNom)} (${annonces.length})
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;">
+              ${annonces.map(ad => `
+                <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 10px; cursor: pointer; transition: transform 0.15s ease;" onclick="fermerProfilVendeur(); changerPage('detail', { annonceId: '${ad.id}' })">
+                  <div style="font-size: 12.5px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(ad.titre)}</div>
+                  <div style="font-size: 13.5px; font-weight: 700; color: var(--primary); margin-top: 4px;">${formaterPrix(ad.prix)}</div>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">🎮 ${escapeHtml(ad.plateforme)} • 📍 ${escapeHtml(ad.region || 'Dakar')}</div>
+                </div>
+              `).join('')}
+            </div>
           </div>
-        </div>
+        ` : ''}
       `;
 
       modal.classList.add('active');
@@ -8412,21 +8663,26 @@
 
     /**
      * Affiche les annonces enregistrées de l'utilisateur actuel
+     * Gère les différents statuts : "en_cours" avec bloc de gestion, "vendue", ou "active"
      */
     function afficherMesAnnonces() {
       const container = document.getElementById('my-ads-container');
+      if (!container) return;
+
       const profil = getProfilUtilisateur();
       const annonces = getAnnonces();
+      const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
 
       // Filtrer les annonces par le nom/ID du vendeur
       const monNomComplet = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
       const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
-      const mesAnnonces = profil ? annonces.filter(a => 
-        (a.vendeurId && profil.id && a.vendeurId === profil.id) || 
+      const mesAnnonces = annonces.filter(a => 
+        (user && a.vendeurId === user.uid) ||
+        (profil && a.vendeurId && profil.id && a.vendeurId === profil.id) || 
         a.vendeur === monNomComplet || 
         a.vendeur === monNomFormate ||
-        (profil.prenom && a.vendeurPrenom === profil.prenom)
-      ) : [];
+        (profil && profil.prenom && a.vendeurPrenom === profil.prenom)
+      );
 
       if (mesAnnonces.length === 0) {
         container.innerHTML = `
@@ -8434,7 +8690,7 @@
             <div class="empty-icon">📋</div>
             <div class="empty-title">Vous n'avez pas encore publié d'annonce</div>
             <div class="empty-desc">
-              Tous vos comptes eFootball mis en vente apparaîtront ici avec la possibilité de les supprimer en un clic.
+              Tous vos comptes eFootball mis en vente apparaîtront ici avec la possibilité de les gérer et d'accepter des offres.
             </div>
             <button class="btn-primary" onclick="changerPage('publier')">
               ➕ Publier ma première annonce
@@ -8444,36 +8700,243 @@
         return;
       }
 
-      container.innerHTML = mesAnnonces.map(item => {
-        const mediaHtml = item.image ? 
-          `<img src="${item.image}" alt="${item.titre}">` : 
-          `<span>⚽</span>`;
+      var html = "";
+      mesAnnonces.forEach(function(annonce) {
+        if (annonce.statut === "en_cours") {
+          var demande = (demandesVendeurCache || []).find(function(d) {
+            return d.annonceId === annonce.id && (d.statut === 'acceptee' || d.statut === 'en_cours');
+          }) || (demandesVendeurCache || []).find(function(d) {
+            return d.annonceId === annonce.id;
+          }) || {};
+          var demandeId = demande.id || "";
+          var acheteurNom = demande.acheteurNom || (demande.acheteurPrenom ? (demande.acheteurPrenom + ' ' + (demande.acheteurNom || '')).trim() : (demande.acheteur || "Inconnu"));
 
-        return `
-          <div class="my-ad-item">
-            <div class="my-ad-info">
-              <div class="my-ad-thumb">${mediaHtml}</div>
-              <div class="my-ad-details">
-                <div class="my-ad-title">${item.titre}</div>
-                <div class="my-ad-meta">${item.plateforme}${item.region ? ' • 📍 ' + item.region : ''}${item.puissance ? ' • 💪 ' + item.puissance : ''}${item.typeCompte ? ' • ' + item.typeCompte : ''} • Publié le ${formaterDate(item.date)}</div>
-                <div class="my-ad-price">${formaterPrix(item.prix)}</div>
+          html += '<div style="background:#1E1E1E; padding:20px; border-radius:12px; margin-bottom:15px; border-left:4px solid #FFC107;">';
+          html += '<h3 style="color:#FFC107; margin-top:0;">🟡 TRANSACTION EN COURS</h3>';
+          html += '<p style="color:white; font-size:16px; font-weight:bold; margin:6px 0;">' + escapeHtml(annonce.titre) + '</p>';
+          html += '<p style="color:#ccc; margin:4px 0 12px 0;">Acheteur : ' + escapeHtml(acheteurNom) + '</p>';
+          
+          if (annonce.accepteAutresOffres) {
+            html += '<p style="color:#00C853; font-weight:600; margin:8px 0;">✅ Vous acceptez d\'autres offres</p>';
+            html += '<button onclick="fermerAuxOffres(\'' + annonce.id + '\')" style="background:#FFC107; color:black; padding:12px; border:none; border-radius:8px; width:100%; margin-bottom:10px; font-weight:bold; cursor:pointer;">🔒 Fermer aux nouvelles offres</button>';
+          } else {
+            html += '<p style="color:#F44336; font-weight:600; margin:8px 0;">🔒 Fermé aux nouvelles offres</p>';
+            html += '<button onclick="laisserOuverte(\'' + annonce.id + '\')" style="background:#00C853; color:white; padding:12px; border:none; border-radius:8px; width:100%; margin-bottom:10px; font-weight:bold; cursor:pointer;">✅ Laisser ouverte</button>';
+          }
+          
+          html += '<button onclick="marquerVendue(\'' + annonce.id + '\')" style="background:#00C853; color:white; padding:12px; border:none; border-radius:8px; width:100%; margin-bottom:10px; font-weight:bold; cursor:pointer;">✅ Marquer comme VENDUE</button>';
+          html += '<button onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">❌ Annuler la transaction</button>';
+          html += '</div>';
+        } else if (annonce.statut === "vendue" || annonce.statut === "VENDU") {
+          html += '<div style="background:#1E1E1E; padding:15px; border-radius:12px; margin-bottom:10px; opacity:0.7;">';
+          html += '<h3 style="color:#F44336; margin-top:0;">🔴 VENDU</h3>';
+          html += '<p style="color:#ccc; font-weight:bold; margin:4px 0;">' + escapeHtml(annonce.titre) + '</p>';
+          html += '<p style="color:#ccc; margin:4px 0;">' + (annonce.prix ? formaterPrix(annonce.prix) : '0 FCFA') + '</p>';
+          if (annonce.dateVente) {
+            html += '<p style="color:#888; font-size:12px; margin:4px 0 10px 0;">✅ Vendu le ' + formaterDate(annonce.dateVente) + '</p>';
+          }
+          html += '<button onclick="supprimerAnnonce(\'' + annonce.id + '\')" style="background:#333; color:white; padding:10px; border:none; border-radius:8px; width:100%; cursor:pointer;">🗑️ Supprimer</button>';
+          html += '</div>';
+        } else {
+          var item = annonce;
+          var mediaHtml = item.image ? 
+            `<img src="${item.image}" alt="${escapeHtml(item.titre)}">` : 
+            `<span>⚽</span>`;
+
+          html += `
+            <div class="my-ad-item">
+              <div class="my-ad-info">
+                <div class="my-ad-thumb">${mediaHtml}</div>
+                <div class="my-ad-details">
+                  <div class="my-ad-title">${escapeHtml(item.titre)}</div>
+                  <div class="my-ad-meta">${escapeHtml(item.plateforme)}${item.region ? ' • 📍 ' + escapeHtml(item.region) : ''}${item.puissance ? ' • 💪 ' + escapeHtml(item.puissance) : ''}${item.typeCompte ? ' • ' + escapeHtml(item.typeCompte) : ''} • Publié le ${formaterDate(item.datePublication || item.date)}</div>
+                  <div class="my-ad-price">${formaterPrix(item.prix)}</div>
+                </div>
+              </div>
+              <div class="my-ad-actions">
+                <button class="btn-secondary" onclick="changerPage('detail', { annonceId: '${item.id}' })">
+                  👁️ Voir
+                </button>
+                <button class="btn-danger" onclick="supprimerAnnonce('${item.id}')">
+                  🗑️ Supprimer
+                </button>
               </div>
             </div>
-            <div class="my-ad-actions">
-              <button class="btn-secondary" onclick="changerPage('detail', { annonceId: '${item.id}' })">
-                👁️ Voir
-              </button>
-              <button class="btn-danger" onclick="supprimerAnnonce('${item.id}')">
-                🗑️ Supprimer
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }
+      });
+
+      container.innerHTML = html;
     }
 
     /**
-     * 3. SUPPRIMER UNE ANNONCE (Firestore)
+     * Ferme l'annonce aux nouvelles offres
+     */
+    function fermerAuxOffres(annonceId) {
+      if (!annonceId) return;
+
+      function appliquerLocalement() {
+        var annonces = getAnnonces();
+        var ad = annonces.find(function(a) { return a.id === annonceId; });
+        if (ad) {
+          ad.accepteAutresOffres = false;
+          setAnnonces(annonces);
+        }
+        afficherNotification("Offres fermées pour cette annonce", "🔒");
+        if (currentPage === 'mes-annonces') afficherMesAnnonces();
+        if (currentPage === 'detail' && currentDetailAdId === annonceId) {
+          afficherDetailAnnonce(annonceId);
+        }
+      }
+
+      if (db) {
+        db.collection("annonces").doc(annonceId).update({
+          accepteAutresOffres: false
+        }).then(function() {
+          appliquerLocalement();
+        }).catch(function(err) {
+          console.warn("Erreur Firestore fermerAuxOffres :", err);
+          appliquerLocalement();
+        });
+      } else {
+        appliquerLocalement();
+      }
+    }
+
+    /**
+     * Laisse l'annonce ouverte aux nouvelles offres
+     */
+    function laisserOuverte(annonceId) {
+      if (!annonceId) return;
+
+      function appliquerLocalement() {
+        var annonces = getAnnonces();
+        var ad = annonces.find(function(a) { return a.id === annonceId; });
+        if (ad) {
+          ad.accepteAutresOffres = true;
+          setAnnonces(annonces);
+        }
+        afficherNotification("L'annonce accepte à nouveau d'autres offres", "✅");
+        if (currentPage === 'mes-annonces') afficherMesAnnonces();
+        if (currentPage === 'detail' && currentDetailAdId === annonceId) {
+          afficherDetailAnnonce(annonceId);
+        }
+      }
+
+      if (db) {
+        db.collection("annonces").doc(annonceId).update({
+          accepteAutresOffres: true
+        }).then(function() {
+          appliquerLocalement();
+        }).catch(function(err) {
+          console.warn("Erreur Firestore laisserOuverte :", err);
+          appliquerLocalement();
+        });
+      } else {
+        appliquerLocalement();
+      }
+    }
+
+    /**
+     * Marque l'annonce comme VENDUE
+     */
+    function marquerVendue(annonceId) {
+      if (!annonceId) return;
+      if (!confirm("Confirmer la vente définitive de ce compte eFootball ?")) return;
+
+      var dateVente = new Date().toISOString();
+
+      function appliquerLocalement() {
+        var annonces = getAnnonces();
+        var ad = annonces.find(function(a) { return a.id === annonceId; });
+        if (ad) {
+          ad.statut = "vendue";
+          ad.dateVente = dateVente;
+          setAnnonces(annonces);
+        }
+        afficherNotification("Compte marqué comme VENDU avec succès !", "🔴");
+        if (currentPage === 'mes-annonces') afficherMesAnnonces();
+        if (currentPage === 'detail' && currentDetailAdId === annonceId) {
+          afficherDetailAnnonce(annonceId);
+        }
+      }
+
+      if (db) {
+        var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : dateVente;
+        db.collection("annonces").doc(annonceId).update({
+          statut: "vendue",
+          dateVente: dateVal
+        }).then(function() {
+          var demande = (demandesVendeurCache || []).find(function(d) {
+            return d.annonceId === annonceId && (d.statut === 'acceptee' || d.statut === 'en_cours');
+          });
+          if (demande && demande.id) {
+            db.collection("demandes").doc(demande.id).update({
+              statut: "terminee",
+              dateTerminee: dateVal
+            }).catch(function(e) { console.warn(e); });
+          }
+          appliquerLocalement();
+        }).catch(function(err) {
+          console.warn("Erreur Firestore marquerVendue :", err);
+          appliquerLocalement();
+        });
+      } else {
+        appliquerLocalement();
+      }
+    }
+
+    /**
+     * Annule la transaction en cours et remet l'annonce en vente
+     */
+    function annulerTransaction(demandeId, annonceId) {
+      if (!confirm("Annuler la transaction en cours et rouvrir l'annonce aux acheteurs ?")) return;
+
+      function appliquerLocalement() {
+        if (annonceId) {
+          var annonces = getAnnonces();
+          var ad = annonces.find(function(a) { return a.id === annonceId; });
+          if (ad) {
+            ad.statut = "active";
+            ad.accepteAutresOffres = true;
+            setAnnonces(annonces);
+          }
+        }
+        afficherNotification("Transaction annulée. Annonce remise en vente.", "ℹ️");
+        if (currentPage === 'mes-annonces') afficherMesAnnonces();
+        if (currentPage === 'detail' && currentDetailAdId === annonceId) {
+          afficherDetailAnnonce(annonceId);
+        }
+      }
+
+      if (db) {
+        var promises = [];
+        if (annonceId) {
+          promises.push(db.collection("annonces").doc(annonceId).update({
+            statut: "active",
+            accepteAutresOffres: true
+          }));
+        }
+        if (demandeId) {
+          var dateAnnul = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
+          promises.push(db.collection("demandes").doc(demandeId).update({
+            statut: "annulee",
+            dateAnnulation: dateAnnul
+          }));
+        }
+        Promise.all(promises).then(function() {
+          appliquerLocalement();
+        }).catch(function(err) {
+          console.warn("Erreur Firestore annulerTransaction :", err);
+          appliquerLocalement();
+        });
+      } else {
+        appliquerLocalement();
+      }
+    }
+
+    /**
+     * 3. SUPPRIMER UNE ANNONCE (Firestore & Local)
      * Supprime définitivement le document de la collection "annonces"
      */
     function supprimerAnnonce(id) {
@@ -8481,18 +8944,31 @@
         return;
       }
 
-      db.collection("annonces").doc(id).delete()
-        .then(function() {
-          console.log("Annonce supprimée : " + id);
-          afficherNotification("Annonce supprimée avec succès", "🗑️");
-          if (currentPage === 'detail' && currentDetailAdId === id) {
-            changerPage('accueil');
-          }
-        })
-        .catch(function(error) {
-          console.error("Erreur de suppression Firestore :", error);
-          alert("Erreur : " + error.message);
-        });
+      function supprimerLocalement() {
+        var annonces = getAnnonces().filter(function(a) { return a.id !== id; });
+        setAnnonces(annonces);
+        localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(annonces));
+        afficherNotification("Annonce supprimée avec succès", "🗑️");
+        if (currentPage === 'mes-annonces') {
+          afficherMesAnnonces();
+        }
+        if (currentPage === 'detail' && currentDetailAdId === id) {
+          changerPage('accueil');
+        }
+      }
+
+      if (db) {
+        db.collection("annonces").doc(id).delete()
+          .then(function() {
+            supprimerLocalement();
+          })
+          .catch(function(error) {
+            console.error("Erreur de suppression Firestore :", error);
+            supprimerLocalement();
+          });
+      } else {
+        supprimerLocalement();
+      }
     }
 
     /* ==========================================================
