@@ -4998,8 +4998,9 @@
       const powerMode = powerModeEl ? powerModeEl.value : 'min';
 
       let resultats = annonces.filter(item => {
-        // Masquer du catalogue public les annonces en cours de transaction ou vendues
-        if (item.statut === 'EN_COURS' || item.statut === 'VENDU' || item.statut === 'vendue') {
+        // Masquer UNIQUEMENT les annonces vendues du catalogue public
+        // Les annonces "en_cours" restent visibles avec un badge jaune
+        if (item.statut === 'VENDU' || item.statut === 'vendue') {
           return false;
         }
 
@@ -5108,7 +5109,7 @@
                 <span>${ad.plateforme}</span>
               </div>
               ${ad.typeCompte ? `<div class="card-type-badge">${ad.typeCompte}</div>` : ''}
-              ${(ad.statut === 'vendue' || ad.statut === 'VENDU') ? `<div style="position: absolute; top: 10px; right: 10px; background: #F44336; color: white; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🔴 VENDU</div>` : (ad.statut === 'en_cours' ? `<div style="position: absolute; top: 10px; right: 10px; background: #FFC107; color: black; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🟡 En cours</div>` : '')}
+              ${(ad.statut === 'vendue' || ad.statut === 'VENDU') ? `<div style="position: absolute; top: 10px; right: 10px; background: #F44336; color: white; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🔴 VENDU</div>` : ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS') ? `<div style="position: absolute; top: 10px; right: 10px; background: #FFC107; color: black; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🟡 En cours</div>` : '')}
             </div>
             <div class="card-body">
               <h3 class="card-title">${ad.titre}</h3>
@@ -5151,7 +5152,50 @@
         return;
       }
 
-      if (firestoreUnsubscribeAnnonces) {
+      // Compteur pour savoir quand les 2 requêtes ont fini
+      var annoncesActives = [];
+      var annoncesEnCours = [];
+      var requetesTerminees = 0;
+
+      function combinerAnnonces() {
+        requetesTerminees++;
+        if (requetesTerminees >= 2) {
+          var toutesAnnonces = annoncesActives.concat(annoncesEnCours);
+          
+          // Supprimer les doublons éventuels
+          var mapUniq = new Map();
+          toutesAnnonces.forEach(function(a) { mapUniq.set(a.id, a); });
+          var annonces = Array.from(mapUniq.values());
+          
+          // Trier par date décroissante
+          annonces.sort(function(a, b) {
+            var timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.datePublication || a.date || 0).getTime();
+            var timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.datePublication || b.date || 0).getTime();
+            return timeB - timeA;
+          });
+          
+          annoncesFirestore = annonces;
+          
+          // Seeding initial si la collection est vide
+          if (annonces.length === 0 && !localStorage.getItem('efoot_firestore_seeded')) {
+            initialiserAnnoncesInitialesFirestore();
+            return;
+          }
+          
+          // Rafraîchir l'affichage en temps réel
+          if (currentPage === 'accueil') {
+            appliquerFiltres();
+          } else if (currentPage === 'mes-annonces') {
+            afficherMesAnnonces();
+          } else if (currentPage === 'detail' && currentDetailAdId) {
+            afficherDetailAnnonce(currentDetailAdId);
+          }
+          verifierLienPartageUrl();
+        }
+      }
+
+      // Si déjà initialisé, ne pas relancer
+      if (firestoreUnsubscribeAnnonces === true) {
         return;
       }
 
@@ -5166,57 +5210,54 @@
       }
 
       try {
-        firestoreUnsubscribeAnnonces = db.collection("annonces")
+        // Requête 1 : annonces actives
+        db.collection("annonces")
           .where("statut", "==", "active")
           .orderBy("datePublication", "desc")
           .onSnapshot(function(snapshot) {
-            var annonces = [];
+            annoncesActives = [];
             snapshot.forEach(function(doc) {
-              annonces.push({ id: doc.id, ...doc.data() });
+              annoncesActives.push({ id: doc.id, ...doc.data() });
             });
-
-            annoncesFirestore = annonces;
-
-            // Seeding initial si la collection Firestore est vide
-            if (annonces.length === 0 && !localStorage.getItem('efoot_firestore_seeded')) {
-              initialiserAnnoncesInitialesFirestore();
-              return;
-            }
-
-            // Rafraîchir l'affichage en temps réel
-            if (currentPage === 'accueil') {
-              appliquerFiltres();
-            } else if (currentPage === 'mes-annonces') {
-              afficherMesAnnonces();
-            } else if (currentPage === 'detail' && currentDetailAdId) {
-              afficherDetailAnnonce(currentDetailAdId);
-            }
-            verifierLienPartageUrl();
+            combinerAnnonces();
           }, function(error) {
-            console.warn("Firestore snapshot avec orderBy nécessite un index ou a échoué, repli sans orderBy :", error);
-            // Repli automatique sans clause orderBy
+            console.warn("Erreur requête actives, repli sans orderBy :", error);
             db.collection("annonces")
               .where("statut", "==", "active")
               .onSnapshot(function(snapshot) {
-                var annonces = [];
+                annoncesActives = [];
                 snapshot.forEach(function(doc) {
-                  annonces.push({ id: doc.id, ...doc.data() });
+                  annoncesActives.push({ id: doc.id, ...doc.data() });
                 });
-                annonces.sort(function(a, b) {
-                  const timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.date || 0).getTime();
-                  const timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.date || 0).getTime();
-                  return timeB - timeA;
-                });
-                annoncesFirestore = annonces;
-                if (currentPage === 'accueil') {
-                  appliquerFiltres();
-                } else if (currentPage === 'mes-annonces') {
-                  afficherMesAnnonces();
-                }
-              }, function(err2) {
-                console.error("Erreur critique écoute Firestore :", err2);
+                combinerAnnonces();
               });
           });
+
+        // Requête 2 : annonces en cours
+        db.collection("annonces")
+          .where("statut", "==", "en_cours")
+          .orderBy("datePublication", "desc")
+          .onSnapshot(function(snapshot) {
+            annoncesEnCours = [];
+            snapshot.forEach(function(doc) {
+              annoncesEnCours.push({ id: doc.id, ...doc.data() });
+            });
+            combinerAnnonces();
+          }, function(error) {
+            console.warn("Erreur requête en_cours, repli sans orderBy :", error);
+            db.collection("annonces")
+              .where("statut", "==", "en_cours")
+              .onSnapshot(function(snapshot) {
+                annoncesEnCours = [];
+                snapshot.forEach(function(doc) {
+                  annoncesEnCours.push({ id: doc.id, ...doc.data() });
+                });
+                combinerAnnonces();
+              });
+          });
+
+        firestoreUnsubscribeAnnonces = true;
+
       } catch (e) {
         console.error("Erreur initialisation Firestore :", e);
       }
