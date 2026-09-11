@@ -5845,9 +5845,59 @@
             return;
           }
           
-          // 6. ACHETEUR avec demande "refusee"
+          // CAS 6 : Demande refusée
           if (demande.statut === "refusee") {
-            conteneur.innerHTML = bandeauInfo + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#F44336; font-weight:bold; margin:0 0 6px 0;">❌ Demande refusée</p><p style="color:#888; font-size:12px; margin:0;">Le vendeur n\'a pas accepté votre demande</p></div>';
+            // Si bloqué définitivement
+            if (demande.bloqueDefinitif === true) {
+              conteneur.innerHTML = bandeauInfo + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p><p style="color:#888; font-size:13px; margin-top:10px;">Vous ne pouvez plus faire de demande sur cette annonce</p></div>';
+              return;
+            }
+            
+            // Vérifier s'il peut refaire une demande
+            var maintenant = new Date();
+            var dateProchaine = null;
+            if (demande.dateProchaineDemande) {
+              if (typeof demande.dateProchaineDemande.toDate === 'function') {
+                dateProchaine = demande.dateProchaineDemande.toDate();
+              } else {
+                dateProchaine = new Date(demande.dateProchaineDemande);
+              }
+            }
+            
+            if (dateProchaine && maintenant < dateProchaine) {
+              // Il doit encore attendre
+              var tempsRestant = Math.floor((dateProchaine - maintenant) / 1000);
+              var heures = Math.floor(tempsRestant / 3600);
+              var minutes = Math.floor((tempsRestant % 3600) / 60);
+              
+              var affichageTemps = "";
+              if (heures >= 24) {
+                var jours = Math.floor(heures / 24);
+                var heuresRestantes = heures % 24;
+                affichageTemps = jours + " jour(s) et " + heuresRestantes + "h";
+              } else if (heures >= 1) {
+                affichageTemps = heures + " heure(s)";
+              } else {
+                affichageTemps = minutes + " minute(s)";
+              }
+              
+              conteneur.innerHTML = bandeauInfo + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;">' +
+                '<p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p>' +
+                '<p style="color:#FFC107; margin-top:15px;">Vous pourrez refaire une demande dans :</p>' +
+                '<p style="color:#FFC107; font-size:20px; font-weight:bold;">' + affichageTemps + '</p>' +
+                '<p style="color:#888; font-size:12px; margin-top:10px;">Nombre de refus : ' + (demande.nombreRefus || 1) + ' / 3</p>' +
+                '</div>';
+              return;
+            }
+            
+            // Il peut refaire une demande
+            conteneur.innerHTML = bandeauInfo + 
+              '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; margin-bottom:15px;">' +
+              '<p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p>' +
+              '<p style="color:#ccc; font-size:14px; margin-top:10px;">Vous pouvez refaire une demande</p>' +
+              '<p style="color:#888; font-size:12px;">Refus : ' + (demande.nombreRefus || 1) + ' / 3</p>' +
+              '</div>' +
+              '<button onclick="refaireDemande(\'' + annonceId + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer;">🔄 Refaire une demande</button>';
             return;
           }
         }, function(error) {
@@ -6433,6 +6483,10 @@
           vendeurId: annonce.vendeurId || "",
           vendeurNom: annonce.vendeur || "Vendeur",
           statut: "en_attente",
+          nombreRefus: 0,
+          dateRefus: null,
+          dateProchaineDemande: null,
+          bloqueDefinitif: false,
           dateCreation: firebase.firestore.FieldValue.serverTimestamp()
         });
       })
@@ -6579,6 +6633,9 @@
           html += '<h4>' + escapeHtml(d.annonceTitre || "Compte eFootball") + '</h4>';
           html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
           html += '<p>👤 Acheteur : ' + escapeHtml(d.acheteurNom || "Acheteur") + '</p>';
+          if (d.nombreRefus && d.nombreRefus > 0) {
+            html += '<p style="color:#FFC107; font-size:12px; margin:4px 0 8px 0;">⚠️ Déjà refusé ' + d.nombreRefus + ' fois</p>';
+          }
           html += '<p>📞 ' + escapeHtml(d.acheteurTelephone || "Non renseigné") + '</p>';
           
           if (d.statut === "en_attente") {
@@ -6673,20 +6730,132 @@
       });
     }
 
+    /**
+     * Refuse une demande avec calcul du délai progressif :
+     * - 1er refus : 48 heures
+     * - 2ème refus : 7 jours
+     * - 3ème refus : blocage définitif sur cette annonce
+     */
     function refuserDemande(demandeId) {
-      if (confirm("Refuser cette demande ?")) {
-        db.collection("demandes").doc(demandeId).update({
+      if (!confirm("Refuser cette demande ?")) return;
+      
+      db.collection("demandes").doc(demandeId).get()
+      .then(function(doc) {
+        var demande = doc.data();
+        var nombreRefus = (demande.nombreRefus || 0) + 1;
+        
+        var delaiMs = 0;
+        var bloqueDefinitif = false;
+        
+        if (nombreRefus === 1) {
+          delaiMs = 48 * 60 * 60 * 1000; // 48 heures
+        } else if (nombreRefus === 2) {
+          delaiMs = 7 * 24 * 60 * 60 * 1000; // 7 jours
+        } else {
+          bloqueDefinitif = true;
+        }
+        
+        var dateProchaine = new Date(Date.now() + delaiMs);
+        
+        return db.collection("demandes").doc(demandeId).update({
           statut: "refusee",
-          dateRefus: firebase.firestore.FieldValue.serverTimestamp()
+          dateRefus: firebase.firestore.FieldValue.serverTimestamp(),
+          nombreRefus: nombreRefus,
+          dateProchaineDemande: dateProchaine,
+          bloqueDefinitif: bloqueDefinitif
+        });
+      })
+      .then(function() {
+        alert("❌ Demande refusée");
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Demande refusée", "❌");
+        }
+        if (typeof afficherDemandesVendeur === 'function') {
+          afficherDemandesVendeur();
+        }
+      })
+      .catch(function(error) {
+        alert("Erreur : " + error.message);
+      });
+    }
+
+    /**
+     * Permet à un acheteur de refaire une demande sur la même annonce après expiration du délai
+     * Conserve le palier de refus précédent s'il y en a eu
+     */
+    function refaireDemande(annonceId) {
+      var user = firebase.auth().currentUser;
+      if (!user) {
+        alert("Veuillez vous connecter pour envoyer une demande.");
+        return;
+      }
+
+      var profil = null;
+      try {
+        profil = JSON.parse(localStorage.getItem("efoot_profil"));
+      } catch (e) {
+        profil = null;
+      }
+      if (!profil) {
+        profil = { prenom: "Acheteur", nom: "", telephone: "" };
+      }
+
+      // Vérifier si l'acheteur a déjà eu des refus sur cette annonce pour reporter le palier de refus
+      db.collection("demandes")
+        .where("annonceId", "==", annonceId)
+        .where("acheteurId", "==", user.uid)
+        .get()
+        .then(function(snapshot) {
+          var precedentRefus = 0;
+          if (snapshot && !snapshot.empty) {
+            snapshot.forEach(function(d) {
+              var data = d.data();
+              if (data.nombreRefus && data.nombreRefus > precedentRefus) {
+                precedentRefus = data.nombreRefus;
+              }
+            });
+          }
+
+          return db.collection("annonces").doc(annonceId).get()
+            .then(function(doc) {
+              var annonce = doc.data();
+              if (!annonce) {
+                throw new Error("Annonce introuvable");
+              }
+              
+              var acheteurNom = ((profil.prenom || "Acheteur") + " " + (profil.nom ? profil.nom.charAt(0) + "." : "")).trim();
+              var acheteurTelephone = profil.telephone || localStorage.getItem("efoot_tel") || "";
+
+              return db.collection("demandes").add({
+                annonceId: annonceId,
+                annonceTitre: annonce.titre || "Compte eFootball",
+                annoncePrix: Number(annonce.prix) || 0,
+                acheteurId: user.uid,
+                acheteurNom: acheteurNom,
+                acheteurTelephone: acheteurTelephone,
+                vendeurId: annonce.vendeurId || "",
+                vendeurNom: annonce.vendeur || "Vendeur",
+                statut: "en_attente",
+                nombreRefus: precedentRefus,
+                dateRefus: null,
+                dateProchaineDemande: null,
+                bloqueDefinitif: false,
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            });
         })
         .then(function() {
-          afficherNotification("Demande refusée", "ℹ️");
-          if (typeof afficherDemandesVendeur === 'function') afficherDemandesVendeur();
+          alert("✅ Nouvelle demande envoyée !");
+          if (typeof afficherNotification === 'function') {
+            afficherNotification("Nouvelle demande envoyée !", "✅");
+          }
+          if (typeof afficherDemandesAcheteur === 'function') {
+            afficherDemandesAcheteur();
+          }
         })
         .catch(function(error) {
           alert("Erreur : " + error.message);
         });
-      }
     }
 
     function repondreDemande(demandeId, action) {
