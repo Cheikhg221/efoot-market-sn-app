@@ -2879,10 +2879,6 @@
           <span>🤝</span> Transactions
           <span class="unread-bubble pulse" id="tx-count-desktop" style="display: none;">0</span>
         </button>
-        <button class="nav-link-btn" id="nav-btn-messages" onclick="changerPage('messages')">
-          <span>💬</span> Messages
-          <span class="unread-bubble" id="unread-count-desktop" style="display: none;">0</span>
-        </button>
         <button class="nav-link-btn" id="nav-btn-mes-annonces" onclick="changerPage('mes-annonces')">
           <span>📋</span> Mes annonces
         </button>
@@ -2922,11 +2918,6 @@
     <button class="dock-btn" id="dock-btn-publier" onclick="changerPage('publier')">
       <span class="dock-icon">➕</span>
       <span>Publier</span>
-    </button>
-    <button class="dock-btn" id="dock-btn-messages" onclick="changerPage('messages')" style="position: relative;">
-      <span class="dock-icon">💬</span>
-      <span>Messages</span>
-      <span class="unread-bubble" id="unread-count-mobile" style="display: none; position: absolute; top: 4px; right: 18%;">0</span>
     </button>
     <button class="dock-btn" id="dock-btn-mes-annonces" onclick="changerPage('mes-annonces')">
       <span class="dock-icon">📋</span>
@@ -3840,9 +3831,17 @@
         if (typeof demarrerEcouteDemandesFirestore === 'function') {
           demarrerEcouteDemandesFirestore();
         }
+        if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
+          var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
+          if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
+        }
       } else {
         if (typeof arreterEcouteDemandesFirestore === 'function') {
           arreterEcouteDemandesFirestore();
+        }
+        if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
+          var adCurLogout = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
+          if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
         }
         afficherEcranConnexion();
       }
@@ -5603,9 +5602,6 @@
       const tousAvis = getAvis();
       const monAvis = tousAvis.find(a => (maTx && a.transactionId === maTx.id) || (a.vendeurNom === ad.vendeur && a.acheteurNom === monNom && a.annonceId === ad.id));
 
-      const messageWA = encodeURIComponent(`Bonjour ${ad.vendeur}, je vous contacte depuis EFoot Market SN pour votre compte "${ad.titre}" affiché à ${formaterPrix(ad.prix)}.`);
-      const lienWhatsApp = `https://wa.me/${ad.telephoneWhatsApp}?text=${messageWA}`;
-
       // Formatage du nom et du badge vérifié pour l'annonce
       const nomVendeurAffiche = formaterNomAffichage(ad.vendeurPrenom || ad.vendeur, ad.vendeurNom);
       const estVendeurVerifie = ad.verifie || validerTelephoneSenegal(ad.telephoneWhatsApp);
@@ -5616,9 +5612,6 @@
             ← Retour à l'accueil
           </button>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" class="btn-share" onclick="partagerAnnonce('${ad.id}')" style="padding: 7px 12px; font-size: 12.5px;" title="Partager cette annonce">
-              <span>📤</span> <span>Partager</span>
-            </button>
             <span style="font-size: 12px; color: var(--text-muted);">Publié le ${formaterDate(ad.date)}</span>
           </div>
         </div>
@@ -5678,20 +5671,8 @@
             </div>
           </div>
 
-          <!-- Actions de contact et partage -->
-          <div class="detail-actions-row">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <a href="${lienWhatsApp}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-whatsapp" style="flex: 1; min-width: 180px;">
-                <span>💬</span> Contacter sur WhatsApp
-              </a>
-              <button class="btn-primary" style="flex: 1; min-width: 180px;" onclick="initierDiscussion('${ad.id}')">
-                <span>✉️</span> Message au vendeur
-              </button>
-            </div>
-            <button type="button" class="btn-share" style="width: 100%; padding: 12px 18px; font-size: 14px; justify-content: center;" onclick="partagerAnnonce('${ad.id}')" title="Partager l'annonce ou copier le lien">
-              <span>🔗</span> <span>Partager cette annonce (Copier le lien / Partage natif)</span>
-            </button>
-          </div>
+          <!-- Conteneur unique pour les boutons d'action (gérés dynamiquement) -->
+          <div id="boutonsAnnonce"></div>
 
           <!-- Carte de Suivi de Transaction Sécurisée & Double Confirmation -->
           ${genererCarteTransactionDetail(ad, estMonAnnonce, maTx, txsVendeur, monAvis)}
@@ -5736,6 +5717,82 @@
           </div>
         </div>
       `;
+
+      // Affichage dynamique et sécurisé des boutons selon l'état de la demande
+      afficherBoutonsAnnonce(ad.id, ad);
+    }
+
+    /**
+     * Gère l'affichage des boutons sur la page détail d'une annonce
+     * Règle : Le bouton "Partager" est réservé UNIQUEMENT au vendeur
+     */
+    function afficherBoutonsAnnonce(annonceId, annonce) {
+      var user = firebase.auth().currentUser;
+      var conteneur = document.getElementById("boutonsAnnonce");
+      
+      if (!conteneur) return;
+      
+      // 1. VISITEUR NON CONNECTÉ
+      if (!user) {
+        conteneur.innerHTML = '<p style="color:#FFC107; text-align:center; padding:15px; background:#1E1E1E; border-radius:10px; border:1px solid #333; margin:0;">🔒 Connectez-vous pour contacter le vendeur</p>';
+        return;
+      }
+      
+      // 2. VENDEUR (user.uid === annonce.vendeurId) -> SEUL CAS avec le bouton Partager
+      if (user.uid === annonce.vendeurId) {
+        conteneur.innerHTML = '<button onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:15px;">📤 Partager mon annonce</button>';
+        return;
+      }
+      
+      var telWhatsApp = (annonce && (annonce.whatsapp || annonce.telephoneWhatsApp)) ? (annonce.whatsapp || annonce.telephoneWhatsApp) : '';
+      
+      // 3 à 6. ACHETEUR (vérifier l'état de la demande dans Firestore)
+      db.collection("demandes")
+        .where("annonceId", "==", annonceId)
+        .where("acheteurId", "==", user.uid)
+        .onSnapshot(function(snapshot) {
+          
+          // 3. ACHETEUR sans demande (bouton supprimé pour éviter la redondance avec l'encadré Achat Sécurisé)
+          if (snapshot.empty) {
+            conteneur.innerHTML = '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
+            return;
+          }
+          
+          var demande = snapshot.docs[0].data();
+          
+          // 4. ACHETEUR avec demande "en_attente"
+          if (demande.statut === "en_attente") {
+            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
+            return;
+          }
+          
+          // 5. ACHETEUR avec demande "acceptee"
+          if (demande.statut === "acceptee") {
+            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);"><p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p><p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p></div><button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>';
+            return;
+          }
+          
+          // 6. ACHETEUR avec demande "refusee"
+          if (demande.statut === "refusee") {
+            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#F44336; font-weight:bold; margin:0 0 6px 0;">❌ Demande refusée</p><p style="color:#888; font-size:12px; margin:0;">Le vendeur n\'a pas accepté votre demande</p></div>';
+            return;
+          }
+        }, function(error) {
+          console.warn("Erreur écoute demande:", error);
+        });
+    }
+
+    /**
+     * Ouvre directement une discussion WhatsApp avec le vendeur
+     */
+    function contacterWhatsApp(numero) {
+      var message = "Bonjour, je suis intéressé par votre annonce sur EFoot Market SN";
+      var numeroClean = (numero || "").replace(/[^0-9]/g, "");
+      if (!numeroClean) {
+        alert("Numéro WhatsApp non disponible.");
+        return;
+      }
+      window.open("https://wa.me/" + numeroClean + "?text=" + encodeURIComponent(message), "_blank");
     }
 
     /* ==========================================================
@@ -5745,43 +5802,23 @@
     /**
      * Partage une annonce via Web Share API native ou copie le lien
      */
-    function partagerAnnonce(adId) {
-      const annonces = getAnnonces();
-      const ad = annonces.find(item => item.id === adId);
-      if (!ad) {
-        afficherNotification("Annonce introuvable pour le partage", "⚠️");
-        return;
-      }
-
-      // Construction du lien de partage direct (compatible avec hash et search param)
-      const baseUrl = window.location.origin && window.location.origin !== 'null' ? 
-        (window.location.origin + window.location.pathname) : 
-        window.location.href.split('#')[0];
-      const urlPartage = `${baseUrl}#annonce=${encodeURIComponent(ad.id)}`;
-      
-      const titrePartage = `⚽ Compte eFootball : ${ad.titre}`;
-      const puissanceTxt = ad.puissance ? ` • Puissance ${ad.puissance}` : '';
-      const textePartage = `Regarde ce compte eFootball en vente sur EFoot Market SN : "${ad.titre}" (${ad.plateforme}${puissanceTxt}) au prix de ${formaterPrix(ad.prix)}.`;
-
-      // Tentative via l'API Web Share native si supportée
+    function partagerAnnonce(annonceId) {
+      var url = window.location.href;
       if (navigator.share) {
-        navigator.share({
-          title: titrePartage,
-          text: textePartage,
-          url: urlPartage
-        }).then(function() {
-          afficherNotification("Annonce partagée avec succès !", "🔗");
-        }).catch(function(err) {
-          // Si l'utilisateur a simplement fermé le panneau de partage natif (AbortError)
-          if (err && err.name === 'AbortError') {
-            return;
+        navigator.share({ title: "EFoot Market SN", url: url }).catch(function(err) {
+          if (err && err.name === 'AbortError') return;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url);
+            alert("✅ Lien copié !");
           }
-          // En cas de refus de permission (iframe, etc.), repli sur la copie de lien
-          copierLienPartage(urlPartage);
         });
       } else {
-        // Navigateur sans Web Share API -> Copie directe dans le presse-papier
-        copierLienPartage(urlPartage);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url);
+          alert("✅ Lien copié !");
+        } else {
+          alert("✅ Lien copié !");
+        }
       }
     }
 
