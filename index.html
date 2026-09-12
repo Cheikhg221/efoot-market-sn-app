@@ -8054,52 +8054,93 @@
 
     /**
      * Ouvre la modale de notation étoilée et commentaire
+     * Réservé UNIQUEMENT à l'acheteur d'une transaction TERMINÉE
      */
     function ouvrirModalAvis(params = {}) {
-      const profil = getProfilUtilisateur();
-      var user = firebase.auth().currentUser;
-
-      currentReviewTransactionId = params.transactionId || ('tx_' + Date.now());
-      currentReviewVendeurNom = params.vendeurNom || "Vendeur";
-      currentReviewVendeurId = params.vendeurId || "";
-      currentReviewAnnonceId = params.annonceId || null;
-      currentReviewTitreAnnonce = params.titreAnnonce || "Compte eFootball";
-      reviewModalObligatoire = params.obligatoire === true;
-
-      // Règle : 1 seul avis par transaction (définitif et non modifiable)
-      const avisListe = getAvis();
-      const avisExistant = avisListe.find(a => 
-        (a.transactionId && a.transactionId === currentReviewTransactionId) ||
-        (user && a.acheteurId && a.acheteurId === user.uid && a.transactionId === currentReviewTransactionId)
-      );
-
-      if (avisExistant) {
-        afficherNotification("Vous avez déjà noté cette transaction. L'avis est définitif.", "ℹ️");
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      
+      if (!user) {
+        alert("Veuillez vous connecter pour laisser un avis.");
         return;
       }
 
-      const questionEl = document.getElementById('review-modal-question');
-      const accountEl = document.getElementById('review-modal-account-title');
-      const closeBtn = document.getElementById('review-modal-close-btn');
+      const transactionId = params.transactionId;
+      const vendeurNom = params.vendeurNom || "Vendeur";
+      const annonceId = params.annonceId;
+      const titreAnnonce = params.titreAnnonce || "Compte eFootball";
 
-      if (questionEl) {
-        questionEl.textContent = `Comment s'est passée la transaction avec ${currentReviewVendeurNom} ?`;
-      }
-      if (accountEl) {
-        accountEl.textContent = `Compte : ${currentReviewTitreAnnonce}`;
-      }
-      if (closeBtn) {
-        closeBtn.style.display = reviewModalObligatoire ? 'none' : 'block';
+      if (!transactionId || !db) {
+        afficherNotification("Impossible de vérifier votre achat.", "⚠️");
+        return;
       }
 
-      const textarea = document.getElementById('review-comment-text');
-      if (textarea) textarea.value = "";
-      currentRatingSelected = 5;
-      actualiserAffichageEtoiles(5);
-      validerFormulaireAvis();
+      db.collection("demandes").doc(transactionId).get().then(function(doc) {
+        if (!doc.exists) {
+          alert("Transaction introuvable. Vous ne pouvez pas laisser d'avis.");
+          return;
+        }
 
-      const modal = document.getElementById('review-modal');
-      if (modal) modal.classList.add('active');
+        var demande = doc.data();
+
+        // Vérifier que c'est BIEN l'acheteur
+        if (demande.acheteurId !== user.uid) {
+          alert("Seul l'acheteur peut laisser un avis sur cette transaction.");
+          return;
+        }
+
+        // Vérifier que la transaction est TERMINÉE
+        if (demande.statut !== "terminee" && demande.statut !== "TERMINEE") {
+          alert("Vous ne pouvez laisser un avis qu'après la fin complète de la transaction.");
+          afficherNotification("La transaction n'est pas encore terminée.", "⚠️");
+          return;
+        }
+
+        // Vérifier qu'il n'a pas déjà laissé un avis
+        const avisListe = getAvis();
+        const avisExistant = avisListe.find(a => 
+          a.transactionId === transactionId || 
+          (a.acheteurId === user.uid && a.annonceId === annonceId)
+        );
+
+        if (avisExistant) {
+          afficherNotification("Vous avez déjà noté cette transaction. L'avis est définitif.", "ℹ️");
+          return;
+        }
+
+        // TOUT EST BON : Afficher la modale
+        currentReviewTransactionId = transactionId;
+        currentReviewVendeurNom = vendeurNom;
+        currentReviewVendeurId = demande.vendeurId || "";
+        currentReviewAnnonceId = annonceId;
+        currentReviewTitreAnnonce = titreAnnonce;
+        reviewModalObligatoire = params.obligatoire === true;
+
+        const questionEl = document.getElementById('review-modal-question');
+        const accountEl = document.getElementById('review-modal-account-title');
+        const closeBtn = document.getElementById('review-modal-close-btn');
+
+        if (questionEl) {
+          questionEl.textContent = `Comment s'est passée la transaction avec ${vendeurNom} ?`;
+        }
+        if (accountEl) {
+          accountEl.textContent = `Compte : ${titreAnnonce}`;
+        }
+        if (closeBtn) {
+          closeBtn.style.display = reviewModalObligatoire ? 'none' : 'block';
+        }
+
+        const textarea = document.getElementById('review-comment-text');
+        if (textarea) textarea.value = "";
+        currentRatingSelected = 5;
+        actualiserAffichageEtoiles(5);
+        validerFormulaireAvis();
+
+        const modal = document.getElementById('review-modal');
+        if (modal) modal.classList.add('active');
+      }).catch(function(error) {
+        console.error("Erreur vérification transaction:", error);
+        alert("Erreur de vérification : " + error.message);
+      });
     }
 
     /**
@@ -8235,49 +8276,91 @@
     }
 
     /**
-     * Enregistre l'avis définitif sur le vendeur
+     * Enregistre l'avis définitif sur le vendeur avec double vérification
      */
     function confirmerEnvoiAvis() {
-      const profil = getProfilUtilisateur();
-      var user = firebase.auth().currentUser;
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user) {
+        alert("Veuillez vous connecter.");
+        return;
+      }
 
-      const textarea = document.getElementById('review-comment-text');
-      const commentaire = textarea ? textarea.value.trim() : "";
-      const noteChoisie = Number(currentRatingSelected) || 5;
+      if (!currentReviewTransactionId || !db) {
+        alert("Erreur : transaction non identifiée.");
+        return;
+      }
 
-      const acheteurNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "Acheteur")) : (localStorage.getItem("efoot_nom") || "Acheteur");
-      const acheteurId = user ? user.uid : "anonyme";
-      const reviewId = 'rev_' + Date.now();
+      // Double vérification avant enregistrement
+      db.collection("demandes").doc(currentReviewTransactionId).get().then(function(doc) {
+        if (!doc.exists) {
+          alert("Transaction introuvable.");
+          return;
+        }
 
-      const reviewData = {
-        id: reviewId,
-        vendeurId: currentReviewVendeurId || "",
-        vendeurNom: currentReviewVendeurNom,
-        acheteurId: acheteurId,
-        acheteurNom: acheteurNom,
-        note: noteChoisie,
-        commentaire: commentaire || "Transaction réussie et conforme",
-        transactionId: currentReviewTransactionId,
-        annonceId: currentReviewAnnonceId,
-        titreAnnonce: currentReviewTitreAnnonce || "Compte eFootball",
-        dateCreation: new Date().toISOString(),
-        date: new Date().toISOString()
-      };
+        var demande = doc.data();
 
-      // 1. Sauvegarde locale immédiate
-      const avisListe = getAvis();
-      avisListe.unshift(reviewData);
-      setAvis(avisListe);
+        if (demande.acheteurId !== user.uid) {
+          alert("Vous ne pouvez pas noter cette transaction.");
+          return;
+        }
 
-      // 2. Mise à jour de la note statique des annonces locales
-      mettreAJourNoteVendeurDansAnnonces(currentReviewVendeurNom);
+        if (demande.statut !== "terminee" && demande.statut !== "TERMINEE") {
+          alert("La transaction doit être terminée pour laisser un avis.");
+          return;
+        }
 
-      // 3. Persistance dans Firestore : collection "avis"
-      if (db) {
-        const firestorePayload = {
+        if (demande.avisDonne) {
+          alert("Un avis a déjà été enregistré pour cette transaction.");
+          return;
+        }
+
+        // Vérifier qu'aucun avis n'a déjà été laissé localement
+        const avisListe = getAvis();
+        const avisExistant = avisListe.find(a => 
+          a.transactionId === currentReviewTransactionId || 
+          (a.acheteurId === user.uid && a.annonceId === currentReviewAnnonceId)
+        );
+        if (avisExistant) {
+          alert("Vous avez déjà noté cette transaction.");
+          return;
+        }
+
+        // Tout est bon : enregistrer l'avis
+        const profil = getProfilUtilisateur();
+        const textarea = document.getElementById('review-comment-text');
+        const commentaire = textarea ? textarea.value.trim() : "";
+        const noteChoisie = Number(currentRatingSelected) || 5;
+
+        const acheteurNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "Acheteur")) : "Acheteur";
+        const reviewId = 'rev_' + Date.now();
+
+        const reviewData = {
+          id: reviewId,
           vendeurId: currentReviewVendeurId || "",
           vendeurNom: currentReviewVendeurNom,
-          acheteurId: acheteurId,
+          acheteurId: user.uid,
+          acheteurNom: acheteurNom,
+          note: noteChoisie,
+          commentaire: commentaire || "Transaction réussie et conforme",
+          transactionId: currentReviewTransactionId,
+          annonceId: currentReviewAnnonceId,
+          titreAnnonce: currentReviewTitreAnnonce || "Compte eFootball",
+          dateCreation: new Date().toISOString(),
+          date: new Date().toISOString()
+        };
+
+        // Sauvegarde locale
+        avisListe.unshift(reviewData);
+        setAvis(avisListe);
+
+        // Mise à jour de la note des annonces du vendeur
+        mettreAJourNoteVendeurDansAnnonces(currentReviewVendeurNom);
+
+        // Persistance Firestore
+        var firestorePayload = {
+          vendeurId: currentReviewVendeurId || "",
+          vendeurNom: currentReviewVendeurNom,
+          acheteurId: user.uid,
           acheteurNom: acheteurNom,
           note: noteChoisie,
           commentaire: commentaire || "Transaction réussie et conforme",
@@ -8295,37 +8378,32 @@
         });
 
         // Marquer la transaction comme notée
-        if (currentReviewTransactionId && currentReviewTransactionId.indexOf('tx_') !== 0) {
-          db.collection("demandes").doc(currentReviewTransactionId).update({
-            avisDonne: true,
-            noteAvis: noteChoisie,
-            commentaireAvis: commentaire || ""
-          }).catch(function(e) {
-            console.warn("Erreur mise à jour demande avisDonne:", e);
-          });
-        }
-      }
+        db.collection("demandes").doc(currentReviewTransactionId).update({
+          avisDonne: true,
+          noteAvis: noteChoisie,
+          commentaireAvis: commentaire || ""
+        }).catch(function(e) {
+          console.warn("Erreur mise à jour demande:", e);
+        });
 
-      // 4. Fermer la modale
-      reviewModalObligatoire = false;
-      const modal = document.getElementById('review-modal');
-      if (modal) modal.classList.remove('active');
+        // Fermer la modale
+        reviewModalObligatoire = false;
+        const modal = document.getElementById('review-modal');
+        if (modal) modal.classList.remove('active');
 
-      afficherNotification(`Votre avis (${noteChoisie}★) a été publié sur le profil de ${currentReviewVendeurNom} !`, "⭐");
+        afficherNotification(`Votre avis (${noteChoisie}★) a été publié !`, "⭐");
 
-      // 5. Actualiser la vue en cours
-      if (currentPage === 'accueil') {
-        appliquerFiltres();
-      } else if (currentPage === 'detail' && currentDetailAdId) {
-        afficherDetailAnnonce(currentDetailAdId);
-      } else if (currentPage === 'transactions') {
-        afficherMesTransactions();
-      }
+        // Rafraîchir
+        if (currentPage === 'accueil') appliquerFiltres();
+        if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
+        if (currentPage === 'transactions') afficherMesTransactions();
 
-      // 6. Ouvrir le profil du vendeur pour visualiser son badge et ses avis actualisés
-      setTimeout(function() {
-        ouvrirProfilVendeur(currentReviewVendeurNom);
-      }, 350);
+        setTimeout(function() {
+          ouvrirProfilVendeur(currentReviewVendeurNom);
+        }, 350);
+      }).catch(function(error) {
+        alert("Erreur : " + error.message);
+      });
     }
 
     /**
