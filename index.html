@@ -3735,6 +3735,10 @@
     var unsubscribeDemandesVendeur = null;
     var unsubscribeDemandesAcheteur = null;
 
+    // Cache et abonnement temps réel Firestore pour tous les avis
+    var avisFirestoreCache = [];
+    var unsubscribeAvisFirestore = null;
+
     /* ==========================================================
        CONFIGURATION ET AUTHENTIFICATION FIREBASE (ANONYME & GOOGLE)
        ========================================================== */
@@ -6113,6 +6117,115 @@
      */
     function setAvis(liste) {
       localStorage.setItem(STORAGE_AVIS, JSON.stringify(liste));
+    }
+
+    /**
+     * Écoute en temps réel tous les avis enregistrés dans Firestore
+     */
+    function chargerTousLesAvisFirestore() {
+      if (!db) return;
+      if (unsubscribeAvisFirestore) return;
+      
+      unsubscribeAvisFirestore = db.collection("avis")
+        .onSnapshot(function(snapshot) {
+          avisFirestoreCache = [];
+          snapshot.forEach(function(doc) {
+            avisFirestoreCache.push({ id: doc.id, ...doc.data() });
+          });
+          console.log("Avis Firestore chargés :", avisFirestoreCache.length);
+          
+          // Rafraîchir l'affichage
+          if (currentPage === 'accueil') appliquerFiltres();
+          if (currentPage === 'mes-annonces') afficherMesAnnonces();
+          if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
+        }, function(error) {
+          console.warn("Erreur chargement avis Firestore :", error);
+        });
+    }
+
+    /**
+     * Récupère les avis associés à une annonce spécifique en fusionnant localStorage et Firestore
+     */
+    function getAvisPourAnnonce(annonce) {
+      if (!annonce) return [];
+      
+      // 1. Récupérer les avis locaux
+      const avisLocaux = getAvis();
+      
+      // 2. Récupérer les avis Firestore (cache global)
+      const avisFirestore = (typeof avisFirestoreCache !== 'undefined' && avisFirestoreCache) 
+        ? avisFirestoreCache 
+        : [];
+      
+      // 3. Fusionner sans doublons
+      const tousLesAvis = [];
+      const idsVus = new Set();
+      
+      // Ajouter les avis Firestore en priorité
+      avisFirestore.forEach(function(a) {
+        if (a.id && !idsVus.has(a.id)) {
+          tousLesAvis.push(a);
+          idsVus.add(a.id);
+        }
+      });
+      
+      // Ajouter les avis locaux qui ne sont pas déjà présents
+      avisLocaux.forEach(function(a) {
+        if (a.id && !idsVus.has(a.id)) {
+          tousLesAvis.push(a);
+          idsVus.add(a.id);
+        } else if (!a.id) {
+          // Anciens avis sans ID : vérifier par transactionId + acheteur
+          const existeDeja = tousLesAvis.some(function(x) {
+            return x.transactionId === a.transactionId && 
+                   x.acheteurNom === a.acheteurNom &&
+                   x.note === a.note;
+          });
+          if (!existeDeja) {
+            tousLesAvis.push(a);
+          }
+        }
+      });
+      
+      // 4. Filtrer les avis concernant cette annonce
+      const avisAnnonce = tousLesAvis.filter(function(a) {
+        // Correspondance par annonceId (le plus fiable)
+        if (a.annonceId && annonce.id && a.annonceId === annonce.id) {
+          return true;
+        }
+        
+        // Correspondance par transactionId → chercher dans les demandes
+        if (a.transactionId) {
+          const demande = (demandesVendeurCache || []).find(function(d) {
+            return d.id === a.transactionId;
+          });
+          if (demande && demande.annonceId === annonce.id) {
+            return true;
+          }
+        }
+        
+        // Fallback : correspondance par titre + vendeur
+        if (a.titreAnnonce && a.vendeurNom && 
+            a.titreAnnonce === annonce.titre && 
+            (a.vendeurNom === annonce.vendeur || a.vendeurNom === annonce.vendeurPrenom)) {
+          return true;
+        }
+        
+        return false;
+      });
+      
+      // 5. Trier par date décroissante
+      avisAnnonce.sort(function(a, b) {
+        const dateA = a.dateCreation ? 
+          (a.dateCreation.toDate ? a.dateCreation.toDate() : new Date(a.dateCreation)) : 
+          (a.date ? new Date(a.date) : new Date(0));
+        const dateB = b.dateCreation ? 
+          (b.dateCreation.toDate ? b.dateCreation.toDate() : new Date(b.dateCreation)) : 
+          (b.date ? new Date(b.date) : new Date(0));
+        return dateB - dateA;
+      });
+      
+      return avisAnnonce;
     }
 
     /**
@@ -9509,7 +9622,17 @@
           html += '<button onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">❌ Annuler la transaction</button>';
           html += '</div>';
         } else if (annonce.statut === "vendue" || annonce.statut === "VENDU") {
-          html += '<div style="background:#1E1E1E; padding:16px; border-radius:12px; margin-bottom:12px; opacity:0.85; border:1px solid rgba(244,67,54,0.3);">';
+          // Récupérer les avis reçus sur cette annonce spécifique
+          const avisAnnonce = getAvisPourAnnonce(annonce);
+          let noteAnnonce = 0;
+          if (avisAnnonce.length > 0) {
+            const sommeAvis = avisAnnonce.reduce(function(acc, a) {
+              return acc + (Number(a.note) || 5);
+            }, 0);
+            noteAnnonce = (sommeAvis / avisAnnonce.length).toFixed(1);
+          }
+
+          html += '<div style="background:#1E1E1E; padding:16px; border-radius:12px; margin-bottom:12px; opacity:0.95; border:1px solid rgba(244,67,54,0.3);">';
           html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">';
           html += '<span style="background:#F44336; color:white; font-weight:bold; font-size:12px; padding:3px 8px; border-radius:6px;">🔴 VENDU</span>';
           if (annonce.dateVente) {
@@ -9518,6 +9641,43 @@
           html += '</div>';
           html += '<p style="color:white; font-weight:bold; font-size:15px; margin:6px 0;">' + escapeHtml(annonce.titre) + '</p>';
           html += '<p style="color:#ccc; margin:4px 0 12px 0;">' + (annonce.prix ? formaterPrix(annonce.prix) : '0 FCFA') + '</p>';
+          
+          // ✅ NOUVELLE SECTION : Avis reçus sur cette annonce
+          if (avisAnnonce.length > 0) {
+            html += '<div style="background:rgba(255,214,0,0.08); border:1px solid rgba(255,214,0,0.3); border-radius:8px; padding:12px; margin-bottom:12px;">';
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">';
+            html += '<span style="color:#FFD700; font-weight:700; font-size:13px;">⭐ Avis reçu' + (avisAnnonce.length > 1 ? 's' : '') + ' (' + avisAnnonce.length + ')</span>';
+            html += '<span style="color:#FFD700; font-weight:700; font-size:13px;">' + noteAnnonce + '/5</span>';
+            html += '</div>';
+            
+            avisAnnonce.slice(0, 3).forEach(function(a) {
+              const note = Number(a.note) || 5;
+              const etoiles = '★'.repeat(note) + '☆'.repeat(5 - note);
+              const commentaire = a.commentaire || "Transaction réussie et conforme";
+              const acheteur = a.acheteurNom || "Acheteur";
+              const dateAvis = formaterDateRelative(a.dateCreation || a.date);
+              
+              html += '<div style="background:#252525; border-radius:6px; padding:10px; margin-bottom:8px;">';
+              html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">';
+              html += '<span style="color:#fff; font-weight:600; font-size:12.5px;">👤 ' + escapeHtml(acheteur) + '</span>';
+              html += '<span style="color:#FFD700; font-size:13px; letter-spacing:1px;">' + etoiles + '</span>';
+              html += '</div>';
+              html += '<p style="color:#e2e8f0; font-size:12.5px; font-style:italic; margin:4px 0; line-height:1.4;">« ' + escapeHtml(commentaire) + ' »</p>';
+              html += '<p style="color:#888; font-size:11px; margin:4px 0 0 0;">' + dateAvis + '</p>';
+              html += '</div>';
+            });
+            
+            if (avisAnnonce.length > 3) {
+              html += '<p style="color:#888; font-size:11.5px; text-align:center; margin:6px 0 0 0;">+ ' + (avisAnnonce.length - 3) + ' autre(s) avis sur votre profil</p>';
+            }
+            html += '</div>';
+          } else {
+            html += '<div style="background:#252525; border:1px dashed #444; border-radius:8px; padding:12px; margin-bottom:12px; text-align:center;">';
+            html += '<p style="color:#888; font-size:12.5px; margin:0;">⏳ Aucun avis reçu pour le moment</p>';
+            html += '<p style="color:#666; font-size:11px; margin:4px 0 0 0;">Les avis apparaîtront ici après la notation de l\'acheteur</p>';
+            html += '</div>';
+          }
+          
           html += '<div style="display:flex; gap:8px;">';
           html += '<button onclick="changerPage(\'detail\', { annonceId: \'' + annonce.id + '\' })" style="background:#333; color:white; padding:9px 12px; border:1px solid #555; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px; flex:1;">👁️ Voir</button>';
           html += '<button onclick="supprimerAnnonce(\'' + annonce.id + '\')" style="background:rgba(244,67,54,0.15); color:#F44336; padding:9px 12px; border:1px solid #F44336; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px; flex:1;">🗑️ Supprimer</button>';
@@ -9766,6 +9926,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Démarrer l'écoute temps réel de la collection Firestore "annonces"
       afficherAnnonces();
+
+      // Démarrer l'écoute temps réel de la collection Firestore "avis"
+      chargerTousLesAvisFirestore();
 
       // Initialiser le stockage local pour la messagerie, transactions et avis
       if (!localStorage.getItem(STORAGE_MESSAGES)) {
