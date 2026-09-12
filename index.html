@@ -5179,11 +5179,8 @@
           
           annoncesFirestore = annonces;
           
-          // Seeding initial si la collection est vide
-          if (annonces.length === 0 && !localStorage.getItem('efoot_firestore_seeded')) {
-            initialiserAnnoncesInitialesFirestore();
-            return;
-          }
+          // Aucune annonce : afficher l'état vide normal
+          // (pas de seeding automatique)
           
           // Rafraîchir l'affichage en temps réel
           if (currentPage === 'accueil') {
@@ -5264,90 +5261,6 @@
       } catch (e) {
         console.error("Erreur initialisation Firestore :", e);
       }
-    }
-
-    /**
-     * Initialise les annonces de démonstration dans Firestore si la base est vide
-     */
-    function initialiserAnnoncesInitialesFirestore() {
-      if (!db) return;
-      if (localStorage.getItem('efoot_firestore_seeded')) return;
-      localStorage.setItem('efoot_firestore_seeded', 'true');
-
-      const exemples = [
-        {
-          titre: "Compte Mobile Légendes & Big Time 103 OVR",
-          description: "Équipe complète avec Messi Big Time 103, Neymar Showtime, Mbappé booster, Vieira et Ronaldinho. 2800 pièces eFootball et 3.5M GP disponibles.",
-          prix: 35000,
-          plateforme: "Mobile",
-          region: "Dakar",
-          localisation: "Dakar",
-          typeCompte: "Big Time & Epics",
-          puissance: "3100 - 3300",
-          whatsapp: "221778901234",
-          telephoneWhatsApp: "221778901234",
-          image: null,
-          vendeur: "Sadio_Efoot",
-          vendeurPrenom: "Sadio",
-          vendeurNom: "Mané",
-          vendeurId: "usr_demo_1",
-          note: 4.9,
-          verifie: true,
-          date: new Date(Date.now() - 3600000 * 4).toISOString(),
-          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
-          statut: "active"
-        },
-        {
-          titre: "Compte PS5 Full Epics & Show Time",
-          description: "Effectif premium avec Rummenigge, Cruyff, Gullit et Maldini maxés. Idéal pour Division 1 compétitive.",
-          prix: 50000,
-          plateforme: "PS5",
-          region: "Thiès",
-          localisation: "Thiès",
-          typeCompte: "Full Epics",
-          puissance: "Plus de 3300",
-          whatsapp: "221781234567",
-          telephoneWhatsApp: "221781234567",
-          image: null,
-          vendeur: "DakarGamer221",
-          vendeurPrenom: "Cheikh",
-          vendeurNom: "Seck",
-          vendeurId: "usr_demo_2",
-          note: 5.0,
-          verifie: true,
-          date: new Date(Date.now() - 3600000 * 24).toISOString(),
-          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
-          statut: "active"
-        },
-        {
-          titre: "Compte Starter Mobile Division 2",
-          description: "Très bon compte pour débuter avec plusieurs joueurs phares et managers de haut niveau. Transfert rapide Konami ID.",
-          prix: 18000,
-          plateforme: "Mobile",
-          region: "Saint-Louis",
-          localisation: "Saint-Louis",
-          typeCompte: "Division 2",
-          puissance: "2700 - 2900",
-          whatsapp: "221762345678",
-          telephoneWhatsApp: "221762345678",
-          image: null,
-          vendeur: "Modou_Pro",
-          vendeurPrenom: "Modou",
-          vendeurNom: "Fall",
-          vendeurId: "usr_demo_3",
-          note: 4.8,
-          verifie: false,
-          date: new Date(Date.now() - 3600000 * 48).toISOString(),
-          datePublication: firebase.firestore.FieldValue.serverTimestamp(),
-          statut: "active"
-        }
-      ];
-
-      exemples.forEach(function(ad) {
-        db.collection("annonces").add(ad).catch(function(e) {
-          console.warn("Seeding initial Firestore", e);
-        });
-      });
     }
 
     /* ==========================================================
@@ -5644,6 +5557,34 @@
       const annonces = getAnnonces();
       const ad = annonces.find(item => item.id === id);
       const container = document.getElementById('detail-card-container');
+      const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+
+      function preparerEtAfficher(adData) {
+        // Si l'utilisateur est connecté, s'assurer que ses demandes pour cette annonce sont chargées
+        if (user && db && (!demandesAcheteurCache || !demandesAcheteurCache.some(function(d) { return d.annonceId === adData.id; }))) {
+          db.collection("demandes")
+            .where("acheteurId", "==", user.uid)
+            .where("annonceId", "==", adData.id)
+            .get()
+            .then(function(snap) {
+              if (!snap.empty) {
+                snap.forEach(function(doc) {
+                  var d = { id: doc.id, ...doc.data() };
+                  if (!demandesAcheteurCache.some(function(x) { return x.id === d.id; })) {
+                    demandesAcheteurCache.push(d);
+                  }
+                });
+              }
+              afficherDetailAnnonceAvecData(adData);
+            })
+            .catch(function(e) {
+              console.warn("Vérification demande pour annonce:", e);
+              afficherDetailAnnonceAvecData(adData);
+            });
+        } else {
+          afficherDetailAnnonceAvecData(adData);
+        }
+      }
 
       // 1. Si l'annonce n'est PAS trouvée dans annoncesFirestore (car elle est vendue ou URL directe),
       // faire une requête Firestore directe pour la récupérer
@@ -5659,7 +5600,7 @@
         db.collection("annonces").doc(id).get().then(function(doc) {
           if (doc.exists) {
             var adData = { id: doc.id, ...doc.data() };
-            afficherDetailAnnonceAvecData(adData);
+            preparerEtAfficher(adData);
           } else {
             if (container) {
               container.innerHTML = `
@@ -5702,7 +5643,7 @@
         return;
       }
 
-      afficherDetailAnnonceAvecData(ad);
+      preparerEtAfficher(ad);
     }
 
     /**
@@ -5712,6 +5653,7 @@
      * - Badge rouge "🔴 VENDU" bien visible
      * - Bandeau rouge "🔴 VENDU - Cet article a été vendu"
      * - Aucun bouton d'achat ou de contact
+     * - L'acheteur peut toujours suivre sa transaction et laisser un avis si terminée
      */
     function afficherDetailAnnonceAvecData(ad) {
       if (!ad) return;
@@ -5736,17 +5678,20 @@
       const totalAvis = statsVendeur.totalAvis;
       const listeAvis = statsVendeur.avis;
 
+      const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       const profil = getProfilUtilisateur();
       const monNom = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
       const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
-      const estMonAnnonce = (ad.vendeur === monNom) || (ad.vendeur === monNomFormate) || (profil && ad.vendeurId && ad.vendeurId === profil.id);
+      const estMonAnnonce = (ad.vendeur === monNom) || (ad.vendeur === monNomFormate) || (profil && ad.vendeurId && ad.vendeurId === profil.id) || (user && ad.vendeurId && ad.vendeurId === user.uid);
 
-      // Chercher si une transaction existe pour cette annonce avec cet utilisateur
+      // Chercher si une transaction existe pour cette annonce avec cet utilisateur (cache Firestore ou local)
       const transactions = getTransactions();
-      const maTx = transactions.find(t => t.annonceId === ad.id && (
-        (profil && profil.id && t.acheteurId === profil.id) ||
-        t.acheteur === monNom || t.acheteurNom === monNom || t.acheteur === monNomFormate
-      ));
+      const maTx = (demandesAcheteurCache || []).find(d => d.annonceId === ad.id && (user ? d.acheteurId === user.uid : true)) ||
+        transactions.find(t => t.annonceId === ad.id && (
+          (user && t.acheteurId === user.uid) ||
+          (profil && profil.id && t.acheteurId === profil.id) ||
+          t.acheteur === monNom || t.acheteurNom === monNom || t.acheteur === monNomFormate
+        ));
       const txsVendeur = transactions.filter(t => t.annonceId === ad.id);
 
       const tousAvis = getAvis();
@@ -5833,7 +5778,12 @@
             </div>
           </div>
 
-          ${estVendue ? '' : `
+          ${estVendue ? (
+            (estMonAnnonce || (maTx && ((maTx.statut || '').toLowerCase() === 'terminee'))) ? `
+              <!-- Carte de Suivi de Transaction Sécurisée (Vente terminée / Avis) -->
+              ${genererCarteTransactionDetail(ad, estMonAnnonce, maTx, txsVendeur, monAvis)}
+            ` : ''
+          ) : `
             <!-- Conteneur unique pour les boutons d'action (gérés dynamiquement) -->
             <div id="boutonsAnnonce"></div>
 
@@ -6793,11 +6743,30 @@
           
           if (d.statut === "en_attente") {
             html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
+            html += '<button onclick="retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée !</p>';
             html += '<p>Le vendeur va vous contacter</p>';
           } else if (d.statut === "refusee") {
             html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
+          } else if (d.statut === "terminee" || d.statut === "TERMINEE") {
+            html += '<p style="color:#34d399; font-weight:700; margin:6px 0;">🎉 Terminée</p>';
+            const tousAvis = getAvis();
+            const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+            const profil = getProfilUtilisateur();
+            const monNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+            const monAvis = tousAvis.find(function(a) {
+              return (d.id && a.transactionId === d.id) || 
+                     (a.vendeurNom === d.vendeurNom && a.acheteurNom === monNom && a.annonceId === d.annonceId) ||
+                     (user && a.acheteurId === user.uid && a.annonceId === d.annonceId);
+            });
+            if (monAvis) {
+              html += '<p style="font-size:12px; color:var(--text-gray); margin:4px 0 8px 0;">Votre avis : ' + monAvis.note + '/5 ★</p>';
+              html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; cursor:pointer;" onclick="ouvrirProfilVendeur(\'' + escapeHtml(d.vendeurNom || '') + '\')">👤 Voir le profil</button>';
+            } else {
+              html += '<button type="button" class="btn-tx-review" style="font-size:12px; padding:8px 14px; margin-top:4px; cursor:pointer;" onclick="ouvrirModalAvisPourAnnonce(\'' + d.annonceId + '\', \'' + d.id + '\')">⭐ Laisser un avis</button>';
+            }
+            html += ' <button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-left:8px; cursor:pointer;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
           }
           
           html += '</div>';
@@ -7037,24 +7006,44 @@
     }
 
     /**
-     * 7. ANNULATION PAR L'ACHETEUR
+     * 7. ANNULATION / RETRAIT DE DEMANDE PAR L'ACHETEUR
      */
-    function annulerDemande(demandeId) {
+    function retirerDemande(demandeId) {
       if (!demandeId) return;
-      if (!confirm("Voulez-vous vraiment annuler votre demande d'achat ?")) {
+      
+      if (!confirm("Voulez-vous vraiment retirer votre demande d'achat ?")) {
         return;
       }
-
-      db.collection("demandes").doc(demandeId).update({
-        statut: "refusee",
-        dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function() {
-        afficherNotification("Demande d'achat annulée.", "ℹ️");
-        afficherDemandesAcheteur();
-        afficherDemandesVendeur();
+      
+      if (!db) {
+        afficherNotification("Demande retirée", "ℹ️");
+        return;
+      }
+      
+      db.collection("demandes").doc(demandeId).get().then(function(doc) {
+        if (!doc.exists) {
+          alert("Demande introuvable.");
+          return;
+        }
+        var data = doc.data();
+        if (data.statut !== "en_attente") {
+          alert("Vous ne pouvez plus retirer cette demande car le vendeur l'a déjà traitée.");
+          return;
+        }
+        return db.collection("demandes").doc(demandeId).delete().then(function() {
+          afficherNotification("Demande d'achat retirée avec succès.", "✅");
+          if (typeof afficherDemandesAcheteur === 'function') afficherDemandesAcheteur();
+          if (typeof afficherDemandesVendeur === 'function') afficherDemandesVendeur();
+          if (typeof afficherMesTransactions === 'function') afficherMesTransactions();
+        });
       }).catch(function(err) {
-        alert("Erreur lors de l'annulation : " + err.message);
+        console.error("Erreur retrait demande :", err);
+        alert("Erreur lors du retrait de la demande : " + err.message);
       });
+    }
+
+    function annulerDemande(demandeId) {
+      retirerDemande(demandeId);
     }
 
     /**
@@ -7870,20 +7859,33 @@
               `;
             } else if (st === 'terminee') {
               const tousAvis = getAvis();
-              const monAvis = tousAvis.find(a => (d.id && a.transactionId === d.id) || (a.vendeurNom === d.vendeurNom && a.acheteurNom === monNom && a.annonceId === d.annonceId));
+              const monAvis = tousAvis.find(a => 
+                (d.id && a.transactionId === d.id) || 
+                (a.vendeurNom === d.vendeurNom && a.acheteurNom === monNom && a.annonceId === d.annonceId)
+              );
 
               actionBoxHtml = `
                 <div class="tx-action-box box-terminee">
                   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                      <div style="font-weight: 700; color: #34d399; font-size: 13.5px;">✅ Achat terminé avec succès !</div>
+                      <div style="font-weight: 700; color: #34d399; font-size: 13.5px;">
+                        ✅ Achat terminé avec succès !
+                      </div>
                       <div style="font-size: 12px; color: var(--text-gray); margin-top: 2px;">
-                        ${monAvis ? `Vous avez noté ce vendeur ${monAvis.note}/5 ★ : « ${escapeHtml(monAvis.commentaire)} »` : 'Vous pouvez évaluer votre expérience avec ce vendeur.'}
+                        ${monAvis 
+                          ? `Vous avez noté ce vendeur ${monAvis.note}/5 ★ : « ${escapeHtml((monAvis.commentaire || '').substring(0, 50))}... »` 
+                          : 'Vous pouvez évaluer votre expérience avec ce vendeur.'}
                       </div>
                     </div>
-                    <button type="button" class="btn-tx-review" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirModalAvisPourAnnonce('${d.annonceId}')">
-                      ${monAvis ? '✏️ Modifier mon avis' : '⭐ Laisser un avis'}
-                    </button>
+                    ${!monAvis ? `
+                      <button type="button" class="btn-tx-review" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirModalAvisPourAnnonce('${d.annonceId}')">
+                        ⭐ Laisser un avis
+                      </button>
+                    ` : `
+                      <button type="button" class="btn-secondary" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirProfilVendeur('${escapeHtml(d.vendeurNom || '')}')">
+                        👤 Voir le profil
+                      </button>
+                    `}
                   </div>
                 </div>
               `;
@@ -8027,23 +8029,99 @@
     /**
      * Ouvre la modale de dépôt d'avis pour une annonce donnée
      */
-    function ouvrirModalAvisPourAnnonce(annonceId) {
+    function ouvrirModalAvisPourAnnonce(annonceId, customTxId) {
+      const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user) {
+        alert("Veuillez vous connecter pour laisser un avis.");
+        return;
+      }
+
+      // 1. Chercher dans les demandes locales (acheteur ou vendeur)
+      let d = null;
+      if (customTxId) {
+        d = (demandesAcheteurCache || []).find(x => x.id === customTxId) ||
+            (demandesVendeurCache || []).find(x => x.id === customTxId);
+      }
+      if (!d && annonceId) {
+        d = (demandesAcheteurCache || []).find(x => x.annonceId === annonceId && ((x.statut || '').toLowerCase() === 'terminee')) ||
+            (demandesAcheteurCache || []).find(x => x.annonceId === annonceId);
+      }
+      if (!d && customTxId) {
+        const txs = getTransactions();
+        d = txs.find(t => t.id === customTxId);
+      }
+      if (!d && annonceId) {
+        const txs = getTransactions();
+        const profil = getProfilUtilisateur();
+        const monNom = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+        d = txs.find(t => t.annonceId === annonceId && (t.acheteurNom === monNom || t.acheteur === monNom));
+      }
+
       const annonces = getAnnonces();
       const ad = annonces.find(a => a.id === annonceId);
-      if (!ad) return;
 
-      const profil = getProfilUtilisateur();
-      const monNom = profil ? profil.nom : "";
-      const txs = getTransactions();
-      const tx = txs.find(t => t.annonceId === annonceId && t.acheteurNom === monNom);
-      const txId = tx ? tx.id : ('tx_' + Date.now());
+      // Si la demande est trouvée avec son ID de document Firestore
+      if (d && d.id && !d.id.startsWith('tx_')) {
+        const titreAnnonce = (ad && ad.titre) || d.annonceTitre || d.titreAnnonce || "Compte eFootball";
+        const vendeurNom = (ad && ad.vendeur) || d.vendeurNom || d.vendeur || "Vendeur";
 
-      ouvrirModalAvis({
-        transactionId: txId,
-        vendeurNom: ad.vendeur,
-        annonceId: ad.id,
-        titreAnnonce: ad.titre
-      });
+        ouvrirModalAvis({
+          transactionId: d.id,
+          vendeurNom: vendeurNom,
+          annonceId: annonceId || d.annonceId,
+          titreAnnonce: titreAnnonce
+        });
+        return;
+      }
+
+      // Si pas encore en cache local ou si l'ID doit être récupéré depuis Firestore
+      if (db) {
+        db.collection("demandes")
+          .where("acheteurId", "==", user.uid)
+          .where("annonceId", "==", annonceId)
+          .get()
+          .then(function(snapshot) {
+            let docTrouve = null;
+            snapshot.forEach(function(doc) {
+              const data = doc.data();
+              if ((data.statut || '').toLowerCase() === 'terminee') {
+                docTrouve = { id: doc.id, ...data };
+              }
+            });
+            if (!docTrouve && !snapshot.empty) {
+              docTrouve = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+            }
+
+            if (docTrouve) {
+              ouvrirModalAvis({
+                transactionId: docTrouve.id,
+                vendeurNom: (ad && ad.vendeur) || docTrouve.vendeurNom || docTrouve.vendeur || "Vendeur",
+                annonceId: annonceId,
+                titreAnnonce: (ad && ad.titre) || docTrouve.annonceTitre || docTrouve.titreAnnonce || "Compte eFootball"
+              });
+            } else if (d && d.id) {
+              ouvrirModalAvis({
+                transactionId: d.id,
+                vendeurNom: (ad && ad.vendeur) || d.vendeurNom || "Vendeur",
+                annonceId: annonceId,
+                titreAnnonce: (ad && ad.titre) || d.annonceTitre || "Compte eFootball"
+              });
+            } else {
+              alert("Transaction introuvable pour cette annonce.");
+            }
+          })
+          .catch(function(err) {
+            console.error("Erreur recherche demande pour avis:", err);
+            alert("Erreur lors de la récupération de la transaction.");
+          });
+      } else if (d && d.id) {
+        ouvrirModalAvis({
+          transactionId: d.id,
+          vendeurNom: (ad && ad.vendeur) || d.vendeurNom || "Vendeur",
+          annonceId: annonceId,
+          titreAnnonce: (ad && ad.titre) || d.annonceTitre || "Compte eFootball"
+        });
+      }
     }
 
     /**
@@ -8092,6 +8170,11 @@
         if (demande.statut !== "terminee" && demande.statut !== "TERMINEE") {
           alert("Vous ne pouvez laisser un avis qu'après la fin complète de la transaction.");
           afficherNotification("La transaction n'est pas encore terminée.", "⚠️");
+          return;
+        }
+
+        if (demande.avisDonne) {
+          alert("Un avis a déjà été enregistré pour cette transaction.");
           return;
         }
 
