@@ -6155,10 +6155,11 @@
           });
           console.log("Avis Firestore chargés :", avisFirestoreCache.length);
           
-          // Rafraîchir l'affichage
+          // Rafraîchir l'affichage en temps réel
           if (currentPage === 'accueil') appliquerFiltres();
           if (currentPage === 'mes-annonces') afficherMesAnnonces();
           if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
+          if (currentPage === 'profil') afficherPageProfil();
         }, function(error) {
           console.warn("Erreur chargement avis Firestore :", error);
         });
@@ -6373,17 +6374,54 @@
 
     /**
      * Calcule la note moyenne, le nombre total d'avis et le badge pour un vendeur donné
+     * FUSIONNE les avis du localStorage et du cache Firestore
      */
     function getNoteEtAvisVendeur(vendeurIdentifiant) {
-      const tousAvis = getAvis();
-      const avisVendeur = tousAvis.filter(a => 
-        a.vendeurNom === vendeurIdentifiant || 
-        (a.vendeurId && a.vendeurId === vendeurIdentifiant) ||
-        (a.vendeur && a.vendeur === vendeurIdentifiant)
-      );
+      // FUSION : avis du localStorage + avis du cache Firestore
+      const avisLocaux = getAvis();
+      const avisFirestore = (typeof avisFirestoreCache !== 'undefined' && avisFirestoreCache) 
+        ? avisFirestoreCache 
+        : [];
+      
+      // Fusionner les deux listes en évitant les doublons
+      const tousAvis = [];
+      const idsVus = new Set();
+      
+      // 1. Ajouter les avis Firestore en priorité
+      avisFirestore.forEach(function(a) {
+        if (a.id && !idsVus.has(a.id)) {
+          tousAvis.push(a);
+          idsVus.add(a.id);
+        }
+      });
+      
+      // 2. Ajouter les avis locaux qui ne sont pas déjà dans Firestore
+      avisLocaux.forEach(function(a) {
+        if (a.id && !idsVus.has(a.id)) {
+          tousAvis.push(a);
+          idsVus.add(a.id);
+        } else if (!a.id) {
+          // Anciens avis sans ID
+          const existeDeja = tousAvis.some(function(x) {
+            return x.transactionId === a.transactionId && 
+                   x.acheteurNom === a.acheteurNom &&
+                   x.note === a.note;
+          });
+          if (!existeDeja) {
+            tousAvis.push(a);
+          }
+        }
+      });
+      
+      // Filtrer les avis de ce vendeur
+      const avisVendeur = tousAvis.filter(function(a) {
+        return a.vendeurNom === vendeurIdentifiant || 
+               (a.vendeurId && a.vendeurId === vendeurIdentifiant) ||
+               (a.vendeur && a.vendeur === vendeurIdentifiant);
+      });
 
       const statsEtoiles = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      avisVendeur.forEach(a => {
+      avisVendeur.forEach(function(a) {
         const n = Math.min(5, Math.max(1, Math.round(Number(a.note) || 5)));
         statsEtoiles[n] = (statsEtoiles[n] || 0) + 1;
       });
@@ -6396,13 +6434,18 @@
           nombreAvis: 0,
           badge: "nouveau",
           avis: [],
-          statsEtoiles
+          statsEtoiles: statsEtoiles
         };
       }
 
-      const somme = avisVendeur.reduce((acc, a) => acc + (Number(a.note) || 5), 0);
+      const somme = avisVendeur.reduce(function(acc, a) {
+        return acc + (Number(a.note) || 5);
+      }, 0);
       const moyenne = Number((somme / avisVendeur.length).toFixed(1));
-      const badge = calculerBadge({ nombreAvis: avisVendeur.length, noteMoyenne: moyenne });
+      const badge = calculerBadge({ 
+        nombreAvis: avisVendeur.length, 
+        noteMoyenne: moyenne 
+      });
 
       return {
         noteMoyenne: moyenne,
@@ -6410,8 +6453,16 @@
         totalAvis: avisVendeur.length,
         nombreAvis: avisVendeur.length,
         badge: badge,
-        avis: avisVendeur.sort((a, b) => new Date(b.date || b.dateCreation || 0) - new Date(a.date || a.dateCreation || 0)),
-        statsEtoiles
+        avis: avisVendeur.sort(function(a, b) {
+          const dateA = a.dateCreation ? 
+            (a.dateCreation.toDate ? a.dateCreation.toDate() : new Date(a.dateCreation)) : 
+            (a.date ? new Date(a.date) : new Date(0));
+          const dateB = b.dateCreation ? 
+            (b.dateCreation.toDate ? b.dateCreation.toDate() : new Date(b.dateCreation)) : 
+            (b.date ? new Date(b.date) : new Date(0));
+          return dateB - dateA;
+        }),
+        statsEtoiles: statsEtoiles
       };
     }
 
