@@ -2,14 +2,35 @@
 <html lang="fr">
 <head>
   <script>
-    // Interception défensive des erreurs cross-origin ("Script error.")
+    // Interception défensive absolue des erreurs cross-origin ("Script error.") et rejets non gérés
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      if (!msg || msg === 'Script error.' || msg === 'Script error' || (typeof msg === 'string' && msg.indexOf('Script error') !== -1)) {
+        // Erreur opaque de script cross-origin ou extension de navigateur : ignorer en silence pour ne pas polluer l'expérience utilisateur
+        return true;
+      }
+      console.warn('Erreur capturée par window.onerror :', msg, error);
+      return true;
+    };
+
     window.addEventListener('error', function(e) {
-      if (e && (e.message === 'Script error.' || !e.message)) {
-        console.warn('Erreur script tiers/CORS interceptée sans blocage de l\'application.');
+      if (!e) return;
+      var msg = e.message || (e.error && e.error.message) || '';
+      if (!msg || msg === 'Script error.' || msg === 'Script error' || (typeof msg === 'string' && msg.indexOf('Script error') !== -1)) {
         if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
         return true;
       }
     }, true);
+
+    window.addEventListener('unhandledrejection', function(e) {
+      if (!e) return;
+      var reason = e.reason;
+      var msg = (reason && (reason.message || reason.toString())) || '';
+      if (!msg || msg.indexOf('Script error') !== -1 || msg.indexOf('permission-denied') !== -1) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+      }
+    });
   </script>
 
   <!-- Scripts Firebase SDK Compat -->
