@@ -2003,6 +2003,7 @@
       margin-bottom: 12px;
     }
 
+
     .carte-demande {
       border: 1px solid #333;
       padding: 15px;
@@ -2731,6 +2732,150 @@
       align-items: center;
       gap: 3px;
     }
+
+    /* ================================================
+       INTERFACE TRANSACTIONS - ONGLETS CLIQUABLES
+       ================================================ */
+
+    /* Barre d'onglets transactions */
+    .transactions-tabs-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: #1a1a1a;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 6px;
+      margin-bottom: 20px;
+    }
+
+    .transactions-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-gray);
+      padding: 14px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 12.5px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      position: relative;
+      font-family: inherit;
+    }
+
+    .transactions-tab-btn:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .transactions-tab-btn.active {
+      background: rgba(0, 200, 83, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(0, 200, 83, 0.35);
+    }
+
+    .transactions-tab-btn .tab-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .transactions-tab-btn .tab-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .transactions-tab-btn .tab-count {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #F44336;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+      display: none;
+    }
+
+    .transactions-tab-btn .tab-count.visible {
+      display: inline-block;
+    }
+
+    .transactions-tab-btn.active .tab-count {
+      background: #00C853;
+      color: #000;
+    }
+
+    /* Contenu des onglets */
+    .transactions-contenu {
+      display: none;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .transactions-contenu.active {
+      display: block;
+    }
+
+    /* Amélioration des cartes de demande */
+    .carte-demande {
+      border: 1px solid #333;
+      padding: 16px;
+      margin: 0;
+      border-radius: 12px;
+      background: #1E1E1E;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .carte-demande:hover {
+      border-color: #444;
+      transform: translateY(-1px);
+    }
+
+    .carte-demande h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+    }
+
+    .carte-demande p {
+      font-size: 13.5px;
+      color: #CCC;
+      margin: 4px 0;
+      line-height: 1.5;
+    }
+
+    /* Responsive desktop */
+    @media (min-width: 768px) {
+      .transactions-tabs-bar {
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      
+      .transactions-tab-btn {
+        flex-direction: row;
+        justify-content: center;
+        padding: 16px;
+        gap: 10px;
+      }
+      
+      .transactions-tab-btn .tab-label {
+        font-size: 14px;
+      }
+      
+      .transactions-tab-btn .tab-icon {
+        font-size: 20px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -3406,9 +3551,71 @@
          -------------------------------------------------------- -->
     <section id="page-transactions" class="page-view">
       <div id="pageTransactions">
-        <h2>📋 Mes transactions</h2>
-        <div id="sectionDemandesRecues"></div>
-        <div id="sectionDemandesEnvoyees"></div>
+        <div class="transactions-hero">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="font-size: 22px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">
+                🤝 Mes Transactions
+              </h2>
+              <p style="font-size: 13px; color: var(--text-gray); line-height: 1.4;">
+                Suivez vos demandes d'achat et de vente en temps réel.
+              </p>
+            </div>
+            <button type="button" class="btn-publish-header" onclick="changerPage('accueil')">
+              <span>🔍</span> Explorer
+            </button>
+          </div>
+
+          <!-- Statistiques rapides -->
+          <div class="transactions-stats-strip">
+            <div class="transactions-stat-item">
+              <div class="transactions-stat-val" style="color: #fbbf24;" id="stat-attente">0</div>
+              <div class="transactions-stat-lbl">En attente</div>
+            </div>
+            <div class="transactions-stat-item">
+              <div class="transactions-stat-val" style="color: #60a5fa;" id="stat-encours">0</div>
+              <div class="transactions-stat-lbl">En cours</div>
+            </div>
+            <div class="transactions-stat-item">
+              <div class="transactions-stat-val" style="color: #00E676;" id="stat-terminees">0</div>
+              <div class="transactions-stat-lbl">Terminées</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BARRE D'ONGLETS (2 onglets côte à côte) -->
+        <div class="transactions-tabs-bar">
+          <button 
+            type="button" 
+            class="transactions-tab-btn active" 
+            id="tab-btn-envoyees" 
+            onclick="basculerOngletTransactions('envoyees')"
+          >
+            <span class="tab-icon">📤</span>
+            <span class="tab-label">Demandes Envoyées</span>
+            <span class="tab-count" id="count-envoyees">0</span>
+          </button>
+          
+          <button 
+            type="button" 
+            class="transactions-tab-btn" 
+            id="tab-btn-recues" 
+            onclick="basculerOngletTransactions('recues')"
+          >
+            <span class="tab-icon">📩</span>
+            <span class="tab-label">Demandes Reçues</span>
+            <span class="tab-count" id="count-recues">0</span>
+          </button>
+        </div>
+
+        <!-- CONTENU DE L'ONGLET ACTIF -->
+        <div id="transactions-contenu-envoyees" class="transactions-contenu active">
+          <div id="sectionDemandesEnvoyees"></div>
+        </div>
+
+        <div id="transactions-contenu-recues" class="transactions-contenu">
+          <div id="sectionDemandesRecues"></div>
+        </div>
       </div>
     </section>
 
@@ -6780,6 +6987,86 @@
       envoyerDemande(annonceId);
     }
 
+    function basculerOngletTransactions(onglet) {
+      // Mettre à jour la variable globale
+      window.currentTransactionsTab = onglet;
+      
+      // Mettre à jour les boutons
+      const btnEnvoyees = document.getElementById('tab-btn-envoyees');
+      const btnRecues = document.getElementById('tab-btn-recues');
+      const contenuEnvoyees = document.getElementById('transactions-contenu-envoyees');
+      const contenuRecues = document.getElementById('transactions-contenu-recues');
+      
+      if (!btnEnvoyees || !btnRecues) return;
+      
+      if (onglet === 'envoyees') {
+        btnEnvoyees.classList.add('active');
+        btnRecues.classList.remove('active');
+        if (contenuEnvoyees) contenuEnvoyees.classList.add('active');
+        if (contenuRecues) contenuRecues.classList.remove('active');
+      } else {
+        btnRecues.classList.add('active');
+        btnEnvoyees.classList.remove('active');
+        if (contenuRecues) contenuRecues.classList.add('active');
+        if (contenuEnvoyees) contenuEnvoyees.classList.remove('active');
+      }
+    }
+
+    function mettreAJourCompteursOngletsTransactions() {
+      const demandesVendeur = (typeof demandesVendeurCache !== 'undefined' && demandesVendeurCache) || [];
+      const demandesAcheteur = (typeof demandesAcheteurCache !== 'undefined' && demandesAcheteurCache) || [];
+      
+      // Compter les demandes en attente
+      const enAttenteRecues = demandesVendeur.filter(function(d) {
+        const s = (d.statut || '').toLowerCase();
+        return s === 'en_attente' || s === 'demande_envoyee';
+      }).length;
+      
+      const enAttenteEnvoyees = demandesAcheteur.filter(function(d) {
+        const s = (d.statut || '').toLowerCase();
+        return s === 'en_attente' || s === 'demande_envoyee';
+      }).length;
+      
+      // Mettre à jour les badges des onglets
+      const countEnvoyeesEl = document.getElementById('count-envoyees');
+      const countRecuesEl = document.getElementById('count-recues');
+      
+      if (countEnvoyeesEl) {
+        countEnvoyeesEl.textContent = enAttenteEnvoyees;
+        countEnvoyeesEl.classList.toggle('visible', enAttenteEnvoyees > 0);
+      }
+      
+      if (countRecuesEl) {
+        countRecuesEl.textContent = enAttenteRecues;
+        countRecuesEl.classList.toggle('visible', enAttenteRecues > 0);
+      }
+      
+      // Mettre à jour les statistiques du haut
+      const tous = demandesVendeur.concat(demandesAcheteur);
+      const statAttente = tous.filter(function(d) {
+        const s = (d.statut || '').toLowerCase();
+        return s === 'en_attente' || s === 'demande_envoyee';
+      }).length;
+      
+      const statEncours = tous.filter(function(d) {
+        const s = (d.statut || '').toLowerCase();
+        return s === 'acceptee' || s === 'livraison_confirmee';
+      }).length;
+      
+      const statTerminees = tous.filter(function(d) {
+        const s = (d.statut || '').toLowerCase();
+        return s === 'terminee';
+      }).length;
+      
+      const elAttente = document.getElementById('stat-attente');
+      const elEncours = document.getElementById('stat-encours');
+      const elTerminees = document.getElementById('stat-terminees');
+      
+      if (elAttente) elAttente.textContent = statAttente;
+      if (elEncours) elEncours.textContent = statEncours;
+      if (elTerminees) elTerminees.textContent = statTerminees;
+    }
+
     /**
      * 2. PAGE "MES TRANSACTIONS" - 2 SECTIONS
      */
@@ -6846,6 +7133,13 @@
         }, function(error) {
           console.error("Erreur écoute demandes envoyées :", error);
         });
+
+      // Mettre à jour les compteurs après chargement
+      setTimeout(function() {
+        if (typeof mettreAJourCompteursOngletsTransactions === 'function') {
+          mettreAJourCompteursOngletsTransactions();
+        }
+      }, 500);
     }
 
     /**
@@ -6899,7 +7193,7 @@
      * 3. AFFICHAGE DES DEMANDES REÇUES (VENDEUR)
      */
     function afficherSectionDemandesRecues(demandes) {
-      var html = '<h3>📩 Demandes reçues</h3>';
+      var html = '';
       
       if (!demandes || demandes.length === 0) {
         html += '<p style="color:#888;">Aucune demande reçue</p>';
@@ -6930,13 +7224,17 @@
       
       var section = document.getElementById("sectionDemandesRecues");
       if (section) section.innerHTML = html;
+      // Mettre à jour les compteurs
+      if (typeof mettreAJourCompteursOngletsTransactions === 'function') {
+        mettreAJourCompteursOngletsTransactions();
+      }
     }
 
     /**
      * 4. AFFICHAGE DES DEMANDES ENVOYÉES (ACHETEUR)
      */
     function afficherSectionDemandesEnvoyees(demandes) {
-      var html = '<h3>📤 Demandes envoyées</h3>';
+      var html = '';
       
       if (!demandes || demandes.length === 0) {
         html += '<p style="color:#888;">Aucune demande envoyée</p>';
@@ -6981,6 +7279,10 @@
       
       var section = document.getElementById("sectionDemandesEnvoyees");
       if (section) section.innerHTML = html;
+      // Mettre à jour les compteurs
+      if (typeof mettreAJourCompteursOngletsTransactions === 'function') {
+        mettreAJourCompteursOngletsTransactions();
+      }
     }
 
     /**
