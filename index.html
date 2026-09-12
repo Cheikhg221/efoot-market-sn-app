@@ -3320,11 +3320,11 @@
                 id="pub-price" 
                 class="form-control" 
                 placeholder="Ex : 25000" 
-                min="500" 
-                step="500"
+                min="100" 
+                step="100"
                 oninput="validerChamp('pub-price')"
               >
-              <div class="error-msg" id="err-pub-price">Veuillez indiquer un prix valide supérieur à 0 FCFA.</div>
+              <div class="error-msg" id="err-pub-price">Veuillez indiquer un prix valide (minimum 100 FCFA, par palier de 100).</div>
             </div>
 
             <div class="form-group">
@@ -5554,7 +5554,7 @@
 
       let titreValide = titreInput.value.trim().length >= 5;
       let descValide = descInput.value.trim().length >= 10;
-      let prixValide = !isNaN(prixInput.value) && parseFloat(prixInput.value) > 0;
+      let prixValide = !isNaN(prixInput.value) && parseFloat(prixInput.value) >= 100;
       let regionValide = !regionInput || (regionInput.value.trim() !== "");
       let whatsappValide = validerFormatWhatsApp(whatsappInput.value.trim());
       let powerValide = false;
