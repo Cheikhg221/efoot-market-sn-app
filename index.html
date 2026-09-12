@@ -4799,6 +4799,9 @@
         appliquerFiltres();
       } else if (pageId === 'mes-annonces') {
         nettoyerHashAnnonce();
+        if (typeof chargerMesAnnoncesVenduesFirestore === 'function') {
+          chargerMesAnnoncesVenduesFirestore();
+        }
         afficherMesAnnonces();
       } else if (pageId === 'messages') {
         nettoyerHashAnnonce();
@@ -5632,27 +5635,97 @@
     /**
      * Affiche les informations complètes d'un compte eFootball
      */
+    /**
+     * Affiche les informations complètes d'un compte eFootball
+     * Si l'annonce n'est pas dans le cache local (ex: vendue), la récupère directement depuis Firestore
+     */
     function afficherDetailAnnonce(id) {
       currentDetailAdId = id;
       const annonces = getAnnonces();
       const ad = annonces.find(item => item.id === id);
       const container = document.getElementById('detail-card-container');
 
-      if (!ad) {
-        container.innerHTML = `
-          <div style="padding: 40px; text-align: center;">
-            <h3>Cette annonce n'existe plus ou a été retirée.</h3>
-            <button class="btn-primary" style="margin-top: 14px;" onclick="changerPage('accueil')">
-              ← Retour à l'accueil
-            </button>
-          </div>
-        `;
+      // 1. Si l'annonce n'est PAS trouvée dans annoncesFirestore (car elle est vendue ou URL directe),
+      // faire une requête Firestore directe pour la récupérer
+      if (!ad && db) {
+        if (container) {
+          container.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+              <div style="font-size: 28px; margin-bottom: 8px;">⏳</div>
+              <p>Chargement des détails de l'annonce...</p>
+            </div>
+          `;
+        }
+        db.collection("annonces").doc(id).get().then(function(doc) {
+          if (doc.exists) {
+            var adData = { id: doc.id, ...doc.data() };
+            afficherDetailAnnonceAvecData(adData);
+          } else {
+            if (container) {
+              container.innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                  <h3>Cette annonce n'existe plus ou a été retirée.</h3>
+                  <button class="btn-primary" style="margin-top: 14px;" onclick="changerPage('accueil')">
+                    ← Retour à l'accueil
+                  </button>
+                </div>
+              `;
+            }
+          }
+        }).catch(function(error) {
+          console.error("Erreur récupération annonce Firestore :", error);
+          if (container) {
+            container.innerHTML = `
+              <div style="padding: 40px; text-align: center;">
+                <h3>Cette annonce n'existe plus ou a été retirée.</h3>
+                <button class="btn-primary" style="margin-top: 14px;" onclick="changerPage('accueil')">
+                  ← Retour à l'accueil
+                </button>
+              </div>
+            `;
+          }
+        });
         return;
       }
 
+      if (!ad) {
+        if (container) {
+          container.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+              <h3>Cette annonce n'existe plus ou a été retirée.</h3>
+              <button class="btn-primary" style="margin-top: 14px;" onclick="changerPage('accueil')">
+                ← Retour à l'accueil
+              </button>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      afficherDetailAnnonceAvecData(ad);
+    }
+
+    /**
+     * Affiche les détails d'une annonce à partir d'un objet ad
+     * Pour les annonces VENDUES :
+     * - Image grisée (opacité 0.5)
+     * - Badge rouge "🔴 VENDU" bien visible
+     * - Bandeau rouge "🔴 VENDU - Cet article a été vendu"
+     * - Aucun bouton d'achat ou de contact
+     */
+    function afficherDetailAnnonceAvecData(ad) {
+      if (!ad) return;
+      currentDetailAdId = ad.id;
+      const container = document.getElementById('detail-card-container');
+      if (!container) return;
+
+      const estVendue = (ad.statut === "vendue" || ad.statut === "VENDU");
+
+      // Griser l'image (opacité 0.5) si l'annonce est vendue
+      const styleImage = estVendue ? 'style="opacity: 0.5; filter: grayscale(40%);"' : '';
       const mediaHtml = ad.image ? 
-        `<img src="${ad.image}" alt="${ad.titre}">` : 
-        `<div class="card-placeholder" style="height: 280px;">
+        `<img src="${ad.image}" alt="${escapeHtml(ad.titre || 'Compte eFootball')}" ${styleImage}>` : 
+        `<div class="card-placeholder" style="height: 280px; ${estVendue ? 'opacity: 0.5;' : ''}">
            <span class="placeholder-ball" style="font-size: 56px;">⚽</span>
            <span class="placeholder-label">eFootball Sénégal</span>
          </div>`;
@@ -5681,7 +5754,14 @@
 
       // Formatage du nom et du badge vérifié pour l'annonce
       const nomVendeurAffiche = formaterNomAffichage(ad.vendeurPrenom || ad.vendeur, ad.vendeurNom);
-      const estVendeurVerifie = ad.verifie || validerTelephoneSenegal(ad.telephoneWhatsApp);
+
+      // Bandeau rouge visible si vendue
+      const bandeauVenduHtml = estVendue ? `
+        <div style="background: rgba(244, 67, 54, 0.15); border: 1.5px solid #F44336; border-radius: 10px; padding: 16px 20px; text-align: center; margin-bottom: 20px;">
+          <p style="color: #F44336; font-size: 20px; font-weight: 800; margin: 0 0 4px 0;">🔴 VENDU</p>
+          <p style="color: #eee; font-size: 14px; margin: 0; font-weight: 500;">Cet article a été vendu</p>
+        </div>
+      ` : '';
 
       container.innerHTML = `
         <div class="detail-top-nav">
@@ -5689,7 +5769,7 @@
             ← Retour à l'accueil
           </button>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 12px; color: var(--text-muted);">Publié le ${formaterDate(ad.date)}</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Publié le ${formaterDate(ad.datePublication || ad.date)}</span>
           </div>
         </div>
 
@@ -5698,22 +5778,25 @@
         </div>
 
         <div class="detail-content">
+          ${bandeauVenduHtml}
+
           <div class="detail-badges-row">
-            <span class="badge-pill primary">🎮 ${ad.plateforme}</span>
-            <span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.12); border: 1px solid rgba(33, 150, 243, 0.25);">📍 ${ad.region || 'Dakar'}</span>
-            ${ad.puissance ? `<span class="badge-pill" style="color: var(--primary); background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">💪 ${ad.puissance}</span>` : ''}
-            ${ad.typeCompte ? `<span class="badge-pill">💎 ${ad.typeCompte}</span>` : ''}
+            ${estVendue ? `<span class="badge-pill" style="color: #fff; background: #F44336; font-weight: 700;">🔴 VENDU</span>` : ''}
+            <span class="badge-pill primary">🎮 ${escapeHtml(ad.plateforme || 'Mobile')}</span>
+            <span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.12); border: 1px solid rgba(33, 150, 243, 0.25);">📍 ${escapeHtml(ad.region || 'Dakar')}</span>
+            ${ad.puissance ? `<span class="badge-pill" style="color: var(--primary); background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">💪 ${escapeHtml(String(ad.puissance))}</span>` : ''}
+            ${ad.typeCompte ? `<span class="badge-pill">💎 ${escapeHtml(ad.typeCompte)}</span>` : ''}
           </div>
 
-          <h1 class="detail-title">${ad.titre}</h1>
+          <h1 class="detail-title" style="${estVendue ? 'color: #aaa;' : ''}">${escapeHtml(ad.titre || 'Compte eFootball')}</h1>
 
-          <div class="detail-price-box">
+          <div class="detail-price-box" style="${estVendue ? 'opacity: 0.8;' : ''}">
             <div>
-              <div class="detail-price-label">Prix de vente vérifié</div>
+              <div class="detail-price-label">${estVendue ? 'Prix de vente' : 'Prix de vente vérifié'}</div>
               <div class="detail-price-value">${formaterPrix(ad.prix)}</div>
             </div>
-            <div style="text-align: right; font-size: 12px; color: var(--primary);">
-              Dispo immédiate • Wave/OM
+            <div style="text-align: right; font-size: 12px; color: ${estVendue ? '#F44336' : 'var(--primary)'}; font-weight: ${estVendue ? '700' : '400'};">
+              ${estVendue ? '🔴 Article vendu' : 'Dispo immédiate • Wave/OM'}
             </div>
           </div>
 
@@ -5721,14 +5804,14 @@
             ${ad.puissance ? `
             <div class="detail-power-box">
               <span class="detail-power-title">Puissance d'équipe :</span>
-              <span class="card-power-badge" style="font-size: 13.5px; padding: 4px 10px;">💪 ${ad.puissance}</span>
+              <span class="card-power-badge" style="font-size: 13.5px; padding: 4px 10px;">💪 ${escapeHtml(String(ad.puissance))}</span>
             </div>` : ''}
             <h4>Description du compte :</h4>
-            <p>${ad.description}</p>
+            <p>${escapeHtml(ad.description || 'Aucune description fournie.')}</p>
           </div>
 
           <!-- Section Vendeur avec lien vers son profil & avis -->
-          <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${ad.vendeur}')" title="Voir le profil complet et les avis de ${nomVendeurAffiche}">
+          <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}')" title="Voir le profil complet et les avis de ${nomVendeurAffiche}">
             <div class="seller-left">
               <div class="seller-avatar">👤</div>
               <div>
@@ -5739,30 +5822,32 @@
                   </span>
                 </div>
                 <div class="seller-meta-sub" style="margin-top: 4px;">
-                  ${totalAvis > 0 ? `★ <strong style="color: #FFD700;">${noteText}</strong> sur 5.0 (${totalAvis} avis reçu${totalAvis > 1 ? 's' : ''})` : `<span style="color: #888;">Nouveau vendeur (0 avis)</span>`} • 📍 ${ad.region || 'Dakar'}
+                  ${totalAvis > 0 ? `★ <strong style="color: #FFD700;">${noteText}</strong> sur 5.0 (${totalAvis} avis reçu${totalAvis > 1 ? 's' : ''})` : `<span style="color: #888;">Nouveau vendeur (0 avis)</span>`} • 📍 ${escapeHtml(ad.region || 'Dakar')}
                 </div>
               </div>
             </div>
             <div>
-              <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')">
+              <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}')">
                 Voir profil & avis (${totalAvis}) →
               </button>
             </div>
           </div>
 
-          <!-- Conteneur unique pour les boutons d'action (gérés dynamiquement) -->
-          <div id="boutonsAnnonce"></div>
+          ${estVendue ? '' : `
+            <!-- Conteneur unique pour les boutons d'action (gérés dynamiquement) -->
+            <div id="boutonsAnnonce"></div>
 
-          <!-- Carte de Suivi de Transaction Sécurisée & Double Confirmation -->
-          ${genererCarteTransactionDetail(ad, estMonAnnonce, maTx, txsVendeur, monAvis)}
+            <!-- Carte de Suivi de Transaction Sécurisée & Double Confirmation -->
+            ${genererCarteTransactionDetail(ad, estMonAnnonce, maTx, txsVendeur, monAvis)}
+          `}
 
           <!-- Section Avis & Commentaires sur le Vendeur -->
           <div class="detail-reviews-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
               <h3 style="font-size: 15px; font-weight: 700; margin: 0;">
-                ⭐ Avis vérifiés sur ${ad.vendeur} (${totalAvis})
+                ⭐ Avis vérifiés sur ${escapeHtml(ad.vendeur || 'le vendeur')} (${totalAvis})
               </h3>
-              <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="ouvrirProfilVendeur('${ad.vendeur}')">
+              <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}')">
                 Voir tout le profil →
               </button>
             </div>
@@ -5779,7 +5864,7 @@
                       <div class="review-author-info">
                         <span style="font-size: 16px;">👤</span>
                         <div>
-                          <div class="review-author-name">${a.acheteurNom}</div>
+                          <div class="review-author-name">${escapeHtml(a.acheteurNom || 'Acheteur')}</div>
                           <div class="review-date">${formaterDate(a.date)}</div>
                         </div>
                       </div>
@@ -5788,7 +5873,7 @@
                         <span style="font-size: 12px; font-weight: 700; margin-left: 3px; color: var(--badge-gold);">${Number(a.note).toFixed(1)}</span>
                       </div>
                     </div>
-                    <div class="review-comment-text">« ${a.commentaire} »</div>
+                    <div class="review-comment-text">« ${escapeHtml(a.commentaire || '')} »</div>
                   </div>
                 `).join('')}
               </div>
@@ -5797,8 +5882,10 @@
         </div>
       `;
 
-      // Affichage dynamique et sécurisé des boutons selon l'état de la demande
-      afficherBoutonsAnnonce(ad.id, ad);
+      // Si l'annonce n'est pas vendue, afficher les boutons interactifs selon le statut de la demande
+      if (!estVendue) {
+        afficherBoutonsAnnonce(ad.id, ad);
+      }
     }
 
     /**
@@ -6027,12 +6114,8 @@
         }
 
         if (idAnnonce) {
-          const annonces = getAnnonces();
-          const ad = annonces.find(a => a.id === idAnnonce);
-          if (ad) {
-            changerPage('detail', { annonceId: idAnnonce });
-            return true;
-          }
+          changerPage('detail', { annonceId: idAnnonce });
+          return true;
         }
       } catch (e) {}
       return false;
@@ -6616,6 +6699,9 @@
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       if (!user) return;
       afficherMesTransactions();
+      if (typeof chargerMesAnnoncesVenduesFirestore === 'function') {
+        chargerMesAnnoncesVenduesFirestore();
+      }
     }
 
     function arreterEcouteDemandesFirestore() {
@@ -6627,8 +6713,15 @@
         unsubscribeDemandesAcheteur();
         unsubscribeDemandesAcheteur = null;
       }
+      if (unsubscribeMesAnnoncesVendues) {
+        unsubscribeMesAnnoncesVendues();
+        unsubscribeMesAnnoncesVendues = null;
+      }
       demandesVendeurCache = [];
       demandesAcheteurCache = [];
+      if (typeof mesAnnoncesVenduesCache !== 'undefined') {
+        mesAnnoncesVenduesCache = [];
+      }
     }
 
     function afficherDemandesVendeur() {
@@ -8878,9 +8971,44 @@
        SECTION 9 : PAGE 5 : MES ANNONCES & SUPPRESSION
        ========================================================== */
 
+    var mesAnnoncesVenduesCache = [];
+    var unsubscribeMesAnnoncesVendues = null;
+
+    /**
+     * Charge et écoute en temps réel les annonces vendues du vendeur connecté depuis Firestore
+     */
+    function chargerMesAnnoncesVenduesFirestore() {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user || !db) return;
+
+      if (unsubscribeMesAnnoncesVendues) {
+        unsubscribeMesAnnoncesVendues();
+        unsubscribeMesAnnoncesVendues = null;
+      }
+
+      try {
+        unsubscribeMesAnnoncesVendues = db.collection("annonces")
+          .where("vendeurId", "==", user.uid)
+          .where("statut", "==", "vendue")
+          .onSnapshot(function(snapshot) {
+            mesAnnoncesVenduesCache = [];
+            snapshot.forEach(function(doc) {
+              mesAnnoncesVenduesCache.push({ id: doc.id, ...doc.data() });
+            });
+            if (currentPage === 'mes-annonces') {
+              afficherMesAnnonces();
+            }
+          }, function(error) {
+            console.warn("Erreur écoute annonces vendues :", error);
+          });
+      } catch (e) {
+        console.warn("Exception écoute annonces vendues :", e);
+      }
+    }
+
     /**
      * Affiche les annonces enregistrées de l'utilisateur actuel
-     * Gère les différents statuts : "en_cours" avec bloc de gestion, "vendue", ou "active"
+     * Gère les différents statuts : "en_cours" avec bloc de gestion, "vendue" avec badge VENDU, ou "active"
      */
     function afficherMesAnnonces() {
       const container = document.getElementById('my-ads-container');
@@ -8890,16 +9018,37 @@
       const annonces = getAnnonces();
       const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
 
-      // Filtrer les annonces par le nom/ID du vendeur
+      // Filtrer les annonces actives ou en cours par le nom/ID du vendeur
       const monNomComplet = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
       const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
-      const mesAnnonces = annonces.filter(a => 
+      let mesAnnonces = annonces.filter(a => 
         (user && a.vendeurId === user.uid) ||
         (profil && a.vendeurId && profil.id && a.vendeurId === profil.id) || 
         a.vendeur === monNomComplet || 
         a.vendeur === monNomFormate ||
         (profil && profil.prenom && a.vendeurPrenom === profil.prenom)
       );
+
+      // Intégrer les annonces vendues du vendeur depuis Firestore
+      if (mesAnnoncesVenduesCache && mesAnnoncesVenduesCache.length > 0) {
+        mesAnnoncesVenduesCache.forEach(function(av) {
+          if (!mesAnnonces.some(a => a.id === av.id)) {
+            mesAnnonces.push(av);
+          }
+        });
+      }
+
+      // Intégrer les annonces vendues depuis le stockage local si nécessaire
+      try {
+        var annoncesLocales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
+        annoncesLocales.forEach(function(al) {
+          if ((al.statut === 'vendue' || al.statut === 'VENDU') && !mesAnnonces.some(a => a.id === al.id)) {
+            if ((user && al.vendeurId === user.uid) || (profil && al.vendeurId && al.vendeurId === profil.id) || al.vendeur === monNomComplet || al.vendeur === monNomFormate) {
+              mesAnnonces.push(al);
+            }
+          }
+        });
+      } catch (e) {}
 
       if (mesAnnonces.length === 0) {
         container.innerHTML = `
@@ -8945,14 +9094,19 @@
           html += '<button onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">❌ Annuler la transaction</button>';
           html += '</div>';
         } else if (annonce.statut === "vendue" || annonce.statut === "VENDU") {
-          html += '<div style="background:#1E1E1E; padding:15px; border-radius:12px; margin-bottom:10px; opacity:0.7;">';
-          html += '<h3 style="color:#F44336; margin-top:0;">🔴 VENDU</h3>';
-          html += '<p style="color:#ccc; font-weight:bold; margin:4px 0;">' + escapeHtml(annonce.titre) + '</p>';
-          html += '<p style="color:#ccc; margin:4px 0;">' + (annonce.prix ? formaterPrix(annonce.prix) : '0 FCFA') + '</p>';
+          html += '<div style="background:#1E1E1E; padding:16px; border-radius:12px; margin-bottom:12px; opacity:0.85; border:1px solid rgba(244,67,54,0.3);">';
+          html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">';
+          html += '<span style="background:#F44336; color:white; font-weight:bold; font-size:12px; padding:3px 8px; border-radius:6px;">🔴 VENDU</span>';
           if (annonce.dateVente) {
-            html += '<p style="color:#888; font-size:12px; margin:4px 0 10px 0;">✅ Vendu le ' + formaterDate(annonce.dateVente) + '</p>';
+            html += '<span style="color:#888; font-size:12px;">Vendu le ' + formaterDate(annonce.dateVente) + '</span>';
           }
-          html += '<button onclick="supprimerAnnonce(\'' + annonce.id + '\')" style="background:#333; color:white; padding:10px; border:none; border-radius:8px; width:100%; cursor:pointer;">🗑️ Supprimer</button>';
+          html += '</div>';
+          html += '<p style="color:white; font-weight:bold; font-size:15px; margin:6px 0;">' + escapeHtml(annonce.titre) + '</p>';
+          html += '<p style="color:#ccc; margin:4px 0 12px 0;">' + (annonce.prix ? formaterPrix(annonce.prix) : '0 FCFA') + '</p>';
+          html += '<div style="display:flex; gap:8px;">';
+          html += '<button onclick="changerPage(\'detail\', { annonceId: \'' + annonce.id + '\' })" style="background:#333; color:white; padding:9px 12px; border:1px solid #555; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px; flex:1;">👁️ Voir</button>';
+          html += '<button onclick="supprimerAnnonce(\'' + annonce.id + '\')" style="background:rgba(244,67,54,0.15); color:#F44336; padding:9px 12px; border:1px solid #F44336; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px; flex:1;">🗑️ Supprimer</button>';
+          html += '</div>';
           html += '</div>';
         } else {
           var item = annonce;
@@ -9165,6 +9319,9 @@
         var annonces = getAnnonces().filter(function(a) { return a.id !== id; });
         setAnnonces(annonces);
         localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(annonces));
+        if (typeof mesAnnoncesVenduesCache !== 'undefined' && mesAnnoncesVenduesCache) {
+          mesAnnoncesVenduesCache = mesAnnoncesVenduesCache.filter(function(a) { return a.id !== id; });
+        }
         afficherNotification("Annonce supprimée avec succès", "🗑️");
         if (currentPage === 'mes-annonces') {
           afficherMesAnnonces();
