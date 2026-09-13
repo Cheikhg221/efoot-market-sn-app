@@ -6366,13 +6366,34 @@
           snapshot.forEach(function(doc) {
             avisFirestoreCache.push({ id: doc.id, ...doc.data() });
           });
-          console.log("Avis Firestore chargés :", avisFirestoreCache.length);
+          console.log("🔄 Avis Firestore rechargés :", avisFirestoreCache.length);
           
-          // Rafraîchir l'affichage en temps réel
-          if (currentPage === 'accueil') appliquerFiltres();
-          if (currentPage === 'mes-annonces') afficherMesAnnonces();
-          if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
-          if (currentPage === 'profil') afficherPageProfil();
+          // FORCER le rafraîchissement de TOUTES les vues possibles
+          if (currentPage === 'accueil') {
+            appliquerFiltres();
+          }
+          if (currentPage === 'mes-annonces') {
+            afficherMesAnnonces();
+          }
+          if (currentPage === 'detail' && currentDetailAdId) {
+            afficherDetailAnnonce(currentDetailAdId);
+          }
+          if (currentPage === 'profil') {
+            afficherPageProfil();
+          }
+          if (currentPage === 'transactions') {
+            afficherMesTransactions();
+          }
+          
+          // Rafraîchir la modale vendeur si elle est ouverte
+          const modalVendeur = document.getElementById('seller-profile-modal');
+          if (modalVendeur && modalVendeur.classList.contains('active')) {
+            const nomVendeurModal = modalVendeur.querySelector('h2');
+            if (nomVendeurModal) {
+              const nom = nomVendeurModal.textContent;
+              ouvrirProfilVendeur(nom);
+            }
+          }
         }, function(error) {
           console.warn("Erreur chargement avis Firestore :", error);
         });
@@ -6590,17 +6611,22 @@
      * FUSIONNE les avis du localStorage et du cache Firestore
      */
     function getNoteEtAvisVendeur(vendeurIdentifiant) {
-      // FUSION : avis du localStorage + avis du cache Firestore
+      if (!vendeurIdentifiant) {
+        return {
+          noteMoyenne: 0, noteTotale: 0, totalAvis: 0, nombreAvis: 0,
+          badge: "nouveau", avis: [], statsEtoiles: {1:0,2:0,3:0,4:0,5:0}
+        };
+      }
+      
+      // 1. Fusionner toutes les sources d'avis
       const avisLocaux = getAvis();
       const avisFirestore = (typeof avisFirestoreCache !== 'undefined' && avisFirestoreCache) 
         ? avisFirestoreCache 
         : [];
       
-      // Fusionner les deux listes en évitant les doublons
       const tousAvis = [];
       const idsVus = new Set();
       
-      // 1. Ajouter les avis Firestore en priorité
       avisFirestore.forEach(function(a) {
         if (a.id && !idsVus.has(a.id)) {
           tousAvis.push(a);
@@ -6608,49 +6634,93 @@
         }
       });
       
-      // 2. Ajouter les avis locaux qui ne sont pas déjà dans Firestore
       avisLocaux.forEach(function(a) {
         if (a.id && !idsVus.has(a.id)) {
           tousAvis.push(a);
           idsVus.add(a.id);
         } else if (!a.id) {
-          // Anciens avis sans ID
           const existeDeja = tousAvis.some(function(x) {
             return x.transactionId === a.transactionId && 
                    x.acheteurNom === a.acheteurNom &&
                    x.note === a.note;
           });
-          if (!existeDeja) {
-            tousAvis.push(a);
-          }
+          if (!existeDeja) tousAvis.push(a);
         }
       });
       
-      // Filtrer les avis de ce vendeur
+      // 2. NORMALISER l'identifiant recherché
+      const identifiantNorm = String(vendeurIdentifiant).trim().toLowerCase();
+      
+      // Extraire le prénom (premier mot)
+      const parties = identifiantNorm.split(/\s+/);
+      const prenomNorm = parties[0] || "";
+      
+      // Retirer le préfixe "vendeur_" si présent
+      const identifiantSansPrefixe = identifiantNorm.replace(/^vendeur_/, "").replace(/_/g, " ");
+      const partiesSansPrefixe = identifiantSansPrefixe.split(/\s+/);
+      const prenomSansPrefixe = partiesSansPrefixe[0] || "";
+      
+      console.log("🔍 getNoteEtAvisVendeur(" + vendeurIdentifiant + ")");
+      console.log("   Prénom normalisé :", prenomNorm);
+      console.log("   Prénom sans préfixe :", prenomSansPrefixe);
+      console.log("   Total avis disponibles :", tousAvis.length);
+      
+      // 3. Filtrer avec PLUSIEURS critères (correspondances larges)
       const avisVendeur = tousAvis.filter(function(a) {
-        return a.vendeurNom === vendeurIdentifiant || 
-               (a.vendeurId && a.vendeurId === vendeurIdentifiant) ||
-               (a.vendeur && a.vendeur === vendeurIdentifiant);
+        const aVendeurId = (a.vendeurId || "").trim();
+        const aVendeurNom = (a.vendeurNom || a.vendeur || "").trim().toLowerCase();
+        const aVendeurNomSansPrefixe = aVendeurNom.replace(/^vendeur_/, "").replace(/_/g, " ");
+        
+        // 1. Correspondance exacte par UID Firebase
+        if (aVendeurId && aVendeurId === vendeurIdentifiant) {
+          return true;
+        }
+        
+        // 2. Correspondance exacte du nom complet
+        if (aVendeurNom === identifiantNorm) {
+          return true;
+        }
+        
+        // 3. Correspondance avec le nom sans préfixe
+        if (aVendeurNomSansPrefixe === identifiantSansPrefixe) {
+          return true;
+        }
+        
+        // 4. Correspondance par prénom (pour gérer "Cheikh G." vs "Cheikh Gueye")
+        if (prenomNorm && prenomNorm.length >= 3) {
+          if (aVendeurNom.startsWith(prenomNorm + " ")) {
+            return true;
+          }
+          if (aVendeurNomSansPrefixe.startsWith(prenomNorm + " ")) {
+            return true;
+          }
+        }
+        
+        // 5. Correspondance par prénom sans préfixe
+        if (prenomSansPrefixe && prenomSansPrefixe.length >= 3 && prenomSansPrefixe !== prenomNorm) {
+          if (aVendeurNom.startsWith(prenomSansPrefixe + " ")) {
+            return true;
+          }
+        }
+        
+        return false;
       });
-
+      
+      console.log("   ✅ Avis trouvés :", avisVendeur.length);
+      
       const statsEtoiles = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
       avisVendeur.forEach(function(a) {
         const n = Math.min(5, Math.max(1, Math.round(Number(a.note) || 5)));
         statsEtoiles[n] = (statsEtoiles[n] || 0) + 1;
       });
-
+      
       if (avisVendeur.length === 0) {
         return {
-          noteMoyenne: 0,
-          noteTotale: 0,
-          totalAvis: 0,
-          nombreAvis: 0,
-          badge: "nouveau",
-          avis: [],
-          statsEtoiles: statsEtoiles
+          noteMoyenne: 0, noteTotale: 0, totalAvis: 0, nombreAvis: 0,
+          badge: "nouveau", avis: [], statsEtoiles: statsEtoiles
         };
       }
-
+      
       const somme = avisVendeur.reduce(function(acc, a) {
         return acc + (Number(a.note) || 5);
       }, 0);
@@ -6659,7 +6729,7 @@
         nombreAvis: avisVendeur.length, 
         noteMoyenne: moyenne 
       });
-
+      
       return {
         noteMoyenne: moyenne,
         noteTotale: somme,
@@ -8799,7 +8869,7 @@
     /**
      * Ouvre la modale d'avis DIRECTEMENT avec l'ID de la transaction (sans requête complexe)
      */
-    function ouvrirModalAvisDepuisTransaction(transactionId, vendeurNom, annonceId, titreAnnonce) {
+    function ouvrirModalAvisDepuisTransaction(transactionId, vendeurNom, annonceId, titreAnnonce, vendeurId) {
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       
       if (!user) {
@@ -8812,30 +8882,47 @@
         return;
       }
 
-      // Ouvrir directement la modale (vérification faite à l'envoi)
       currentReviewTransactionId = transactionId;
       currentReviewVendeurNom = vendeurNom || "Vendeur";
-      currentReviewVendeurId = "";
+      currentReviewVendeurId = vendeurId || "";
       currentReviewAnnonceId = annonceId;
       currentReviewTitreAnnonce = titreAnnonce || "Compte eFootball";
       reviewModalObligatoire = false;
 
-      const questionEl = document.getElementById('review-modal-question');
-      const accountEl = document.getElementById('review-modal-account-title');
-      const closeBtn = document.getElementById('review-modal-close-btn');
+      // Si pas d'UID fourni, le récupérer depuis l'annonce
+      if (!currentReviewVendeurId && annonceId && db) {
+        db.collection("annonces").doc(annonceId).get().then(function(doc) {
+          if (doc.exists) {
+            var annonce = doc.data();
+            currentReviewVendeurId = annonce.vendeurId || "";
+            console.log("🔑 UID vendeur récupéré depuis l'annonce :", currentReviewVendeurId);
+          }
+          afficherModaleAvis();
+        }).catch(function() {
+          afficherModaleAvis();
+        });
+      } else {
+        afficherModaleAvis();
+      }
+      
+      function afficherModaleAvis() {
+        const questionEl = document.getElementById('review-modal-question');
+        const accountEl = document.getElementById('review-modal-account-title');
+        const closeBtn = document.getElementById('review-modal-close-btn');
 
-      if (questionEl) questionEl.textContent = `Comment s'est passée la transaction avec ${vendeurNom} ?`;
-      if (accountEl) accountEl.textContent = `Compte : ${titreAnnonce}`;
-      if (closeBtn) closeBtn.style.display = 'block';
+        if (questionEl) questionEl.textContent = `Comment s'est passée la transaction avec ${currentReviewVendeurNom} ?`;
+        if (accountEl) accountEl.textContent = `Compte : ${currentReviewTitreAnnonce}`;
+        if (closeBtn) closeBtn.style.display = 'block';
 
-      const textarea = document.getElementById('review-comment-text');
-      if (textarea) textarea.value = "";
-      currentRatingSelected = 5;
-      actualiserAffichageEtoiles(5);
-      validerFormulaireAvis();
+        const textarea = document.getElementById('review-comment-text');
+        if (textarea) textarea.value = "";
+        currentRatingSelected = 5;
+        actualiserAffichageEtoiles(5);
+        validerFormulaireAvis();
 
-      const modal = document.getElementById('review-modal');
-      if (modal) modal.classList.add('active');
+        const modal = document.getElementById('review-modal');
+        if (modal) modal.classList.add('active');
+      }
     }
 
     /**
@@ -9055,7 +9142,14 @@
       if (!db) return;
       const stats = getNoteEtAvisVendeur(vendeurId || vendeurNom);
       const badge = stats.badge;
-      const docId = vendeurId || ("vendeur_" + (vendeurNom || "inconnu").replace(/\s+/g, '_'));
+      
+      // PRIORITÉ à l'UID Firebase, sinon fallback sur le nom
+      let docId;
+      if (vendeurId && vendeurId.length > 0 && !vendeurId.startsWith('vendeur_')) {
+        docId = vendeurId;
+      } else {
+        docId = "vendeur_" + (vendeurNom || "inconnu").replace(/\s+/g, '_');
+      }
 
       const dataVendeur = {
         userId: vendeurId || "",
@@ -9067,9 +9161,13 @@
         dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
       };
 
-      db.collection("vendeurs").doc(docId).set(dataVendeur, { merge: true }).catch(function(e) {
-        console.warn("Erreur mise à jour profil vendeur Firestore:", e);
-      });
+      db.collection("vendeurs").doc(docId).set(dataVendeur, { merge: true })
+        .then(function() {
+          console.log("✅ Profil vendeur mis à jour :", docId);
+        })
+        .catch(function(e) {
+          console.warn("Erreur mise à jour profil vendeur :", e);
+        });
     }
 
     /**
@@ -9168,8 +9266,36 @@
 
       // Écriture Firestore OBLIGATOIRE
       if (db) {
+        // S'assurer que vendeurId est rempli
+        var vendeurIdFinal = currentReviewVendeurId || "";
+        
+        // Si vide, essayer de le récupérer depuis currentReviewAnnonceId
+        if (!vendeurIdFinal && currentReviewAnnonceId) {
+          // Récupération asynchrone (fire and forget)
+          db.collection("annonces").doc(currentReviewAnnonceId).get().then(function(doc) {
+            if (doc.exists) {
+              var annonce = doc.data();
+              var uidVendeur = annonce.vendeurId || "";
+              
+              // Mettre à jour l'avis existant avec l'UID
+              if (uidVendeur && reviewData.id) {
+                db.collection("avis").doc(reviewData.id).update({
+                  vendeurId: uidVendeur
+                }).then(function() {
+                  console.log("🔑 UID vendeur ajouté à l'avis :", uidVendeur);
+                  mettreAJourProfilVendeurFirestore(uidVendeur, currentReviewVendeurNom);
+                }).catch(function(e) {
+                  console.warn("Erreur ajout UID :", e);
+                });
+              }
+            }
+          }).catch(function(e) {
+            console.warn("Erreur récupération annonce :", e);
+          });
+        }
+        
         var firestorePayload = {
-          vendeurId: currentReviewVendeurId || "",
+          vendeurId: vendeurIdFinal,
           vendeurNom: currentReviewVendeurNom,
           acheteurId: user.uid,
           acheteurNom: acheteurNom,
@@ -9187,6 +9313,23 @@
           .then(function(docRef) {
             console.log("✅ Avis enregistré dans Firestore, ID :", docRef.id);
             reviewData.id = docRef.id;
+            
+            // Forcer le rechargement immédiat du cache
+            avisFirestoreCache.push({
+              id: docRef.id,
+              vendeurId: currentReviewVendeurId || "",
+              vendeurNom: currentReviewVendeurNom,
+              acheteurId: user.uid,
+              acheteurNom: acheteurNom,
+              note: noteChoisie,
+              commentaire: commentaire || "Transaction réussie et conforme",
+              transactionId: currentReviewTransactionId,
+              annonceId: currentReviewAnnonceId || "",
+              titreAnnonce: currentReviewTitreAnnonce || "Compte eFootball",
+              dateCreation: new Date()
+            });
+            console.log("🔄 Cache local mis à jour :", avisFirestoreCache.length, "avis");
+            
             mettreAJourProfilVendeurFirestore(currentReviewVendeurId, currentReviewVendeurNom);
           })
           .catch(function(err) {
@@ -9370,7 +9513,7 @@
     }
 
     /**
-     * Charge les avis reçus par le vendeur connecté (depuis Firestore avec repli localStorage)
+     * Charge les avis reçus par le vendeur connecté (source unifiée via getNoteEtAvisVendeur)
      */
     function chargerMesAvis() {
       const container = document.getElementById('mes-avis-container');
@@ -9387,56 +9530,23 @@
 
       const monNomComplet = profil.nom ? (profil.prenom + ' ' + profil.nom).trim() : (profil.prenom || "");
       const monNomFormate = formaterNomAffichage(profil.prenom, profil.nom);
+      const monUid = user ? user.uid : null;
 
-      // Repli localStorage si Firestore indisponible
-      if (!db) {
-        const avis = getAvis().filter(function(a) {
-          return a.vendeurNom === monNomComplet || 
-                 a.vendeurNom === monNomFormate ||
-                 (a.vendeurId && user && a.vendeurId === user.uid);
-        });
-        afficherAvisVendeur(avis, container, countEl);
-        return;
+      // Utiliser la source unifiée getNoteEtAvisVendeur()
+      // qui lit déjà localStorage + avisFirestoreCache
+      let stats = getNoteEtAvisVendeur(monUid || monNomComplet);
+      
+      // Si aucun avis trouvé avec l'UID, essayer avec le nom complet
+      if (stats.totalAvis === 0 && monNomComplet) {
+        stats = getNoteEtAvisVendeur(monNomComplet);
       }
-
-      // Charger depuis Firestore en temps réel
-      db.collection("avis")
-        .where("vendeurNom", "==", monNomComplet)
-        .onSnapshot(function(snapshot) {
-          var avis = [];
-          snapshot.forEach(function(doc) {
-            avis.push({ id: doc.id, ...doc.data() });
-          });
-          
-          // Si vide et nom formaté différent, essayer avec le formaté
-          if (avis.length === 0 && monNomFormate !== monNomComplet) {
-            db.collection("avis")
-              .where("vendeurNom", "==", monNomFormate)
-              .onSnapshot(function(snapshot2) {
-                var avis2 = [];
-                snapshot2.forEach(function(doc) {
-                  avis2.push({ id: doc.id, ...doc.data() });
-                });
-                afficherAvisVendeur(avis2, container, countEl);
-              }, function(err) {
-                console.warn("Erreur Firestore avis formaté:", err);
-                var locaux = getAvis().filter(function(a) {
-                  return a.vendeurNom === monNomFormate;
-                });
-                afficherAvisVendeur(locaux, container, countEl);
-              });
-            return;
-          }
-          
-          afficherAvisVendeur(avis, container, countEl);
-        }, function(error) {
-          console.warn("Erreur chargement avis:", error);
-          // Repli localStorage
-          const avis = getAvis().filter(function(a) {
-            return a.vendeurNom === monNomComplet || a.vendeurNom === monNomFormate;
-          });
-          afficherAvisVendeur(avis, container, countEl);
-        });
+      
+      // Si toujours aucun, essayer avec le nom formaté
+      if (stats.totalAvis === 0 && monNomFormate && monNomFormate !== monNomComplet) {
+        stats = getNoteEtAvisVendeur(monNomFormate);
+      }
+      
+      afficherAvisVendeur(stats.avis, container, countEl);
     }
 
     /**
