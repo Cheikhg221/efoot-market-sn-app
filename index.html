@@ -6486,15 +6486,15 @@
      * Calcule le badge du vendeur selon les 4 niveaux basés sur les notes et avis :
      * 1. 🆕 NOUVEAU (0 avis)
      * 2. 🟢 RECOMMANDÉ (1-2 avis, note ≥ 4.0)
-     * 3. 🔵 TRÈS FIABLE (3-4 avis, note ≥ 4.5)
-     * 4. 👑 EXCELLENT (5+ avis, note ≥ 4.7)
+     * 3. 🔵 TRÈS FIABLE (3-4 avis, note ≥ 4.0)
+     * 4. 👑 EXCELLENT (5+ avis, note ≥ 4.5)
      */
     function calculerBadge(vendeur) {
       var avis = (vendeur && (vendeur.nombreAvis !== undefined ? vendeur.nombreAvis : (vendeur.totalAvis !== undefined ? vendeur.totalAvis : 0))) || 0;
       var note = (vendeur && (vendeur.noteMoyenne !== undefined ? vendeur.noteMoyenne : (vendeur.note !== undefined ? vendeur.note : 0))) || 0;
 
-      if (avis >= 5 && note >= 4.7) return "excellent";
-      if (avis >= 3 && note >= 4.5) return "tres_fiable";
+      if (avis >= 5 && note >= 4.5) return "excellent";
+      if (avis >= 3 && note >= 4.0) return "tres_fiable";
       if (avis >= 1 && note >= 4.0) return "recommande";
       return "nouveau";
     }
@@ -6759,6 +6759,8 @@
           return '✅ Acceptée';
         case 'refusee':
           return '❌ Refusée';
+        case 'annulee':
+          return '❌ Annulée';
         case 'livraison_confirmee':
           return '📦 Réception confirmée';
         case 'terminee':
@@ -6784,7 +6786,7 @@
       if (s === 'en_attente' || s === 'demande_envoyee') {
         step1Class = 'active';
         progressWidth = '12%';
-      } else if (s === 'refusee') {
+      } else if (s === 'refusee' || s === 'annulee') {
         step1Class = 'completed';
         step2Class = 'refused';
         progressWidth = '33%';
@@ -7371,6 +7373,10 @@
             html += '<p>Le vendeur va vous contacter</p>';
           } else if (d.statut === "refusee") {
             html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
+          } else if (d.statut === "annulee" || d.statut === "ANNULEE") {
+            html += '<p style="color:#f87171; font-weight:600;">❌ Annulée par le vendeur</p>';
+            html += '<p style="color:#888; font-size:12px;">Le vendeur a annulé cette transaction</p>';
+            html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
           } else if (d.statut === "terminee" || d.statut === "TERMINEE") {
             html += '<p style="color:#34d399; font-weight:700; margin:6px 0;">🎉 Terminée</p>';
             const tousAvis = getAvis();
@@ -8187,6 +8193,27 @@
             </div>
           </div>
         `;
+      } else if (maTx.statut === 'ANNULEE' || maTx.statut === 'annulee') {
+        actionBox = `
+          <div class="tx-action-box box-litige">
+            <div style="font-weight: 700; color: #f87171; font-size: 13.5px;">
+              ❌ Transaction annulée par le vendeur
+            </div>
+            <div style="font-size: 12px; color: var(--text-gray); margin-top: 6px; line-height: 1.5;">
+              Le vendeur a annulé cette transaction. Vous pouvez :
+            </div>
+            <ul style="font-size: 12px; color: var(--text-gray); margin: 8px 0; padding-left: 20px; line-height: 1.6;">
+              <li>Chercher un autre compte similaire</li>
+              <li>Contacter directement le vendeur sur WhatsApp</li>
+              <li>Faire une nouvelle demande sur cette annonce si elle est toujours active</li>
+            </ul>
+            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn-primary" style="font-size: 12px; padding: 8px 14px;" onclick="changerPage('accueil')">
+                🔍 Voir d'autres comptes
+              </button>
+            </div>
+          </div>
+        `;
       }
 
       return `
@@ -8512,6 +8539,25 @@
                         👤 Voir le profil
                       </button>
                     `}
+                  </div>
+                </div>
+              `;
+            } else if (st === 'annulee' || st === 'ANNULEE') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-litige" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3);">
+                  <div style="font-weight: 700; color: #f87171; font-size: 13px;">
+                    ❌ Transaction annulée par le vendeur
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-gray); margin-top: 4px;">
+                    Le vendeur a annulé la transaction. Vous pouvez postuler à d'autres comptes.
+                  </div>
+                  <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('detail', { annonceId: '${d.annonceId}' })">
+                      👁️ Voir l'annonce
+                    </button>
+                    <button type="button" class="btn-primary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('accueil')">
+                      🔍 Chercher d'autres comptes
+                    </button>
                   </div>
                 </div>
               `;
@@ -9486,8 +9532,8 @@
      * Retourne le libellé du badge selon le nombre d'avis et la note moyenne
      */
     function getBadgeLabel(nbAvis, noteMoyenne) {
-      if (nbAvis >= 5 && noteMoyenne >= 4.7) return "👑 Excellent";
-      if (nbAvis >= 3 && noteMoyenne >= 4.5) return "🔵 Très fiable";
+      if (nbAvis >= 5 && noteMoyenne >= 4.5) return "👑 Excellent";
+      if (nbAvis >= 3 && noteMoyenne >= 4.0) return "🔵 Très fiable";
       if (nbAvis >= 1 && noteMoyenne >= 4.0) return "🟢 Recommandé";
       return "🆕 Nouveau";
     }
