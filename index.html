@@ -10531,24 +10531,93 @@
     function executerAnnulationTransaction(demandeId, annonceId, nomAcheteur) {
       if (!annonceId) return;
       
-      var dateAnnul = new Date().toISOString();
       var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
         ? firebase.firestore.FieldValue.serverTimestamp() 
-        : dateAnnul;
+        : new Date().toISOString();
       
-      function appliquerLocalement() {
-        // Remettre l'annonce en vente
-        var annonces = getAnnonces();
-        var ad = annonces.find(function(a) { return a.id === annonceId; });
-        if (ad) {
-          ad.statut = "active";
-          ad.accepteAutresOffres = true;
-          setAnnonces(annonces);
+      // 1. Annuler la demande concernée
+      function annulerDemande() {
+        if (!demandeId || !db) return Promise.resolve();
+        return db.collection("demandes").doc(demandeId).update({
+          statut: "annulee",
+          motifAnnulation: "Annulée par le vendeur",
+          dateAnnulation: dateVal
+        });
+      }
+      
+      // 2. Vérifier s'il reste des demandes actives
+      function verifierDemandesRestantes() {
+        if (!db) {
+          // Mode local : vérifier dans le cache
+          var restantes = (demandesVendeurCache || []).filter(function(d) {
+            var s = (d.statut || '').toLowerCase();
+            return d.annonceId === annonceId && 
+                   d.id !== demandeId &&
+                   (s === 'acceptee' || s === 'en_attente' || s === 'demande_envoyee');
+          });
+          return Promise.resolve(restantes.length);
         }
         
+        return db.collection("demandes")
+          .where("annonceId", "==", annonceId)
+          .get()
+          .then(function(snapshot) {
+            var count = 0;
+            snapshot.forEach(function(doc) {
+              if (doc.id !== demandeId) {
+                var d = doc.data();
+                var s = (d.statut || '').toLowerCase();
+                if (s === 'acceptee' || s === 'en_attente' || s === 'demande_envoyee') {
+                  count++;
+                }
+              }
+            });
+            return count;
+          });
+      }
+      
+      // 3. Mettre à jour l'annonce selon le résultat
+      function mettreAJourAnnonce(demandesRestantes) {
+        if (!db) {
+          // Mode local
+          var annonces = getAnnonces();
+          var ad = annonces.find(function(a) { return a.id === annonceId; });
+          if (ad) {
+            if (demandesRestantes > 0) {
+              // Il reste des demandes : garder en_cours
+              ad.statut = "en_cours";
+              ad.accepteAutresOffres = true;
+            } else {
+              // Plus de demandes : remettre active
+              ad.statut = "active";
+              ad.accepteAutresOffres = true;
+            }
+            setAnnonces(annonces);
+          }
+          return Promise.resolve();
+        }
+        
+        var updateData = {};
+        if (demandesRestantes > 0) {
+          // Il reste des demandes : garder en_cours
+          updateData.statut = "en_cours";
+          updateData.accepteAutresOffres = true;
+          console.log("✅ Annulation : il reste " + demandesRestantes + " demande(s). Annonce conservée en 'en_cours'.");
+        } else {
+          // Plus de demandes : remettre active
+          updateData.statut = "active";
+          updateData.accepteAutresOffres = true;
+          console.log("✅ Annulation : plus de demandes. Annonce remise en 'active'.");
+        }
+        
+        return db.collection("annonces").doc(annonceId).update(updateData);
+      }
+      
+      // 4. Notification et rafraîchissement
+      function finaliser() {
         var messageNotif = nomAcheteur 
-          ? "Transaction annulée avec " + nomAcheteur + ". Annonce remise en vente." 
-          : "Transaction annulée. Annonce remise en vente.";
+          ? "Transaction avec " + nomAcheteur + " annulée." 
+          : "Transaction annulée.";
         
         afficherNotification(messageNotif, "ℹ️");
         
@@ -10559,39 +10628,20 @@
         if (currentPage === 'transactions') afficherMesTransactions();
       }
       
-      if (!db) {
-        appliquerLocalement();
-        return;
-      }
-      
-      var promises = [];
-      
-      // 1. Mettre à jour l'annonce
-      promises.push(
-        db.collection("annonces").doc(annonceId).update({
-          statut: "active",
-          accepteAutresOffres: true
-        })
-      );
-      
-      // 2. Mettre à jour la demande concernée
-      if (demandeId) {
-        promises.push(
-          db.collection("demandes").doc(demandeId).update({
-            statut: "annulee",
-            motifAnnulation: "Annulée par le vendeur",
-            dateAnnulation: dateVal
-          })
-        );
-      }
-      
-      Promise.all(promises)
+      // Exécution séquentielle
+      annulerDemande()
         .then(function() {
-          appliquerLocalement();
+          return verifierDemandesRestantes();
+        })
+        .then(function(demandesRestantes) {
+          return mettreAJourAnnonce(demandesRestantes);
+        })
+        .then(function() {
+          finaliser();
         })
         .catch(function(err) {
-          console.warn("Erreur Firestore annulation :", err);
-          appliquerLocalement();
+          console.warn("Erreur annulation :", err);
+          finaliser();
         });
     }
 
