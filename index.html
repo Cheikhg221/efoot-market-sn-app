@@ -10299,8 +10299,13 @@
         var d = demandesAcceptees[0];
         var nomAcheteur = d.acheteurNom || d.acheteur || "cet acheteur";
         
-        var message = "Êtes-vous sûr d'avoir vendu le compte à " + nomAcheteur + " ?\n\n" +
-                      "Cette action est définitive et marquera l'annonce comme VENDUE.";
+        var message = "⚠️ CONFIRMATION DE VENTE\n\n" +
+                      "Êtes-vous sûr d'avoir VENDU le compte à :\n\n" +
+                      "👤 " + nomAcheteur + "\n\n" +
+                      "Cette action est DÉFINITIVE :\n" +
+                      "• L'annonce sera marquée comme VENDUE\n" +
+                      "• Cette action ne peut PAS être annulée\n\n" +
+                      "Cliquez sur OK pour confirmer.";
         
         if (confirm(message)) {
           executerMarquerVendue(annonceId, d.id, nomAcheteur);
@@ -10461,6 +10466,19 @@
     }
 
     function executerMarquerVendueAvecChoix(annonceId, demandeId, acheteurNom) {
+      var messageConfirm = "⚠️ CONFIRMATION FINALE\n\n" +
+                           "Confirmez-vous avoir VENDU le compte à :\n\n" +
+                           "👤 " + acheteurNom + "\n\n" +
+                           "Cette action est DÉFINITIVE :\n" +
+                           "• L'annonce sera marquée comme VENDUE\n" +
+                           "• Les autres demandes seront automatiquement refusées\n" +
+                           "• Cette action ne peut PAS être annulée\n\n" +
+                           "Cliquez sur OK pour confirmer.";
+      
+      if (!confirm(messageConfirm)) {
+        return;
+      }
+      
       fermerModalChoixAcheteur();
       executerMarquerVendue(annonceId, demandeId, acheteurNom);
     }
