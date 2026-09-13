@@ -7389,8 +7389,8 @@
         html += '<p style="color:#888;">Aucune demande reçue</p>';
       } else {
         demandes.forEach(function(d) {
-          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E;">';
-          html += '<h4>' + escapeHtml(d.annonceTitre || "Compte eFootball") + '</h4>';
+          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
+          html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
           html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
           html += '<p>👤 Acheteur : ' + escapeHtml(d.acheteurNom || "Acheteur") + '</p>';
           if (d.nombreRefus && d.nombreRefus > 0) {
@@ -7400,14 +7400,15 @@
           
           if (d.statut === "en_attente") {
             html += '<p style="color:#FFC107;">🟡 En attente de votre réponse</p>';
-            html += '<button onclick="accepterDemande(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
-            html += '<button onclick="refuserDemande(\'' + d.id + '\')" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
+            html += '<button onclick="event.stopPropagation(); accepterDemande(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
+            html += '<button onclick="event.stopPropagation(); refuserDemande(\'' + d.id + '\')" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée</p>';
           } else if (d.statut === "refusee") {
             html += '<p style="color:#F44336;">❌ Refusée</p>';
           }
           
+          html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
           html += '</div>';
         });
       }
@@ -7430,14 +7431,14 @@
         html += '<p style="color:#888;">Aucune demande envoyée</p>';
       } else {
         demandes.forEach(function(d) {
-          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E;">';
-          html += '<h4>' + escapeHtml(d.annonceTitre || "Compte eFootball") + '</h4>';
+          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
+          html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
           html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
           html += '<p>👤 Vendeur : ' + escapeHtml(d.vendeurNom || "Vendeur") + '</p>';
           
           if (d.statut === "en_attente") {
             html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
-            html += '<button onclick="retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
+            html += '<button onclick="event.stopPropagation(); retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée !</p>';
             html += '<p>Le vendeur va vous contacter</p>';
@@ -7446,7 +7447,7 @@
           } else if (d.statut === "annulee" || d.statut === "ANNULEE") {
             html += '<p style="color:#f87171; font-weight:600;">❌ Annulée par le vendeur</p>';
             html += '<p style="color:#888; font-size:12px;">Le vendeur a annulé cette transaction</p>';
-            html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
+            html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
           } else if (d.statut === "terminee" || d.statut === "TERMINEE") {
             html += '<p style="color:#34d399; font-weight:700; margin:6px 0;">🎉 Terminée</p>';
             const tousAvis = getAvis();
@@ -7460,13 +7461,14 @@
             });
             if (monAvis) {
               html += '<p style="font-size:12px; color:var(--text-gray); margin:4px 0 8px 0;">Votre avis : ' + monAvis.note + '/5 ★</p>';
-              html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; cursor:pointer;" onclick="ouvrirProfilVendeur(\'' + escapeHtml(d.vendeurNom || '') + '\')">👤 Voir le profil</button>';
+              html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirProfilVendeur(\'' + escapeHtml(d.vendeurNom || '') + '\')">👤 Voir le profil</button>';
             } else {
-              html += '<button type="button" class="btn-tx-review" style="font-size:12px; padding:8px 14px; margin-top:4px; cursor:pointer;" onclick="ouvrirModalAvisDepuisTransaction(\'' + d.id + '\', \'' + escapeHtml(d.vendeurNom || 'Vendeur') + '\', \'' + d.annonceId + '\', \'' + escapeHtml(d.annonceTitre || 'Compte eFootball') + '\', \'' + (d.vendeurId || '') + '\')">⭐ Laisser un avis</button>';
+              html += '<button type="button" class="btn-tx-review" style="font-size:12px; padding:8px 14px; margin-top:4px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + d.id + '\', \'' + escapeHtml(d.vendeurNom || 'Vendeur') + '\', \'' + d.annonceId + '\', \'' + escapeHtml(d.annonceTitre || 'Compte eFootball') + '\', \'' + (d.vendeurId || '') + '\')">⭐ Laisser un avis</button>';
             }
-            html += ' <button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-left:8px; cursor:pointer;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
+            html += ' <button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-left:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
           }
           
+          html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
           html += '</div>';
         });
       }
