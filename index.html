@@ -3967,6 +3967,10 @@
     var avisFirestoreCache = [];
     var unsubscribeAvisFirestore = null;
 
+    // Variables de suivi pour les notifications d'événements de transactions
+    var dernierCompteurVendeur = 0;
+    var dernierCompteurAcheteur = 0;
+
     /* ==========================================================
        CONFIGURATION ET AUTHENTIFICATION FIREBASE (ANONYME & GOOGLE)
        ========================================================== */
@@ -6894,6 +6898,46 @@
     }
 
     /**
+     * Notification visuelle et sonore pour les événements de transaction
+     */
+    function notifierNouvelleDemande(type) {
+      var messages = {
+        'recue': { texte: "📩 Nouvelle demande d'achat reçue !", icone: "🔔" },
+        'acceptee': { texte: "✅ Votre demande a été acceptée !", icone: "🔔" },
+        'reception': { texte: "📦 L'acheteur a confirmé la réception", icone: "🔔" },
+        'terminee': { texte: "🎉 La vente a été finalisée", icone: "🔔" },
+        'refusee': { texte: "❌ Votre demande a été refusée", icone: "🔔" },
+        'annulee': { texte: "ℹ️ Demande annulée", icone: "🔔" }
+      };
+      
+      var msg = messages[type] || { texte: "Nouvelle notification", icone: "🔔" };
+      afficherNotification(msg.texte, msg.icone);
+      
+      // Petit son de notification discret
+      try {
+        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          var audioCtx = new AudioContextClass();
+          var oscillator = audioCtx.createOscillator();
+          var gainNode = audioCtx.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          
+          oscillator.type = 'sine';
+          oscillator.frequency.value = 880;
+          gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+          
+          oscillator.start(audioCtx.currentTime);
+          oscillator.stop(audioCtx.currentTime + 0.2);
+        }
+      } catch(e) {
+        console.warn("Son de notification non supporté :", e);
+      }
+    }
+
+    /**
      * 1. QUAND L'ACHETEUR CLIQUE "JE VEUX ACHETER" :
      * Remplacer le localStorage par Firestore
      */
@@ -7098,8 +7142,39 @@
             var dateB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
             return dateB - dateA;
           });
+          
+          // Détecter les nouvelles demandes en attente
+          var nouvellesEnAttente = demandes.filter(function(d) {
+            var s = (d.statut || '').toLowerCase();
+            return s === 'en_attente' || s === 'demande_envoyee';
+          }).length;
+          
+          var livraisonsConfirmees = demandes.filter(function(d) {
+            var s = (d.statut || '').toLowerCase();
+            return s === 'livraison_confirmee';
+          }).length;
+          
+          // Ne notifier QUE si on a déjà chargé au moins une fois (pas au démarrage)
+          if (demandesVendeurCache.length > 0) {
+            if (nouvellesEnAttente > dernierCompteurVendeur) {
+              notifierNouvelleDemande('recue');
+            }
+            if (livraisonsConfirmees > 0) {
+              var anciennesLivraisons = demandesVendeurCache.filter(function(d) {
+                var s = (d.statut || '').toLowerCase();
+                return s === 'livraison_confirmee';
+              }).length;
+              if (livraisonsConfirmees > anciennesLivraisons) {
+                notifierNouvelleDemande('reception');
+              }
+            }
+          }
+          
+          dernierCompteurVendeur = nouvellesEnAttente;
+          
           demandesVendeurCache = demandes;
           afficherSectionDemandesRecues(demandes);
+          mettreAJourBadgeTransactions();
           if (typeof synchroniserTransactionsDepuisFirestore === 'function') {
             synchroniserTransactionsDepuisFirestore();
           }
@@ -7125,8 +7200,25 @@
             var dateB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
             return dateB - dateA;
           });
+          
+          // Détecter les acceptations
+          var acceptations = demandes.filter(function(d) {
+            var s = (d.statut || '').toLowerCase();
+            return s === 'acceptee';
+          }).length;
+          
+          // Ne notifier QUE si on a déjà chargé au moins une fois (pas au démarrage)
+          if (demandesAcheteurCache.length > 0) {
+            if (acceptations > dernierCompteurAcheteur) {
+              notifierNouvelleDemande('acceptee');
+            }
+          }
+          
+          dernierCompteurAcheteur = acceptations;
+          
           demandesAcheteurCache = demandes;
           afficherSectionDemandesEnvoyees(demandes);
+          mettreAJourBadgeTransactions();
           if (typeof synchroniserTransactionsDepuisFirestore === 'function') {
             synchroniserTransactionsDepuisFirestore();
           }
