@@ -10487,49 +10487,196 @@
      * Annule la transaction en cours et remet l'annonce en vente
      */
     function annulerTransaction(demandeId, annonceId) {
-      if (!confirm("Annuler la transaction en cours et rouvrir l'annonce aux acheteurs ?")) return;
-
-      function appliquerLocalement() {
-        if (annonceId) {
-          var annonces = getAnnonces();
-          var ad = annonces.find(function(a) { return a.id === annonceId; });
-          if (ad) {
-            ad.statut = "active";
-            ad.accepteAutresOffres = true;
-            setAnnonces(annonces);
-          }
+      if (!annonceId) return;
+      
+      // 1. Récupérer toutes les demandes actives sur cette annonce
+      var demandesActives = (demandesVendeurCache || []).filter(function(d) {
+        var s = (d.statut || '').toLowerCase();
+        return d.annonceId === annonceId && 
+               (s === 'acceptee' || s === 'en_attente' || s === 'demande_envoyee');
+      });
+      
+      // 2. Si aucune demande active
+      if (demandesActives.length === 0) {
+        if (!confirm("Aucune demande active sur cette annonce.\n\nVoulez-vous quand même la remettre en vente ?")) {
+          return;
         }
-        afficherNotification("Transaction annulée. Annonce remise en vente.", "ℹ️");
+        executerAnnulationTransaction(null, annonceId, null);
+        return;
+      }
+      
+      // 3. Si UNE SEULE demande : confirmation simple
+      if (demandesActives.length === 1) {
+        var d = demandesActives[0];
+        var nomAcheteur = d.acheteurNom || d.acheteur || "cet acheteur";
+        
+        var message = "⚠️ ANNULATION DE TRANSACTION\n\n" +
+                      "Voulez-vous vraiment annuler la transaction avec :\n\n" +
+                      "👤 " + nomAcheteur + "\n\n" +
+                      "Cette action va :\n" +
+                      "• Annuler la demande de l'acheteur\n" +
+                      "• Remettre l'annonce en vente\n\n" +
+                      "Cliquez sur OK pour confirmer.";
+        
+        if (confirm(message)) {
+          executerAnnulationTransaction(d.id, annonceId, nomAcheteur);
+        }
+        return;
+      }
+      
+      // 4. Si PLUSIEURS demandes : modale de choix
+      ouvrirModalChoixAnnulation(annonceId, demandesActives);
+    }
+
+    function executerAnnulationTransaction(demandeId, annonceId, nomAcheteur) {
+      if (!annonceId) return;
+      
+      var dateAnnul = new Date().toISOString();
+      var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : dateAnnul;
+      
+      function appliquerLocalement() {
+        // Remettre l'annonce en vente
+        var annonces = getAnnonces();
+        var ad = annonces.find(function(a) { return a.id === annonceId; });
+        if (ad) {
+          ad.statut = "active";
+          ad.accepteAutresOffres = true;
+          setAnnonces(annonces);
+        }
+        
+        var messageNotif = nomAcheteur 
+          ? "Transaction annulée avec " + nomAcheteur + ". Annonce remise en vente." 
+          : "Transaction annulée. Annonce remise en vente.";
+        
+        afficherNotification(messageNotif, "ℹ️");
+        
         if (currentPage === 'mes-annonces') afficherMesAnnonces();
         if (currentPage === 'detail' && currentDetailAdId === annonceId) {
           afficherDetailAnnonce(annonceId);
         }
+        if (currentPage === 'transactions') afficherMesTransactions();
       }
-
-      if (db) {
-        var promises = [];
-        if (annonceId) {
-          promises.push(db.collection("annonces").doc(annonceId).update({
-            statut: "active",
-            accepteAutresOffres: true
-          }));
-        }
-        if (demandeId) {
-          var dateAnnul = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
-          promises.push(db.collection("demandes").doc(demandeId).update({
+      
+      if (!db) {
+        appliquerLocalement();
+        return;
+      }
+      
+      var promises = [];
+      
+      // 1. Mettre à jour l'annonce
+      promises.push(
+        db.collection("annonces").doc(annonceId).update({
+          statut: "active",
+          accepteAutresOffres: true
+        })
+      );
+      
+      // 2. Mettre à jour la demande concernée
+      if (demandeId) {
+        promises.push(
+          db.collection("demandes").doc(demandeId).update({
             statut: "annulee",
-            dateAnnulation: dateAnnul
-          }));
-        }
-        Promise.all(promises).then(function() {
+            motifAnnulation: "Annulée par le vendeur",
+            dateAnnulation: dateVal
+          })
+        );
+      }
+      
+      Promise.all(promises)
+        .then(function() {
           appliquerLocalement();
-        }).catch(function(err) {
-          console.warn("Erreur Firestore annulerTransaction :", err);
+        })
+        .catch(function(err) {
+          console.warn("Erreur Firestore annulation :", err);
           appliquerLocalement();
         });
-      } else {
-        appliquerLocalement();
+    }
+
+    function ouvrirModalChoixAnnulation(annonceId, demandesActives) {
+      var optionsHtml = '';
+      demandesActives.forEach(function(d) {
+        var nomAcheteur = d.acheteurNom || d.acheteur || "Acheteur";
+        var telephone = d.acheteurTelephone || "Non renseigné";
+        var dateDemande = d.dateCreation ? formaterDate(d.dateCreation) : "récemment";
+        var statutBadge = (d.statut || '').toLowerCase() === 'acceptee' 
+          ? '<span style="color: #00C853; font-size: 11px;">✅ Acceptée</span>'
+          : '<span style="color: #FFC107; font-size: 11px;">⏳ En attente</span>';
+        
+        optionsHtml += 
+          '<button type="button" ' +
+            'onclick="confirmerAnnulationAvecChoix(\'' + annonceId + '\', \'' + d.id + '\', \'' + escapeHtml(nomAcheteur).replace(/'/g, "\\'") + '\')" ' +
+            'style="display: block; width: 100%; text-align: left; background: #252525; border: 1px solid #333; color: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s ease;" ' +
+            'onmouseover="this.style.borderColor=\'#F44336\'; this.style.background=\'#2a2a2a\';" ' +
+            'onmouseout="this.style.borderColor=\'#333\'; this.style.background=\'#252525\';">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">' +
+              '<span style="font-weight: 700; font-size: 14px;">👤 ' + escapeHtml(nomAcheteur) + '</span>' +
+              statutBadge +
+            '</div>' +
+            '<div style="font-size: 12px; color: #aaa;">📞 ' + escapeHtml(telephone) + '</div>' +
+            '<div style="font-size: 11px; color: #666; margin-top: 4px;">Demande du ' + dateDemande + '</div>' +
+          '</button>';
+      });
+      
+      var modal = document.getElementById('modal-choix-annulation');
+      
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-choix-annulation';
+        modal.className = 'modal-backdrop';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
       }
+      
+      modal.innerHTML = 
+        '<div class="modal-card" style="max-width: 480px;">' +
+          '<div class="modal-title" style="color: #F44336; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">' +
+            '<span>⚠️</span>' +
+            '<span>ANNULER QUELLE TRANSACTION ?</span>' +
+          '</div>' +
+          '<p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px; line-height: 1.5;">' +
+            'Plusieurs acheteurs sont en attente sur ce compte. Sélectionnez l\'acheteur avec qui vous voulez annuler :' +
+          '</p>' +
+          '<div style="margin-bottom: 16px;">' + optionsHtml + '</div>' +
+          '<div style="background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 8px; padding: 12px; font-size: 12px; color: #f87171; margin-bottom: 16px; line-height: 1.5;">' +
+            '⚠️ <strong>Attention :</strong><br>' +
+            '• La demande de l\'acheteur sélectionné sera annulée<br>' +
+            '• L\'annonce sera remise en vente<br>' +
+            '• Les autres demandes resteront actives' +
+          '</div>' +
+          '<div style="display: flex; gap: 10px; justify-content: flex-end;">' +
+            '<button type="button" class="btn-secondary" onclick="fermerModalChoixAnnulation()">' +
+              'Annuler' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      
+      modal.style.display = 'flex';
+    }
+
+    function fermerModalChoixAnnulation() {
+      var modal = document.getElementById('modal-choix-annulation');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function confirmerAnnulationAvecChoix(annonceId, demandeId, acheteurNom) {
+      var messageConfirm = "⚠️ CONFIRMATION D'ANNULATION\n\n" +
+                           "Voulez-vous vraiment annuler la transaction avec :\n\n" +
+                           "👤 " + acheteurNom + "\n\n" +
+                           "Cette action va :\n" +
+                           "• Annuler la demande de cet acheteur\n" +
+                           "• Remettre l'annonce en vente\n" +
+                           "• Les AUTRES demandes resteront actives\n\n" +
+                           "Cliquez sur OK pour confirmer.";
+      
+      if (!confirm(messageConfirm)) {
+        return;
+      }
+      
+      fermerModalChoixAnnulation();
+      executerAnnulationTransaction(demandeId, annonceId, acheteurNom);
     }
 
     /**
