@@ -10276,52 +10276,193 @@
     }
 
     /**
-     * Marque l'annonce comme VENDUE
+     * Marque l'annonce comme VENDUE en permettant de choisir l'acheteur final
      */
     function marquerVendue(annonceId) {
       if (!annonceId) return;
-      if (!confirm("Confirmer la vente définitive de ce compte eFootball ?")) return;
+      
+      var demandesAcceptees = (demandesVendeurCache || []).filter(function(d) {
+        var s = (d.statut || '').toLowerCase();
+        return d.annonceId === annonceId && 
+               (s === 'acceptee' || s === 'en_attente');
+      });
+      
+      if (demandesAcceptees.length === 0) {
+        if (!confirm("Aucune demande acceptée sur cette annonce.\n\nVoulez-vous quand même la marquer comme vendue ?")) {
+          return;
+        }
+        executerMarquerVendue(annonceId, null, null);
+        return;
+      }
+      
+      if (demandesAcceptees.length === 1) {
+        var d = demandesAcceptees[0];
+        var nomAcheteur = d.acheteurNom || d.acheteur || "cet acheteur";
+        
+        var message = "Êtes-vous sûr d'avoir vendu le compte à " + nomAcheteur + " ?\n\n" +
+                      "Cette action est définitive et marquera l'annonce comme VENDUE.";
+        
+        if (confirm(message)) {
+          executerMarquerVendue(annonceId, d.id, nomAcheteur);
+        }
+        return;
+      }
+      
+      ouvrirModalChoixAcheteur(annonceId, demandesAcceptees);
+    }
 
+    function executerMarquerVendue(annonceId, demandeId, acheteurNom) {
+      if (!annonceId) return;
+      
       var dateVente = new Date().toISOString();
-
+      var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : dateVente;
+      
       function appliquerLocalement() {
         var annonces = getAnnonces();
         var ad = annonces.find(function(a) { return a.id === annonceId; });
         if (ad) {
           ad.statut = "vendue";
           ad.dateVente = dateVente;
+          ad.acheteurFinal = acheteurNom || "";
           setAnnonces(annonces);
         }
-        afficherNotification("Compte marqué comme VENDU avec succès !", "🔴");
+        
+        var messageNotif = acheteurNom 
+          ? "Compte vendu à " + acheteurNom + " avec succès !" 
+          : "Compte marqué comme VENDU avec succès !";
+        
+        afficherNotification(messageNotif, "🔴");
+        
         if (currentPage === 'mes-annonces') afficherMesAnnonces();
         if (currentPage === 'detail' && currentDetailAdId === annonceId) {
           afficherDetailAnnonce(annonceId);
         }
+        if (currentPage === 'transactions') afficherMesTransactions();
       }
-
-      if (db) {
-        var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : dateVente;
-        db.collection("annonces").doc(annonceId).update({
-          statut: "vendue",
-          dateVente: dateVal
-        }).then(function() {
-          var demande = (demandesVendeurCache || []).find(function(d) {
-            return d.annonceId === annonceId && (d.statut === 'acceptee' || d.statut === 'en_cours');
-          });
-          if (demande && demande.id) {
-            db.collection("demandes").doc(demande.id).update({
-              statut: "terminee",
-              dateTerminee: dateVal
-            }).catch(function(e) { console.warn(e); });
-          }
-          appliquerLocalement();
-        }).catch(function(err) {
-          console.warn("Erreur Firestore marquerVendue :", err);
-          appliquerLocalement();
-        });
-      } else {
+      
+      if (!db) {
         appliquerLocalement();
+        return;
       }
+      
+      db.collection("annonces").doc(annonceId).update({
+        statut: "vendue",
+        dateVente: dateVal,
+        acheteurFinal: acheteurNom || ""
+      })
+      .then(function() {
+        if (demandeId) {
+          return db.collection("demandes").doc(demandeId).update({
+            statut: "terminee",
+            dateTerminee: dateVal
+          });
+        }
+      })
+      .then(function() {
+        return db.collection("demandes")
+          .where("annonceId", "==", annonceId)
+          .get();
+      })
+      .then(function(snapshot) {
+        var promises = [];
+        snapshot.forEach(function(doc) {
+          if (doc.id !== demandeId) {
+            var d = doc.data();
+            var statut = (d.statut || '').toLowerCase();
+            if (statut === 'en_attente' || statut === 'acceptee') {
+              promises.push(
+                db.collection("demandes").doc(doc.id).update({
+                  statut: "refusee",
+                  motifRefus: "Le compte a été vendu à un autre acheteur",
+                  dateRefus: dateVal
+                })
+              );
+            }
+          }
+        });
+        return Promise.all(promises);
+      })
+      .then(function() {
+        appliquerLocalement();
+      })
+      .catch(function(err) {
+        console.warn("Erreur Firestore marquerVendue :", err);
+        appliquerLocalement();
+      });
+    }
+
+    /**
+     * Modale de sélection de l'acheteur final quand plusieurs demandes existent
+     */
+    function ouvrirModalChoixAcheteur(annonceId, demandesAcceptees) {
+      var optionsHtml = '';
+      demandesAcceptees.forEach(function(d) {
+        var nomAcheteur = d.acheteurNom || d.acheteur || "Acheteur";
+        var telephone = d.acheteurTelephone || "Non renseigné";
+        var dateDemande = d.dateCreation ? formaterDate(d.dateCreation) : "récemment";
+        var statutBadge = (d.statut || '').toLowerCase() === 'acceptee' 
+          ? '<span style="color: #00C853; font-size: 11px;">✅ Acceptée</span>'
+          : '<span style="color: #FFC107; font-size: 11px;">⏳ En attente</span>';
+        
+        optionsHtml += 
+          '<button type="button" ' +
+            'onclick="executerMarquerVendueAvecChoix(\'' + annonceId + '\', \'' + d.id + '\', \'' + escapeHtml(nomAcheteur).replace(/'/g, "\\'") + '\')" ' +
+            'style="display: block; width: 100%; text-align: left; background: #252525; border: 1px solid #333; color: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s ease;" ' +
+            'onmouseover="this.style.borderColor=\'#00C853\'; this.style.background=\'#2a2a2a\';" ' +
+            'onmouseout="this.style.borderColor=\'#333\'; this.style.background=\'#252525\';">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">' +
+              '<span style="font-weight: 700; font-size: 14px;">👤 ' + escapeHtml(nomAcheteur) + '</span>' +
+              statutBadge +
+            '</div>' +
+            '<div style="font-size: 12px; color: #aaa;">📞 ' + escapeHtml(telephone) + '</div>' +
+            '<div style="font-size: 11px; color: #666; margin-top: 4px;">Demande du ' + dateDemande + '</div>' +
+          '</button>';
+      });
+      
+      var modal = document.getElementById('modal-choix-acheteur');
+      
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-choix-acheteur';
+        modal.className = 'modal-backdrop';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
+      }
+      
+      modal.innerHTML = 
+        '<div class="modal-card" style="max-width: 480px;">' +
+          '<div class="modal-title" style="color: #00C853; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">' +
+            '<span>🎉</span>' +
+            '<span>À QUI AVEZ-VOUS VENDU LE COMPTE ?</span>' +
+          '</div>' +
+          '<p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px; line-height: 1.5;">' +
+            'Plusieurs acheteurs sont intéressés par ce compte. Sélectionnez celui à qui vous avez vendu :' +
+          '</p>' +
+          '<div style="margin-bottom: 16px;">' + optionsHtml + '</div>' +
+          '<div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px; font-size: 12px; color: #fbbf24; margin-bottom: 16px; line-height: 1.5;">' +
+            '⚠️ <strong>Les autres demandes seront automatiquement refusées.</strong><br>' +
+            'Les autres acheteurs seront notifiés que le compte a été vendu.' +
+          '</div>' +
+          '<div style="display: flex; gap: 10px; justify-content: flex-end;">' +
+            '<button type="button" class="btn-secondary" onclick="fermerModalChoixAcheteur()">' +
+              'Annuler' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      
+      modal.style.display = 'flex';
+    }
+
+    function fermerModalChoixAcheteur() {
+      var modal = document.getElementById('modal-choix-acheteur');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function executerMarquerVendueAvecChoix(annonceId, demandeId, acheteurNom) {
+      fermerModalChoixAcheteur();
+      executerMarquerVendue(annonceId, demandeId, acheteurNom);
     }
 
     /**
