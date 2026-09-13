@@ -3967,9 +3967,11 @@
     var avisFirestoreCache = [];
     var unsubscribeAvisFirestore = null;
 
-    // Variables de suivi pour les notifications d'événements de transactions
-    var dernierCompteurVendeur = 0;
-    var dernierCompteurAcheteur = 0;
+    // Variables de suivi d'état pour les notifications d'événements de transactions (par ID)
+    var etatPrecedentDemandesVendeur = {};
+    var etatPrecedentDemandesAcheteur = {};
+    var premierChargementVendeur = true;
+    var premierChargementAcheteur = true;
 
     /* ==========================================================
        CONFIGURATION ET AUTHENTIFICATION FIREBASE (ANONYME & GOOGLE)
@@ -7136,45 +7138,44 @@
           snapshot.forEach(function(doc) {
             demandes.push({ id: doc.id, ...doc.data() });
           });
-          // Trier par date de création descendante
           demandes.sort(function(a, b) {
             var dateA = a.dateCreation ? (a.dateCreation.seconds || 0) : 0;
             var dateB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
             return dateB - dateA;
           });
           
-          // Détecter les nouvelles demandes en attente
-          var nouvellesEnAttente = demandes.filter(function(d) {
-            var s = (d.statut || '').toLowerCase();
-            return s === 'en_attente' || s === 'demande_envoyee';
-          }).length;
-          
-          var livraisonsConfirmees = demandes.filter(function(d) {
-            var s = (d.statut || '').toLowerCase();
-            return s === 'livraison_confirmee';
-          }).length;
-          
-          // Ne notifier QUE si on a déjà chargé au moins une fois (pas au démarrage)
-          if (demandesVendeurCache.length > 0) {
-            if (nouvellesEnAttente > dernierCompteurVendeur) {
-              notifierNouvelleDemande('recue');
-            }
-            if (livraisonsConfirmees > 0) {
-              var anciennesLivraisons = demandesVendeurCache.filter(function(d) {
-                var s = (d.statut || '').toLowerCase();
-                return s === 'livraison_confirmee';
-              }).length;
-              if (livraisonsConfirmees > anciennesLivraisons) {
+          // Détection de nouvelles demandes ou changements de statut
+          if (!premierChargementVendeur) {
+            demandes.forEach(function(d) {
+              var ancienStatut = etatPrecedentDemandesVendeur[d.id];
+              var nouveauStatut = (d.statut || '').toLowerCase();
+              
+              // Nouvelle demande reçue (ID pas vu avant)
+              if (!ancienStatut && nouveauStatut === 'en_attente') {
+                notifierNouvelleDemande('recue');
+              }
+              // Changement de statut vers "livraison_confirmee"
+              else if (ancienStatut && 
+                       ancienStatut !== 'livraison_confirmee' && 
+                       nouveauStatut === 'livraison_confirmee') {
                 notifierNouvelleDemande('reception');
               }
-            }
+            });
           }
           
-          dernierCompteurVendeur = nouvellesEnAttente;
+          // Sauvegarder l'état actuel pour la prochaine comparaison
+          var nouvelEtat = {};
+          demandes.forEach(function(d) {
+            nouvelEtat[d.id] = (d.statut || '').toLowerCase();
+          });
+          etatPrecedentDemandesVendeur = nouvelEtat;
+          premierChargementVendeur = false;
           
           demandesVendeurCache = demandes;
           afficherSectionDemandesRecues(demandes);
-          mettreAJourBadgeTransactions();
+          if (typeof mettreAJourBadgeTransactions === 'function') {
+            mettreAJourBadgeTransactions();
+          }
           if (typeof synchroniserTransactionsDepuisFirestore === 'function') {
             synchroniserTransactionsDepuisFirestore();
           }
@@ -7194,31 +7195,52 @@
           snapshot.forEach(function(doc) {
             demandes.push({ id: doc.id, ...doc.data() });
           });
-          // Trier par date de création descendante
           demandes.sort(function(a, b) {
             var dateA = a.dateCreation ? (a.dateCreation.seconds || 0) : 0;
             var dateB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
             return dateB - dateA;
           });
           
-          // Détecter les acceptations
-          var acceptations = demandes.filter(function(d) {
-            var s = (d.statut || '').toLowerCase();
-            return s === 'acceptee';
-          }).length;
-          
-          // Ne notifier QUE si on a déjà chargé au moins une fois (pas au démarrage)
-          if (demandesAcheteurCache.length > 0) {
-            if (acceptations > dernierCompteurAcheteur) {
-              notifierNouvelleDemande('acceptee');
-            }
+          // Détection des changements de statut
+          if (!premierChargementAcheteur) {
+            demandes.forEach(function(d) {
+              var ancienStatut = etatPrecedentDemandesAcheteur[d.id];
+              var nouveauStatut = (d.statut || '').toLowerCase();
+              
+              // Changement vers "acceptee" (seulement si on avait un ancien statut)
+              if (ancienStatut && 
+                  ancienStatut !== 'acceptee' && 
+                  nouveauStatut === 'acceptee') {
+                notifierNouvelleDemande('acceptee');
+              }
+              // Changement vers "refusee"
+              else if (ancienStatut && 
+                       ancienStatut !== 'refusee' && 
+                       nouveauStatut === 'refusee') {
+                notifierNouvelleDemande('refusee');
+              }
+              // Changement vers "terminee"
+              else if (ancienStatut && 
+                       ancienStatut !== 'terminee' && 
+                       nouveauStatut === 'terminee') {
+                notifierNouvelleDemande('terminee');
+              }
+            });
           }
           
-          dernierCompteurAcheteur = acceptations;
+          // Sauvegarder l'état actuel
+          var nouvelEtat = {};
+          demandes.forEach(function(d) {
+            nouvelEtat[d.id] = (d.statut || '').toLowerCase();
+          });
+          etatPrecedentDemandesAcheteur = nouvelEtat;
+          premierChargementAcheteur = false;
           
           demandesAcheteurCache = demandes;
           afficherSectionDemandesEnvoyees(demandes);
-          mettreAJourBadgeTransactions();
+          if (typeof mettreAJourBadgeTransactions === 'function') {
+            mettreAJourBadgeTransactions();
+          }
           if (typeof synchroniserTransactionsDepuisFirestore === 'function') {
             synchroniserTransactionsDepuisFirestore();
           }
@@ -7261,6 +7283,10 @@
       }
       demandesVendeurCache = [];
       demandesAcheteurCache = [];
+      etatPrecedentDemandesVendeur = {};
+      etatPrecedentDemandesAcheteur = {};
+      premierChargementVendeur = true;
+      premierChargementAcheteur = true;
       if (typeof mesAnnoncesVenduesCache !== 'undefined') {
         mesAnnoncesVenduesCache = [];
       }
