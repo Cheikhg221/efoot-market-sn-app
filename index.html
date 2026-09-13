@@ -6178,6 +6178,23 @@
             return;
           }
 
+          // CAS 3c-bis : Demande en attente de confirmation acheteur
+          if (demande.statut === "LIVRAISON_CONFIRMEE" && annonce.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+            conteneur.innerHTML = 
+              '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:2px solid #FFC107; margin-bottom:15px;">' +
+                '<p style="color:#FFC107; font-size:18px; font-weight:bold; margin:0 0 10px 0;">⏳ CONFIRMATION REQUISE</p>' +
+                '<p style="color:#fff; font-size:15px; margin:0 0 8px 0; font-weight:600;">Avez-vous reçu le compte eFootball ?</p>' +
+                '<p style="color:#ccc; font-size:13px; margin:0 0 16px 0;">Vérifiez que les identifiants Konami ID fonctionnent correctement.</p>' +
+              '</div>' +
+              '<button onclick="confirmerReceptionParAcheteur(\'' + snapshot.docs[0].id + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">' +
+                '✅ Oui, j\'ai reçu le compte' +
+              '</button>' +
+              '<button onclick="refuserReceptionParAcheteur(\'' + snapshot.docs[0].id + '\')" style="background:#333; color:#FFC107; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:600; border:1px solid #FFC107; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">' +
+                '❌ Non, je n\'ai pas encore reçu' +
+              '</button>';
+            return;
+          }
+
           // CAS 3d : Demande REFUSÉE
           if (demande.statut === "refusee") {
             if (demande.bloqueDefinitif === true) {
@@ -7442,12 +7459,23 @@
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée !</p>';
             html += '<p>Le vendeur va vous contacter</p>';
+          } else if (d.statut === "LIVRAISON_CONFIRMEE") {
+            html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin:8px 0;">';
+            html += '<p style="color:#FFC107; font-weight:700; margin:0 0 8px 0;">⏳ CONFIRMATION REQUISE</p>';
+            html += '<p style="color:#fff; font-size:13px; margin:0 0 12px 0;">Le vendeur a marqué le compte comme vendu. Confirmez-vous avoir reçu le compte ?</p>';
+            html += '<button onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 16px; border:none; border-radius:6px; font-weight:700; cursor:pointer; margin-right:8px; font-size:12.5px;">✅ Oui, j\'ai reçu</button>';
+            html += '<button onclick="event.stopPropagation(); refuserReceptionParAcheteur(\'' + d.id + '\')" style="background:#333; color:#FFC107; padding:10px 16px; border:1px solid #FFC107; border-radius:6px; font-weight:600; cursor:pointer; font-size:12.5px;">❌ Non, pas encore</button>';
+            html += '</div>';
           } else if (d.statut === "refusee") {
             html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
           } else if (d.statut === "annulee" || d.statut === "ANNULEE") {
             html += '<p style="color:#f87171; font-weight:600;">❌ Annulée par le vendeur</p>';
             html += '<p style="color:#888; font-size:12px;">Le vendeur a annulé cette transaction</p>';
             html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
+          } else if (d.statut === "LIVRAISON_NON_CONFIRMEE") {
+            html += '<p style="color:#fbbf24; font-weight:600;">⚠️ Réception non confirmée</p>';
+            html += '<p style="color:#888; font-size:12px;">Le vendeur a été notifié et doit vous recontacter.</p>';
+            html += '<button type="button" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px; margin-top:8px;" onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')">✅ Confirmer la réception maintenant</button>';
           } else if (d.statut === "terminee" || d.statut === "TERMINEE") {
             html += '<p style="color:#34d399; font-weight:700; margin:6px 0;">🎉 Terminée</p>';
             const tousAvis = getAvis();
@@ -8575,10 +8603,20 @@
               `;
             } else if (st === 'livraison_confirmee') {
               actionBoxHtml = `
-                <div class="tx-action-box box-livraison">
-                  <div style="font-weight: 700; color: #fb923c; font-size: 13px;">📦 Réception confirmée par vos soins</div>
-                  <div style="font-size: 12px; color: #ccc; margin-top: 2px;">
-                    Le vendeur valide son paiement pour clôturer la transaction.
+                <div class="tx-action-box box-livraison" style="background: rgba(255, 193, 7, 0.08); border-color: #FFC107;">
+                  <div style="font-weight: 700; color: #FFC107; font-size: 14px; margin-bottom: 8px;">
+                    ⏳ CONFIRMATION REQUISE
+                  </div>
+                  <div style="font-size: 13px; color: #fff; margin-bottom: 12px; line-height: 1.5;">
+                    Le vendeur a marqué le compte comme vendu. Confirmez-vous avoir reçu le compte ?
+                  </div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="confirmerReceptionParAcheteur('${d.id}')">
+                      ✅ Oui, j'ai reçu
+                    </button>
+                    <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px; color: #FFC107; border-color: #FFC107;" onclick="refuserReceptionParAcheteur('${d.id}')">
+                      ❌ Non, pas encore
+                    </button>
                   </div>
                 </div>
               `;
@@ -10365,7 +10403,15 @@
 
       var html = "";
       mesAnnonces.forEach(function(annonce) {
-        if (annonce.statut === "en_cours") {
+        if (annonce.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+          html += '<div style="background:#1E1E1E; padding:20px; border-radius:12px; margin-bottom:15px; border-left:4px solid #FFC107;">';
+          html += '<h3 style="color:#FFC107; margin-top:0;">⏳ EN ATTENTE DE CONFIRMATION ACHETEUR</h3>';
+          html += '<p style="color:white; font-size:16px; font-weight:bold; margin:6px 0;">' + escapeHtml(annonce.titre) + '</p>';
+          html += '<p style="color:#ccc; margin:4px 0 12px 0;">Vous avez marqué le compte comme vendu. En attente de la confirmation de l\'acheteur.</p>';
+          html += '<button onclick="relancerConfirmationAcheteur(\'' + annonce.id + '\')" style="background:#FFC107; color:black; padding:12px; border:none; border-radius:8px; width:100%; margin-bottom:10px; font-weight:bold; cursor:pointer;">🔔 Relancer la confirmation</button>';
+          html += '<button onclick="changerPage(\'detail\', { annonceId: \'' + annonce.id + '\' })" style="background:#333; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">👁️ Voir l\'annonce</button>';
+          html += '</div>';
+        } else if (annonce.statut === "en_cours") {
           var demande = (demandesVendeurCache || []).find(function(d) {
             return d.annonceId === annonce.id && (d.statut === 'acceptee' || d.statut === 'en_cours');
           }) || (demandesVendeurCache || []).find(function(d) {
@@ -10596,26 +10642,26 @@
     function executerMarquerVendue(annonceId, demandeId, acheteurNom) {
       if (!annonceId) return;
       
-      var dateVente = new Date().toISOString();
       var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
         ? firebase.firestore.FieldValue.serverTimestamp() 
-        : dateVente;
+        : new Date().toISOString();
       
       function appliquerLocalement() {
         var annonces = getAnnonces();
         var ad = annonces.find(function(a) { return a.id === annonceId; });
         if (ad) {
-          ad.statut = "vendue";
-          ad.dateVente = dateVente;
+          ad.statut = "EN_ATTENTE_CONFIRMATION_ACHETEUR";
+          ad.accepteAutresOffres = false;
           ad.acheteurFinal = acheteurNom || "";
+          ad.dateVente = new Date().toISOString();
           setAnnonces(annonces);
         }
         
         var messageNotif = acheteurNom 
-          ? "Compte vendu à " + acheteurNom + " avec succès !" 
-          : "Compte marqué comme VENDU avec succès !";
+          ? "Annonce semi-fermée. En attente de confirmation de " + acheteurNom 
+          : "Annonce semi-fermée. En attente de confirmation de l'acheteur.";
         
-        afficherNotification(messageNotif, "🔴");
+        afficherNotification(messageNotif, "⏳");
         
         if (currentPage === 'mes-annonces') afficherMesAnnonces();
         if (currentPage === 'detail' && currentDetailAdId === annonceId) {
@@ -10629,20 +10675,25 @@
         return;
       }
       
+      // 1. Mettre à jour l'annonce en statut "EN_ATTENTE_CONFIRMATION_ACHETEUR"
       db.collection("annonces").doc(annonceId).update({
-        statut: "vendue",
+        statut: "EN_ATTENTE_CONFIRMATION_ACHETEUR",
+        accepteAutresOffres: false,
+        acheteurFinal: acheteurNom || "",
         dateVente: dateVal,
-        acheteurFinal: acheteurNom || ""
+        dateConfirmationAttente: dateVal
       })
       .then(function() {
+        // 2. Mettre à jour la demande en "LIVRAISON_CONFIRMEE"
         if (demandeId) {
           return db.collection("demandes").doc(demandeId).update({
-            statut: "terminee",
-            dateTerminee: dateVal
+            statut: "LIVRAISON_CONFIRMEE",
+            dateLivraison: dateVal
           });
         }
       })
       .then(function() {
+        // 3. Refuser les autres demandes en attente
         return db.collection("demandes")
           .where("annonceId", "==", annonceId)
           .get();
@@ -10668,11 +10719,159 @@
       })
       .then(function() {
         appliquerLocalement();
+        
+        // 4. Notification à l'acheteur
+        if (demandeId) {
+          db.collection("demandes").doc(demandeId).get().then(function(doc) {
+            if (doc.exists) {
+              var demande = doc.data();
+              // Envoyer une notification (si système de notifications)
+              console.log("📤 Notification à l'acheteur :", demande.acheteurId);
+            }
+          });
+        }
       })
       .catch(function(err) {
         console.warn("Erreur Firestore marquerVendue :", err);
         appliquerLocalement();
       });
+    }
+
+    /**
+     * Confirmation de la réception du compte par l'acheteur
+     */
+    function confirmerReceptionParAcheteur(demandeId) {
+      if (!demandeId) return;
+      
+      if (!confirm("⚠️ CONFIRMATION DE RÉCEPTION\n\n" +
+                   "Confirmez-vous avoir reçu le compte eFootball ?\n\n" +
+                   "Vérifiez que :\n" +
+                   "• Les identifiants Konami ID fonctionnent\n" +
+                   "• Le compte est bien accessible\n" +
+                   "• Aucun problème de connexion\n\n" +
+                   "Cliquez sur OK pour confirmer la réception.")) {
+        return;
+      }
+      
+      var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : new Date().toISOString();
+      
+      if (!db) {
+        var annonces = getAnnonces();
+        var ad = annonces.find(function(a) { return a.statut === 'EN_ATTENTE_CONFIRMATION_ACHETEUR'; });
+        if (ad) {
+          ad.statut = "vendue";
+          setAnnonces(annonces);
+        }
+        afficherNotification("✅ Réception confirmée ! Transaction terminée.", "🎉");
+        if (currentPage === 'transactions') afficherMesTransactions();
+        if (currentPage === 'mes-annonces') afficherMesAnnonces();
+        if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
+        return;
+      }
+
+      db.collection("demandes").doc(demandeId).get()
+      .then(function(doc) {
+        if (!doc.exists) {
+          alert("Transaction introuvable.");
+          return;
+        }
+        
+        var demande = doc.data();
+        var annonceId = demande.annonceId;
+        
+        // 1. Marquer la demande comme TERMINÉE
+        return db.collection("demandes").doc(demandeId).update({
+          statut: "terminee",
+          dateTerminee: dateVal,
+          confirmationAcheteur: true
+        }).then(function() {
+          // 2. Marquer l'annonce comme VENDUE (définitif)
+          if (annonceId) {
+            return db.collection("annonces").doc(annonceId).update({
+              statut: "vendue",
+              dateVente: dateVal,
+              confirmationAcheteur: true
+            });
+          }
+        });
+      })
+      .then(function() {
+        // Mettre à jour localement
+        var annonces = getAnnonces();
+        var ad = annonces.find(function(a) { return a.statut === 'EN_ATTENTE_CONFIRMATION_ACHETEUR'; });
+        if (ad) {
+          ad.statut = "vendue";
+          setAnnonces(annonces);
+        }
+        
+        afficherNotification("✅ Réception confirmée ! Transaction terminée.", "🎉");
+        
+        if (currentPage === 'transactions') afficherMesTransactions();
+        if (currentPage === 'mes-annonces') afficherMesAnnonces();
+        if (currentPage === 'detail' && currentDetailAdId) {
+          afficherDetailAnnonce(currentDetailAdId);
+        }
+      })
+      .catch(function(err) {
+        console.warn("Erreur confirmation :", err);
+        alert("Erreur lors de la confirmation : " + (err ? err.message : "Erreur"));
+      });
+    }
+
+    /**
+     * Signalement d'un problème ou refus de réception par l'acheteur
+     */
+    function refuserReceptionParAcheteur(demandeId) {
+      if (!demandeId) return;
+      
+      if (!confirm("⚠️ SIGNALER UN PROBLÈME\n\n" +
+                   "Vous n'avez PAS reçu le compte ?\n\n" +
+                   "Le vendeur sera notifié et devra vous recontacter.\n\n" +
+                   "Cliquez sur OK pour confirmer.")) {
+        return;
+      }
+      
+      if (!db) {
+        afficherNotification("Le vendeur a été notifié. Attendez son contact.", "⚠️");
+        if (currentPage === 'transactions') afficherMesTransactions();
+        if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
+        return;
+      }
+
+      var dateVal = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : new Date().toISOString();
+
+      db.collection("demandes").doc(demandeId).update({
+        statut: "LIVRAISON_NON_CONFIRMEE",
+        dateRefusReception: dateVal,
+        confirmationAcheteur: false
+      })
+      .then(function() {
+        afficherNotification("Le vendeur a été notifié. Attendez son contact.", "⚠️");
+        
+        if (currentPage === 'transactions') afficherMesTransactions();
+        if (currentPage === 'detail' && currentDetailAdId) {
+          afficherDetailAnnonce(currentDetailAdId);
+        }
+      })
+      .catch(function(err) {
+        console.warn("Erreur refus :", err);
+        alert("Erreur : " + (err ? err.message : "Erreur"));
+      });
+    }
+
+    /**
+     * Relance la confirmation auprès de l'acheteur pour une annonce en attente de confirmation
+     */
+    function relancerConfirmationAcheteur(annonceId) {
+      if (!confirm("Envoyer une nouvelle notification à l'acheteur ?")) return;
+      
+      afficherNotification("Notification envoyée à l'acheteur", "🔔");
+      console.log("Relance demandée pour annonce :", annonceId);
+      // Ici tu pourras envoyer un email ou SMS plus tard
     }
 
     /**
