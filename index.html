@@ -6178,8 +6178,21 @@
             return;
           }
 
+          // CAS 3c-ter : Acheteur a DÉJÀ confirmé la réception (attente du vendeur)
+          if (demande.statut === "LIVRAISON_CONFIRMEE" && demande.confirmationAcheteur === true) {
+            conteneur.innerHTML = 
+              '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid rgba(251,146,60,0.3);">' +
+                '<p style="color:#fb923c; font-size:16px; font-weight:bold; margin:0 0 8px 0;">📦 Réception confirmée !</p>' +
+                '<p style="color:#ccc; font-size:13px; margin:0;">Vous avez confirmé avoir reçu le compte. En attente de la clôture définitive par le vendeur.</p>' +
+              '</div>';
+            return;
+          }
+
           // CAS 3c-quater : Vendeur a marqué VENDU, en attente de confirmation acheteur
-          if ((demande.statut === "LIVRAISON_CONFIRMEE" || demande.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") && annonce && (annonce.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR" || annonce.statut === "vendue")) {
+          if ((demande.statut === "LIVRAISON_CONFIRMEE" || demande.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") && 
+              annonce && 
+              (annonce.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR" || annonce.statut === "vendue") && 
+              demande.confirmationAcheteur !== true) {
             conteneur.innerHTML = 
               '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:2px solid #FFC107; margin-bottom:15px;">' +
                 '<p style="color:#FFC107; font-size:18px; font-weight:bold; margin:0 0 10px 0;">⏳ CONFIRMATION REQUISE</p>' +
@@ -7466,6 +7479,11 @@
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée !</p>';
             html += '<p>Le vendeur va vous contacter</p>';
+          } else if (d.confirmationAcheteur === true) {
+            html += '<div style="background:rgba(251,146,60,0.1); border:1px solid rgba(251,146,60,0.3); border-radius:8px; padding:12px; margin:8px 0;">';
+            html += '<p style="color:#fb923c; font-weight:700; margin:0 0 4px 0;">📦 Réception confirmée !</p>';
+            html += '<p style="color:#ccc; font-size:12.5px; margin:0;">Vous avez confirmé la réception. En attente de la clôture définitive par le vendeur.</p>';
+            html += '</div>';
           } else if (d.statut === "LIVRAISON_CONFIRMEE" || d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
             html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin:8px 0;">';
             html += '<p style="color:#FFC107; font-weight:700; margin:0 0 8px 0;">⏳ CONFIRMATION REQUISE</p>';
@@ -8604,6 +8622,17 @@
                     <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemande('${d.id}')">
                       Annuler ma demande
                     </button>
+                  </div>
+                </div>
+              `;
+            } else if (d.confirmationAcheteur === true || (st === 'livraison_confirmee' && d.confirmationAcheteur === true)) {
+              actionBoxHtml = `
+                <div class="tx-action-box box-livraison" style="border-color: rgba(251, 146, 60, 0.4);">
+                  <div style="font-weight: 700; color: #fb923c; margin-bottom: 4px; font-size: 13.5px;">
+                    📦 Réception confirmée !
+                  </div>
+                  <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
+                    Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur.
                   </div>
                 </div>
               `;
@@ -10794,28 +10823,11 @@
         return;
       }
 
-      db.collection("demandes").doc(demandeId).get()
-      .then(function(doc) {
-        if (!doc.exists) {
-          alert("Transaction introuvable.");
-          return;
-        }
-        
-        var demande = doc.data();
-        var annonceId = demande.annonceId;
-        
-        return db.collection("demandes").doc(demandeId).update({
-          statut: "LIVRAISON_CONFIRMEE",
-          dateLivraison: dateVal,
-          confirmationAcheteur: true
-        }).then(function() {
-          if (annonceId) {
-            return db.collection("annonces").doc(annonceId).update({
-              confirmationAcheteur: true,
-              dateConfirmationAcheteur: dateVal
-            });
-          }
-        });
+      // IMPORTANT : Modifier UNIQUEMENT la demande, PAS l'annonce
+      db.collection("demandes").doc(demandeId).update({
+        statut: "LIVRAISON_CONFIRMEE",
+        dateLivraison: dateVal,
+        confirmationAcheteur: true
       })
       .then(function() {
         afficherNotification("✅ Réception confirmée ! Le vendeur va clôturer.", "📦");
