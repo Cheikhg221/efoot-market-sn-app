@@ -5407,7 +5407,7 @@
                 <div class="card-price">${formaterPrix(ad.prix)}</div>
                 ${ad.puissance ? `<div class="card-power-badge">💪 ${ad.puissance}</div>` : ''}
               </div>
-              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);" title="Voir le profil et les avis de ${ad.vendeur}">
+              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}', '${ad.vendeurId || ''}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);" title="Voir le profil et les avis de ${ad.vendeur}">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                   <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: var(--text-white);">
                     <span title="${infoBadge.texte}" style="font-size: 14px;">${infoBadge.icone}</span>
@@ -6055,7 +6055,7 @@
           </div>
 
           <!-- Section Vendeur avec lien vers son profil & avis -->
-          <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}')" title="Voir le profil complet et les avis de ${nomVendeurAffiche}">
+          <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}', '${ad.vendeurId || ''}')" title="Voir le profil complet et les avis de ${nomVendeurAffiche}">
             <div class="seller-left">
               <div class="seller-avatar">👤</div>
               <div>
@@ -6071,7 +6071,7 @@
               </div>
             </div>
             <div>
-              <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}')">
+              <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}', '${ad.vendeurId || ''}')">
                 Voir profil & avis (${totalAvis}) →
               </button>
             </div>
@@ -6096,7 +6096,7 @@
               <h3 style="font-size: 15px; font-weight: 700; margin: 0;">
                 ⭐ Avis vérifiés sur ${escapeHtml(ad.vendeur || 'le vendeur')} (${totalAvis})
               </h3>
-              <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}')">
+              <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}', '${ad.vendeurId || ''}')">
                 Voir tout le profil →
               </button>
             </div>
@@ -6526,7 +6526,8 @@
             const nomVendeurModal = modalVendeur.querySelector('h2');
             if (nomVendeurModal) {
               const nom = nomVendeurModal.textContent;
-              ouvrirProfilVendeur(nom);
+              const vId = modalVendeur.dataset.vendeurId || '';
+              ouvrirProfilVendeur(nom, vId);
             }
           }
         }, function(error) {
@@ -6843,6 +6844,20 @@
       
       console.log("   ✅ Avis trouvés :", avisVendeur.length);
       
+      // FALLBACK : Si aucun avis trouvé, chercher par vendeurPrenom
+      if (avisVendeur.length === 0 && vendeurIdentifiant) {
+        const prenom = String(vendeurIdentifiant).trim().split(/\s+/)[0].toLowerCase();
+        const avisParPrenom = tousAvis.filter(function(a) {
+          const aPrenom = (a.vendeurPrenom || '').toLowerCase();
+          const aNom = (a.vendeurNom || a.vendeur || '').toLowerCase();
+          return aPrenom === prenom || aNom.startsWith(prenom + ' ');
+        });
+        
+        if (avisParPrenom.length > 0) {
+          avisVendeur.push(...avisParPrenom);
+        }
+      }
+
       const statsEtoiles = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
       avisVendeur.forEach(function(a) {
         const n = Math.min(5, Math.max(1, Math.round(Number(a.note) || 5)));
@@ -7591,7 +7606,7 @@
             });
             if (monAvis) {
               html += '<p style="font-size:12px; color:var(--text-gray); margin:4px 0 8px 0;">Votre avis : ' + monAvis.note + '/5 ★</p>';
-              html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirProfilVendeur(\'' + escapeHtml(d.vendeurNom || '') + '\')">👤 Voir le profil</button>';
+              html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirProfilVendeur(\'' + escapeHtml(d.vendeurNom || '') + '\', \'' + (d.vendeurId || '') + '\')">👤 Voir le profil</button>';
             } else {
               html += '<button type="button" class="btn-tx-review" style="font-size:12px; padding:8px 14px; margin-top:4px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + d.id + '\', \'' + escapeHtml(d.vendeurNom || 'Vendeur') + '\', \'' + d.annonceId + '\', \'' + escapeHtml(d.annonceTitre || 'Compte eFootball') + '\', \'' + (d.vendeurId || '') + '\')">⭐ Laisser un avis</button>';
             }
@@ -8742,7 +8757,7 @@
                         ⭐ Laisser un avis
                       </button>
                     ` : `
-                      <button type="button" class="btn-secondary" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirProfilVendeur('${escapeHtml(d.vendeurNom || '')}')">
+                      <button type="button" class="btn-secondary" style="font-size: 12px; padding: 8px 14px;" onclick="ouvrirProfilVendeur('${escapeHtml(d.vendeurNom || '')}', '${d.vendeurId || ''}')">
                         👤 Voir le profil
                       </button>
                     `}
@@ -9687,7 +9702,7 @@
       if (currentPage === 'transactions') afficherMesTransactions();
 
       setTimeout(function() {
-        ouvrirProfilVendeur(currentReviewVendeurNom);
+        ouvrirProfilVendeur(currentReviewVendeurNom, currentReviewVendeurId);
       }, 350);
     }
 
@@ -9701,19 +9716,91 @@
      * 📅 Membre depuis ...
      * 💬 Derniers avis (3 derniers avec commentaire, étoiles, acheteur, date relative)
      */
-    function ouvrirProfilVendeur(vendeurNom) {
-      const stats = getNoteEtAvisVendeur(vendeurNom);
-      const annonces = getAnnonces().filter(a => a.vendeur === vendeurNom || a.vendeurNom === vendeurNom);
-      const badgeKey = calculerBadge(stats);
+    function ouvrirProfilVendeur(vendeurNom, vendeurId) {
+      // NOUVEAU : Si vendeurId fourni, chercher par UID en priorité
+      const stats = getNoteEtAvisVendeur(vendeurId || vendeurNom);
+      
+      // Récupérer les annonces du vendeur
+      let annonces = [];
+      if (vendeurId) {
+        annonces = getAnnonces().filter(a => a.vendeurId === vendeurId);
+      }
+      // Si aucune annonce trouvée par UID, essayer par nom
+      if (annonces.length === 0) {
+        annonces = getAnnonces().filter(a => 
+          a.vendeur === vendeurNom || 
+          a.vendeurNom === vendeurNom ||
+          a.vendeurPrenom === vendeurNom
+        );
+      }
+      
+      // Récupérer le vrai nom du vendeur depuis ses annonces
+      let nomVendeurAffiche = vendeurNom;
+      if (annonces.length > 0) {
+        const annonceRef = annonces[0];
+        nomVendeurAffiche = formaterNomAffichage(
+          annonceRef.vendeurPrenom || annonceRef.vendeur, 
+          annonceRef.vendeurNom
+        );
+      }
+      
+      // Si stats vides, essayer avec les variantes du nom
+      let statsFinales = stats;
+      if (stats.totalAvis === 0 && annonces.length > 0) {
+        const annonceRef = annonces[0];
+        
+        // Essayer par vendeurPrenom + vendeurNom
+        if (annonceRef.vendeurPrenom && annonceRef.vendeurNom) {
+          const nomComplet = annonceRef.vendeurPrenom + ' ' + annonceRef.vendeurNom;
+          statsFinales = getNoteEtAvisVendeur(nomComplet);
+        }
+        
+        // Si toujours vide, essayer par le nom affiché
+        if (statsFinales.totalAvis === 0 && annonceRef.vendeur) {
+          statsFinales = getNoteEtAvisVendeur(annonceRef.vendeur);
+        }
+        
+        // Si toujours vide, chercher dans les avis par annonceId
+        if (statsFinales.totalAvis === 0) {
+          const tousAvis = getAvis();
+          const avisParAnnonce = tousAvis.filter(a => 
+            annonces.some(ann => ann.id === a.annonceId)
+          );
+          
+          if (avisParAnnonce.length > 0) {
+            const sommeAvis = avisParAnnonce.reduce((acc, a) => acc + (Number(a.note) || 5), 0);
+            const moyenne = Number((sommeAvis / avisParAnnonce.length).toFixed(1));
+            
+            statsFinales = {
+              noteMoyenne: moyenne,
+              noteTotale: sommeAvis,
+              totalAvis: avisParAnnonce.length,
+              nombreAvis: avisParAnnonce.length,
+              badge: calculerBadge({ nombreAvis: avisParAnnonce.length, noteMoyenne: moyenne }),
+              avis: avisParAnnonce.sort((a, b) => new Date(b.date || b.dateCreation || 0) - new Date(a.date || a.dateCreation || 0)),
+              statsEtoiles: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+            };
+          }
+        }
+      }
+      
+      const badgeKey = calculerBadge(statsFinales);
       const infoBadge = afficherBadge(badgeKey);
+      const totalAvis = statsFinales.totalAvis;
+      const noteText = totalAvis > 0 ? statsFinales.noteMoyenne.toFixed(1) : null;
+      const derniersAvis = (statsFinales.avis || []).slice(0, 3);
 
       const modal = document.getElementById('seller-profile-modal');
       const container = document.getElementById('seller-profile-modal-content');
       if (!modal || !container) return;
+      if (vendeurId) modal.dataset.vendeurId = vendeurId;
+      modal.dataset.vendeurNom = vendeurNom || '';
 
-      const regionVendeur = (annonces.length > 0 && (annonces[0].region || annonces[0].localisation)) ? (annonces[0].region || annonces[0].localisation) : 'Dakar';
+      const regionVendeur = (annonces.length > 0 && (annonces[0].region || annonces[0].localisation)) 
+        ? (annonces[0].region || annonces[0].localisation) 
+        : 'Dakar';
 
-      // Calcul de l'ancienneté du membre
+      // Calcul de l'ancienneté
       let datePlusAncienne = Date.now();
       if (annonces.length > 0) {
         annonces.forEach(a => {
@@ -9721,8 +9808,8 @@
           if (d < datePlusAncienne) datePlusAncienne = d;
         });
       }
-      if (stats.avis && stats.avis.length > 0) {
-        stats.avis.forEach(a => {
+      if (statsFinales.avis && statsFinales.avis.length > 0) {
+        statsFinales.avis.forEach(a => {
           const d = new Date(a.date || a.dateCreation || Date.now()).getTime();
           if (d < datePlusAncienne) datePlusAncienne = d;
         });
@@ -9741,9 +9828,6 @@
         }
       }
 
-      // 3 derniers avis
-      const derniersAvis = (stats.avis || []).slice(0, 3);
-
       container.innerHTML = `
         <div style="background: #181818; border-radius: 12px; padding: 20px; border: 1px solid #2e2e2e; margin-bottom: 16px;">
           <div style="display: flex; align-items: flex-start; gap: 14px;">
@@ -9751,7 +9835,7 @@
               👤
             </div>
             <div style="flex: 1;">
-              <h2 style="font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">${escapeHtml(vendeurNom)}</h2>
+              <h2 style="font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">${escapeHtml(nomVendeurAffiche)}</h2>
               <div style="margin-bottom: 12px;">
                 <span style="background: rgba(255,255,255,0.06); border: 1px solid ${infoBadge.couleur}; color: ${infoBadge.couleur}; font-size: 12.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
                   ${infoBadge.icone} ${infoBadge.texte}
@@ -9759,12 +9843,12 @@
               </div>
               
               <div style="font-size: 18px; font-weight: 700; color: #FFD700; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                <span>${stats.totalAvis > 0 ? genererEtoilesVisuelles(stats.noteMoyenne) : '☆☆☆☆☆'}</span>
-                <span>${stats.totalAvis > 0 ? `${stats.noteMoyenne.toFixed(1)} sur 5` : '0.0 sur 5'}</span>
+                <span>${totalAvis > 0 ? genererEtoilesVisuelles(statsFinales.noteMoyenne) : '☆☆☆☆☆'}</span>
+                <span>${totalAvis > 0 ? `${statsFinales.noteMoyenne.toFixed(1)} sur 5` : '0.0 sur 5'}</span>
               </div>
               
               <div style="font-size: 13.5px; color: #ddd; margin-top: 4px;">
-                📊 ${stats.totalAvis} avis reçu${stats.totalAvis > 1 ? 's' : ''}
+                📊 ${totalAvis} avis reçu${totalAvis > 1 ? 's' : ''}
               </div>
               <div style="font-size: 13px; color: var(--text-gray); margin-top: 3px;">
                 📍 ${escapeHtml(regionVendeur)}
@@ -9784,8 +9868,7 @@
 
           ${derniersAvis.length === 0 ? `
             <div style="background: #181818; border: 1px dashed #333; border-radius: 10px; padding: 22px; text-align: center; color: var(--text-muted); font-size: 13px;">
-              Aucun avis pour le moment sur ce vendeur.<br>
-              Les avis sont automatiquement enregistrés à la fin des transactions.
+              Aucun avis pour le moment sur ce vendeur.
             </div>
           ` : derniersAvis.map(a => `
             <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 10px; padding: 14px; margin-bottom: 10px;">
@@ -9809,11 +9892,11 @@
         ${annonces.length > 0 ? `
           <div>
             <h3 style="font-size: 14.5px; font-weight: 700; color: #fff; margin: 0 0 10px 0;">
-              ⚽ Comptes publiés par ${escapeHtml(vendeurNom)} (${annonces.length})
+              ⚽ Comptes publiés par ${escapeHtml(nomVendeurAffiche)} (${annonces.length})
             </h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;">
               ${annonces.map(ad => `
-                <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 10px; cursor: pointer; transition: transform 0.15s ease;" onclick="fermerProfilVendeur(); changerPage('detail', { annonceId: '${ad.id}' })">
+                <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 10px; cursor: pointer;" onclick="fermerProfilVendeur(); changerPage('detail', { annonceId: '${ad.id}' })">
                   <div style="font-size: 12.5px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(ad.titre)}</div>
                   <div style="font-size: 13.5px; font-weight: 700; color: var(--primary); margin-top: 4px;">${formaterPrix(ad.prix)}</div>
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">🎮 ${escapeHtml(ad.plateforme)} • 📍 ${escapeHtml(ad.region || 'Dakar')}</div>
@@ -10318,7 +10401,7 @@
                   </div>
                 </div>
                 <div class="tx-banner-actions">
-                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}', '${conv.vendeurId || ''}')">
                     👤 Profil vendeur
                   </button>
                   <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirModalAvisDepuisChat('${conv.id}')">
@@ -10336,7 +10419,7 @@
                   </div>
                 </div>
                 <div class="tx-banner-actions">
-                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}', '${conv.vendeurId || ''}')">
                     👤 Profil vendeur
                   </button>
                   <button class="btn-tx-review" onclick="ouvrirModalAvisDepuisChat('${conv.id}')">
@@ -10355,7 +10438,7 @@
                 </div>
               </div>
               <div class="tx-banner-actions">
-                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}')">
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirProfilVendeur('${conv.vendeurNom}', '${conv.vendeurId || ''}')">
                   👤 Mon profil vendeur
                 </button>
               </div>
