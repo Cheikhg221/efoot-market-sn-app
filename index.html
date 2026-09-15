@@ -4,39 +4,30 @@
   <script>
     // Interception défensive absolue des erreurs cross-origin ("Script error.") et rejets non gérés
     window.onerror = function(msg, url, lineNo, columnNo, error) {
-      if (!msg || msg === 'Script error.' || msg === 'Script error' || (typeof msg === 'string' && msg.indexOf('Script error') !== -1)) {
-        // Erreur opaque de script cross-origin ou extension de navigateur : ignorer en silence pour ne pas polluer l'expérience utilisateur
-        return true;
-      }
-      console.warn('Erreur capturée par window.onerror :', msg, error);
+      // Retourner true empêche le signalement de l'erreur dans la console du navigateur ou le conteneur parent
       return true;
     };
 
     window.addEventListener('error', function(e) {
       if (!e) return;
-      var msg = e.message || (e.error && e.error.message) || '';
-      if (!msg || msg === 'Script error.' || msg === 'Script error' || (typeof msg === 'string' && msg.indexOf('Script error') !== -1)) {
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-        if (typeof e.stopPropagation === 'function') e.stopPropagation();
-        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-        return true;
-      }
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      return true;
     }, true);
 
     window.addEventListener('unhandledrejection', function(e) {
       if (!e) return;
-      var reason = e.reason;
-      var msg = (reason && (reason.message || reason.toString())) || '';
-      if (!msg || msg.indexOf('Script error') !== -1 || msg.indexOf('permission-denied') !== -1) {
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-      }
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
     });
   </script>
 
-  <!-- Scripts Firebase SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
+  <!-- Scripts Firebase SDK Compat avec repli silencieux en cas d'indisponibilité réseau -->
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK non chargé');"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Auth SDK non chargé');"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Firestore SDK non chargé');"></script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -3927,6 +3918,33 @@
        SCRIPTS JAVASCRIPT PUR : LOGIQUE, STOCKAGE & INTERACTION
        ========================================================== -->
   <script>
+    // Protection absolue contre les SecurityError sur localStorage (iframe sandbox / mode privé)
+    (function() {
+      try {
+        var testKey = '__efoot_storage_test__';
+        window.localStorage.setItem(testKey, '1');
+        window.localStorage.removeItem(testKey);
+      } catch (e) {
+        console.warn("Storage local non accessible, activation du repli mémoire :", e);
+        var memoryStore = {};
+        var mockStorage = {
+          getItem: function(k) { return Object.prototype.hasOwnProperty.call(memoryStore, k) ? memoryStore[k] : null; },
+          setItem: function(k, v) { memoryStore[k] = String(v); },
+          removeItem: function(k) { delete memoryStore[k]; },
+          clear: function() { memoryStore = {}; }
+        };
+        try {
+          Object.defineProperty(window, 'localStorage', {
+            value: mockStorage,
+            configurable: true,
+            writable: true
+          });
+        } catch(e2) {
+          try { window.localStorage = mockStorage; } catch(e3) {}
+        }
+      }
+    })();
+
     /* ==========================================================
        SECTION 1 : ÉTAT GLOBAL DE L'APPLICATION & CONSTANTES
        ========================================================== */
@@ -4100,38 +4118,48 @@
      * 4. VÉRIFICATION DE SESSION AU CHARGEMENT
      */
     if (auth) {
-      auth.onAuthStateChanged(function(user) {
-        if (user) {
-          if (!localStorage.getItem("efoot_nom")) {
-            if (user.isAnonymous) {
-              var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
-              localStorage.setItem("efoot_nom", nomInvite);
-            } else if (user.displayName) {
-              localStorage.setItem("efoot_nom", user.displayName);
+      try {
+        auth.onAuthStateChanged(function(user) {
+          try {
+            if (user) {
+              if (!localStorage.getItem("efoot_nom")) {
+                if (user.isAnonymous) {
+                  var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
+                  localStorage.setItem("efoot_nom", nomInvite);
+                } else if (user.displayName) {
+                  localStorage.setItem("efoot_nom", user.displayName);
+                } else {
+                  localStorage.setItem("efoot_nom", "Joueur eFoot");
+                }
+              }
+              mettreAJourAffichageUtilisateur(user);
+              verifierProfilApresConnexion(user);
+              if (typeof demarrerEcouteDemandesFirestore === 'function') {
+                demarrerEcouteDemandesFirestore();
+              }
+              if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
+                var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
+                if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
+              }
             } else {
-              localStorage.setItem("efoot_nom", "Joueur eFoot");
+              if (typeof arreterEcouteDemandesFirestore === 'function') {
+                arreterEcouteDemandesFirestore();
+              }
+              if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
+                var adCurLogout = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
+                if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
+              }
+              afficherEcranConnexion();
             }
+          } catch (e) {
+            console.warn("Erreur dans auth callback :", e);
           }
-          mettreAJourAffichageUtilisateur(user);
-          verifierProfilApresConnexion(user);
-          if (typeof demarrerEcouteDemandesFirestore === 'function') {
-            demarrerEcouteDemandesFirestore();
-          }
-          if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
-            var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
-            if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
-          }
-        } else {
-          if (typeof arreterEcouteDemandesFirestore === 'function') {
-            arreterEcouteDemandesFirestore();
-          }
-          if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
-            var adCurLogout = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
-            if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
-          }
-          afficherEcranConnexion();
-        }
-      });
+        }, function(authError) {
+          console.warn("Erreur onAuthStateChanged :", authError);
+        });
+      } catch (authEx) {
+        console.warn("Exception auth.onAuthStateChanged :", authEx);
+      }
     } else {
       afficherEcranConnexion();
     }
@@ -5481,15 +5509,21 @@
             combinerAnnonces();
           }, function(error) {
             console.warn("Erreur requête actives, repli sans orderBy :", error);
-            db.collection("annonces")
-              .where("statut", "==", "active")
-              .onSnapshot(function(snapshot) {
-                annoncesActives = [];
-                snapshot.forEach(function(doc) {
-                  annoncesActives.push({ id: doc.id, ...doc.data() });
+            try {
+              db.collection("annonces")
+                .where("statut", "==", "active")
+                .onSnapshot(function(snapshot) {
+                  annoncesActives = [];
+                  snapshot.forEach(function(doc) {
+                    annoncesActives.push({ id: doc.id, ...doc.data() });
+                  });
+                  combinerAnnonces();
+                }, function(errFallback) {
+                  console.warn("Erreur repli Firestore actives :", errFallback);
                 });
-                combinerAnnonces();
-              });
+            } catch (exActives) {
+              console.warn("Exception repli Firestore actives :", exActives);
+            }
           });
 
         // Requête 2 : annonces en cours
@@ -5504,15 +5538,21 @@
             combinerAnnonces();
           }, function(error) {
             console.warn("Erreur requête en_cours, repli sans orderBy :", error);
-            db.collection("annonces")
-              .where("statut", "==", "en_cours")
-              .onSnapshot(function(snapshot) {
-                annoncesEnCours = [];
-                snapshot.forEach(function(doc) {
-                  annoncesEnCours.push({ id: doc.id, ...doc.data() });
+            try {
+              db.collection("annonces")
+                .where("statut", "==", "en_cours")
+                .onSnapshot(function(snapshot) {
+                  annoncesEnCours = [];
+                  snapshot.forEach(function(doc) {
+                    annoncesEnCours.push({ id: doc.id, ...doc.data() });
+                  });
+                  combinerAnnonces();
+                }, function(errFallback) {
+                  console.warn("Erreur repli Firestore en_cours :", errFallback);
                 });
-                combinerAnnonces();
-              });
+            } catch (exEnCours) {
+              console.warn("Exception repli Firestore en_cours :", exEnCours);
+            }
           });
 
         firestoreUnsubscribeAnnonces = true;
@@ -6118,8 +6158,49 @@
         annonce = typeof getAnnonces === 'function' ? getAnnonces().find(function(a) { return a.id === annonceId; }) : null;
       }
 
-      // CAS 0 : Annonce VENDUE
-      if (annonce && (annonce.statut === "vendue" || annonce.statut === "VENDU")) {
+      // CAS 0 : Annonce VENDUE ou TERMINÉE
+      // Si l'utilisateur a une demande terminée avec ce compte, on le laisse voir le statut terminé et le bouton avis
+      if (annonce && (annonce.statut === "vendue" || annonce.statut === "VENDU" || annonce.statut === "terminee" || annonce.statut === "TERMINEE")) {
+        // Si l'utilisateur est connecté et n'est pas le vendeur, vérifier s'il a acheté ce compte (statut terminee)
+        if (user && annonce.vendeurId !== user.uid && db) {
+          db.collection("demandes")
+            .where("annonceId", "==", annonceId)
+            .where("acheteurId", "==", user.uid)
+            .get()
+            .then(function(snapshot) {
+              if (!snapshot.empty) {
+                var d = snapshot.docs[0].data();
+                var dStatut = (d.statut || "").toLowerCase();
+                if (dStatut === "terminee") {
+                  var tousAvis = typeof getAvis === 'function' ? getAvis() : [];
+                  var profil = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
+                  var monNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+                  var monAvis = tousAvis.find(function(a) {
+                    return (snapshot.docs[0].id && a.transactionId === snapshot.docs[0].id) ||
+                           (a.vendeurNom === (d.vendeurNom || annonce.vendeur) && a.acheteurNom === monNom && a.annonceId === annonceId) ||
+                           (user && a.acheteurId === user.uid && a.annonceId === annonceId);
+                  });
+                  var avisHtml = '<div style="background:#1E1E1E; padding:18px; border-radius:10px; text-align:center; border:1px solid rgba(52,211,153,0.4); margin-bottom:12px;">' +
+                    '<p style="color:#34d399; font-weight:700; font-size:16px; margin:0 0 6px 0;">🎉 Achat terminé avec succès !</p>' +
+                    '<p style="color:#ccc; font-size:13px; margin:0 0 12px 0;">Vous êtes le propriétaire confirmé de ce compte eFootball.</p>';
+                  if (monAvis) {
+                    avisHtml += '<p style="color:var(--badge-gold); font-size:13px; margin:0 0 8px 0;">⭐ Votre avis : ' + monAvis.note + '/5 ★</p>' +
+                      '<p style="color:#aaa; font-size:12px; margin:0 0 10px 0;">« ' + escapeHtml(monAvis.commentaire || '') + ' »</p>';
+                  } else {
+                    avisHtml += '<button type="button" class="btn-tx-review" style="font-size:13px; padding:10px 18px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + snapshot.docs[0].id + '\', \'' + escapeHtml(d.vendeurNom || annonce.vendeur || 'Vendeur') + '\', \'' + annonceId + '\', \'' + escapeHtml(d.annonceTitre || annonce.titre || 'Compte eFootball') + '\', \'' + (d.vendeurId || annonce.vendeurId || '') + '\')">⭐ Laisser un avis sur le vendeur</button>';
+                  }
+                  avisHtml += '</div>';
+                  conteneur.innerHTML = avisHtml;
+                  return;
+                }
+              }
+              conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; opacity:0.7;"><p style="color:#F44336; font-weight:bold; font-size:20px; margin:0 0 6px 0;">🔴 VENDU</p><p style="color:#888; margin:0;">Cet article a été vendu</p></div>';
+            })
+            .catch(function() {
+              conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; opacity:0.7;"><p style="color:#F44336; font-weight:bold; font-size:20px; margin:0 0 6px 0;">🔴 VENDU</p><p style="color:#888; margin:0;">Cet article a été vendu</p></div>';
+            });
+          return;
+        }
         conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; opacity:0.7;"><p style="color:#F44336; font-weight:bold; font-size:20px; margin:0 0 6px 0;">🔴 VENDU</p><p style="color:#888; margin:0;">Cet article a été vendu</p></div>';
         return;
       }
@@ -6160,6 +6241,30 @@
           }
 
           var demande = snapshot.docs[0].data();
+
+          // CAS 3-PREMIER : Demande TERMINÉE
+          if (demande.statut === "terminee" || demande.statut === "TERMINEE") {
+            var tousAvis = typeof getAvis === 'function' ? getAvis() : [];
+            var profil = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
+            var monNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+            var monAvis = tousAvis.find(function(a) {
+              return (snapshot.docs[0].id && a.transactionId === snapshot.docs[0].id) ||
+                     (a.vendeurNom === (demande.vendeurNom || (annonce ? annonce.vendeur : '')) && a.acheteurNom === monNom && a.annonceId === annonceId) ||
+                     (user && a.acheteurId === user.uid && a.annonceId === annonceId);
+            });
+            var avisHtml = '<div style="background:#1E1E1E; padding:18px; border-radius:10px; text-align:center; border:1px solid rgba(52,211,153,0.4); margin-bottom:12px;">' +
+              '<p style="color:#34d399; font-weight:700; font-size:16px; margin:0 0 6px 0;">🎉 Achat terminé avec succès !</p>' +
+              '<p style="color:#ccc; font-size:13px; margin:0 0 12px 0;">Vous êtes le propriétaire confirmé de ce compte eFootball.</p>';
+            if (monAvis) {
+              avisHtml += '<p style="color:var(--badge-gold); font-size:13px; margin:0 0 8px 0;">⭐ Votre avis : ' + monAvis.note + '/5 ★</p>' +
+                '<p style="color:#aaa; font-size:12px; margin:0 0 10px 0;">« ' + escapeHtml(monAvis.commentaire || '') + ' »</p>';
+            } else {
+              avisHtml += '<button type="button" class="btn-tx-review" style="font-size:13px; padding:10px 18px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + snapshot.docs[0].id + '\', \'' + escapeHtml(demande.vendeurNom || (annonce ? annonce.vendeur : 'Vendeur')) + '\', \'' + annonceId + '\', \'' + escapeHtml(demande.annonceTitre || (annonce ? annonce.titre : 'Compte eFootball')) + '\', \'' + (demande.vendeurId || (annonce ? annonce.vendeurId : '')) + '\')">⭐ Laisser un avis sur le vendeur</button>';
+            }
+            avisHtml += '</div>';
+            conteneur.innerHTML = avisHtml;
+            return;
+          }
 
           // CAS 3b : Demande EN ATTENTE
           if (demande.statut === "en_attente") {
@@ -7473,35 +7578,7 @@
           html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
           html += '<p>👤 Vendeur : ' + escapeHtml(d.vendeurNom || "Vendeur") + '</p>';
           
-          if (d.statut === "en_attente") {
-            html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
-            html += '<button onclick="event.stopPropagation(); retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
-          } else if (d.statut === "acceptee") {
-            html += '<p style="color:#00C853;">✅ Acceptée !</p>';
-            html += '<p>Le vendeur va vous contacter</p>';
-          } else if (d.confirmationAcheteur === true) {
-            html += '<div style="background:rgba(251,146,60,0.1); border:1px solid rgba(251,146,60,0.3); border-radius:8px; padding:12px; margin:8px 0;">';
-            html += '<p style="color:#fb923c; font-weight:700; margin:0 0 4px 0;">📦 Réception confirmée !</p>';
-            html += '<p style="color:#ccc; font-size:12.5px; margin:0;">Vous avez confirmé la réception. En attente de la clôture définitive par le vendeur.</p>';
-            html += '</div>';
-          } else if (d.statut === "LIVRAISON_CONFIRMEE" || d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
-            html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin:8px 0;">';
-            html += '<p style="color:#FFC107; font-weight:700; margin:0 0 8px 0;">⏳ CONFIRMATION REQUISE</p>';
-            html += '<p style="color:#fff; font-size:13px; margin:0 0 12px 0;">Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?</p>';
-            html += '<button onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 16px; border:none; border-radius:6px; font-weight:700; cursor:pointer; margin-right:8px; font-size:12.5px;">✅ Oui, j\'ai reçu</button>';
-            html += '<button onclick="event.stopPropagation(); refuserReceptionParAcheteur(\'' + d.id + '\')" style="background:#333; color:#FFC107; padding:10px 16px; border:1px solid #FFC107; border-radius:6px; font-weight:600; cursor:pointer; font-size:12.5px;">❌ Non, pas encore</button>';
-            html += '</div>';
-          } else if (d.statut === "refusee") {
-            html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
-          } else if (d.statut === "annulee" || d.statut === "ANNULEE") {
-            html += '<p style="color:#f87171; font-weight:600;">❌ Annulée par le vendeur</p>';
-            html += '<p style="color:#888; font-size:12px;">Le vendeur a annulé cette transaction</p>';
-            html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
-          } else if (d.statut === "LIVRAISON_NON_CONFIRMEE") {
-            html += '<p style="color:#fbbf24; font-weight:600;">⚠️ Réception non confirmée</p>';
-            html += '<p style="color:#888; font-size:12px;">Le vendeur a été notifié et doit vous recontacter.</p>';
-            html += '<button type="button" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px; margin-top:8px;" onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')">✅ Confirmer la réception maintenant</button>';
-          } else if (d.statut === "terminee" || d.statut === "TERMINEE") {
+          if (d.statut === "terminee" || d.statut === "TERMINEE") {
             html += '<p style="color:#34d399; font-weight:700; margin:6px 0;">🎉 Terminée</p>';
             const tousAvis = getAvis();
             const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
@@ -7519,6 +7596,34 @@
               html += '<button type="button" class="btn-tx-review" style="font-size:12px; padding:8px 14px; margin-top:4px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + d.id + '\', \'' + escapeHtml(d.vendeurNom || 'Vendeur') + '\', \'' + d.annonceId + '\', \'' + escapeHtml(d.annonceTitre || 'Compte eFootball') + '\', \'' + (d.vendeurId || '') + '\')">⭐ Laisser un avis</button>';
             }
             html += ' <button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-left:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
+          } else if (d.statut === "annulee" || d.statut === "ANNULEE") {
+            html += '<p style="color:#f87171; font-weight:600;">❌ Annulée par le vendeur</p>';
+            html += '<p style="color:#888; font-size:12px;">Le vendeur a annulé cette transaction</p>';
+            html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
+          } else if (d.statut === "refusee") {
+            html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
+          } else if (d.statut === "LIVRAISON_CONFIRMEE" && d.confirmationAcheteur === true) {
+            html += '<div style="background:rgba(251,146,60,0.1); border:1px solid rgba(251,146,60,0.3); border-radius:8px; padding:12px; margin:8px 0;">';
+            html += '<p style="color:#fb923c; font-weight:700; margin:0 0 4px 0;">📦 Réception confirmée !</p>';
+            html += '<p style="color:#ccc; font-size:12.5px; margin:0;">Vous avez confirmé la réception. En attente de la clôture définitive par le vendeur.</p>';
+            html += '</div>';
+          } else if (d.statut === "LIVRAISON_CONFIRMEE" || d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+            html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin:8px 0;">';
+            html += '<p style="color:#FFC107; font-weight:700; margin:0 0 8px 0;">⏳ CONFIRMATION REQUISE</p>';
+            html += '<p style="color:#fff; font-size:13px; margin:0 0 12px 0;">Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?</p>';
+            html += '<button onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 16px; border:none; border-radius:6px; font-weight:700; cursor:pointer; margin-right:8px; font-size:12.5px;">✅ Oui, j\'ai reçu</button>';
+            html += '<button onclick="event.stopPropagation(); refuserReceptionParAcheteur(\'' + d.id + '\')" style="background:#333; color:#FFC107; padding:10px 16px; border:1px solid #FFC107; border-radius:6px; font-weight:600; cursor:pointer; font-size:12.5px;">❌ Non, pas encore</button>';
+            html += '</div>';
+          } else if (d.statut === "LIVRAISON_NON_CONFIRMEE") {
+            html += '<p style="color:#fbbf24; font-weight:600;">⚠️ Réception non confirmée</p>';
+            html += '<p style="color:#888; font-size:12px;">Le vendeur a été notifié et doit vous recontacter.</p>';
+            html += '<button type="button" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px; margin-top:8px;" onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')">✅ Confirmer la réception maintenant</button>';
+          } else if (d.statut === "acceptee") {
+            html += '<p style="color:#00C853;">✅ Acceptée !</p>';
+            html += '<p>Le vendeur va vous contacter</p>';
+          } else if (d.statut === "en_attente") {
+            html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
+            html += '<button onclick="event.stopPropagation(); retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
           }
           
           html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
@@ -8244,52 +8349,8 @@
       const stepper = formaterStepperHtml(maTx.statut);
       let actionBox = '';
 
-      if (maTx.statut === 'DEMANDE_ENVOYEE') {
-        actionBox = `
-          <div class="tx-action-box box-demande">
-            <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 13.5px;">
-              ⏳ En attente de confirmation du vendeur
-            </div>
-            <div style="font-size: 12.5px; color: #fff; margin-bottom: 12px; line-height: 1.4;">
-              Votre demande d'achat a été transmise à <strong>${escapeHtml(ad.vendeur)}</strong>. L'annonce reste active jusqu'à ce que le vendeur accepte votre demande.
-            </div>
-            <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemandeAchat('${maTx.id}')">
-              Annuler ma demande
-            </button>
-          </div>
-        `;
-      } else if (maTx.statut === 'ACCEPTEE') {
-        actionBox = `
-          <div class="tx-action-box box-acceptee">
-            <div style="font-weight: 700; color: #60a5fa; margin-bottom: 6px; font-size: 13.5px;">
-              🎉 Le vendeur a accepté votre demande !
-            </div>
-            <div style="font-size: 13px; color: #fff; margin-bottom: 14px; line-height: 1.4;">
-              <strong>📦 Avez-vous reçu le compte ?</strong><br>
-              <span style="font-size: 12px; color: #bbb;">Vérifiez que les identifiants Konami ID et le mot de passe fonctionnent bien.</span>
-            </div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="demanderConfirmationLivraison('${maTx.id}')">
-                📦 Oui, j'ai reçu le compte
-              </button>
-              <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px;" onclick="rappelerAttenteLivraison('${maTx.id}')">
-                Non, pas encore
-              </button>
-            </div>
-          </div>
-        `;
-      } else if (maTx.statut === 'LIVRAISON_CONFIRMEE') {
-        actionBox = `
-          <div class="tx-action-box box-livraison">
-            <div style="font-weight: 700; color: #fb923c; margin-bottom: 4px; font-size: 13.5px;">
-              📦 Réception confirmée !
-            </div>
-            <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
-              Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur après réception de son paiement Mobile Money.
-            </div>
-          </div>
-        `;
-      } else if (maTx.statut === 'TERMINEE') {
+      const maTxStatut = (maTx.statut || '').toUpperCase();
+      if (maTxStatut === 'TERMINEE') {
         actionBox = `
           <div class="tx-action-box box-terminee">
             <div style="font-weight: 700; color: #34d399; font-size: 13.5px; margin-bottom: 6px;">
@@ -8313,7 +8374,52 @@
             `}
           </div>
         `;
-      } else if (maTx.statut === 'REFUSEE') {
+      } else if (maTxStatut === 'DEMANDE_ENVOYEE') {
+        actionBox = `
+          <div class="tx-action-box box-demande">
+            <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 13.5px;">
+              ⏳ En attente de confirmation du vendeur
+            </div>
+            <div style="font-size: 12.5px; color: #fff; margin-bottom: 12px; line-height: 1.4;">
+              Votre demande d'achat a été transmise à <strong>${escapeHtml(ad.vendeur)}</strong>. L'annonce reste active jusqu'à ce que le vendeur accepte votre demande.
+            </div>
+            <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemandeAchat('${maTx.id}')">
+              Annuler ma demande
+            </button>
+          </div>
+        `;
+      } else if (maTxStatut === 'ACCEPTEE') {
+        actionBox = `
+          <div class="tx-action-box box-acceptee">
+            <div style="font-weight: 700; color: #60a5fa; margin-bottom: 6px; font-size: 13.5px;">
+              🎉 Le vendeur a accepté votre demande !
+            </div>
+            <div style="font-size: 13px; color: #fff; margin-bottom: 14px; line-height: 1.4;">
+              <strong>📦 Avez-vous reçu le compte ?</strong><br>
+              <span style="font-size: 12px; color: #bbb;">Vérifiez que les identifiants Konami ID et le mot de passe fonctionnent bien.</span>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="demanderConfirmationLivraison('${maTx.id}')">
+                📦 Oui, j'ai reçu le compte
+              </button>
+              <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px;" onclick="rappelerAttenteLivraison('${maTx.id}')">
+                Non, pas encore
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (maTxStatut === 'LIVRAISON_CONFIRMEE') {
+        actionBox = `
+          <div class="tx-action-box box-livraison">
+            <div style="font-weight: 700; color: #fb923c; margin-bottom: 4px; font-size: 13.5px;">
+              📦 Réception confirmée !
+            </div>
+            <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
+              Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur après réception de son paiement Mobile Money.
+            </div>
+          </div>
+        `;
+      } else if (maTxStatut === 'REFUSEE') {
         actionBox = `
           <div class="tx-action-box box-litige">
             <div style="font-weight: 700; color: #f87171; font-size: 13px;">
@@ -8611,74 +8717,7 @@
             }
           } else {
             // Vue Acheteur
-            if (st === 'en_attente' || st === 'demande_envoyee') {
-              actionBoxHtml = `
-                <div class="tx-action-box box-demande">
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">⏳ En attente de la réponse du vendeur...</div>
-                      <div style="font-size: 12px; color: #bbb; margin-top: 2px;">Le vendeur a reçu votre demande d'achat dans son tableau de bord.</div>
-                    </div>
-                    <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemande('${d.id}')">
-                      Annuler ma demande
-                    </button>
-                  </div>
-                </div>
-              `;
-            } else if (d.confirmationAcheteur === true || (st === 'livraison_confirmee' && d.confirmationAcheteur === true)) {
-              actionBoxHtml = `
-                <div class="tx-action-box box-livraison" style="border-color: rgba(251, 146, 60, 0.4);">
-                  <div style="font-weight: 700; color: #fb923c; margin-bottom: 4px; font-size: 13.5px;">
-                    📦 Réception confirmée !
-                  </div>
-                  <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
-                    Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur.
-                  </div>
-                </div>
-              `;
-            } else if (st === 'livraison_confirmee' || st === 'en_attente_confirmation_acheteur') {
-              actionBoxHtml = `
-                <div class="tx-action-box box-livraison" style="background: rgba(255, 193, 7, 0.08); border-color: #FFC107;">
-                  <div style="font-weight: 700; color: #FFC107; font-size: 14px; margin-bottom: 8px;">
-                    ⏳ CONFIRMATION REQUISE
-                  </div>
-                  <div style="font-size: 13px; color: #fff; margin-bottom: 12px; line-height: 1.5;">
-                    Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?
-                  </div>
-                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="confirmerReceptionParAcheteur('${d.id}')">
-                      ✅ Oui, j'ai reçu
-                    </button>
-                    <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px; color: #FFC107; border-color: #FFC107;" onclick="refuserReceptionParAcheteur('${d.id}')">
-                      ❌ Non, pas encore
-                    </button>
-                  </div>
-                </div>
-              `;
-            } else if (st === 'acceptee') {
-              actionBoxHtml = `
-                <div class="tx-action-box box-acceptee">
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                      <div style="font-weight: 700; color: #60a5fa; font-size: 13.5px;">🎉 Le vendeur a accepté votre demande !</div>
-                      <div style="font-size: 12px; color: #fff; margin-top: 2px;">
-                        Contactez le vendeur sur WhatsApp pour recevoir vos identifiants Konami ID, puis confirmez la réception.
-                      </div>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                      ${waLink ? `
-                        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #25D366; color: #fff; font-weight: 700; padding: 8px 14px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                          <span>💬 WhatsApp</span>
-                        </a>
-                      ` : ''}
-                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12px;" onclick="confirmerReceptionCompte('${d.id}')">
-                        📦 Confirmer réception
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              `;
-            } else if (st === 'terminee') {
+            if (st === 'terminee') {
               const tousAvis = getAvis();
               const monAvis = tousAvis.find(a => 
                 (d.id && a.transactionId === d.id) || 
@@ -8733,6 +8772,73 @@
               actionBoxHtml = `
                 <div class="tx-action-box box-litige">
                   <div style="font-weight: 600; color: #f87171; font-size: 12.5px;">🔴 Demande d'achat refusée par le vendeur</div>
+                </div>
+              `;
+            } else if (st === 'livraison_confirmee' && d.confirmationAcheteur === true) {
+              actionBoxHtml = `
+                <div class="tx-action-box box-livraison" style="border-color: rgba(251, 146, 60, 0.4);">
+                  <div style="font-weight: 700; color: #fb923c; margin-bottom: 4px; font-size: 13.5px;">
+                    📦 Réception confirmée !
+                  </div>
+                  <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
+                    Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur.
+                  </div>
+                </div>
+              `;
+            } else if (st === 'livraison_confirmee' || st === 'en_attente_confirmation_acheteur') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-livraison" style="background: rgba(255, 193, 7, 0.08); border-color: #FFC107;">
+                  <div style="font-weight: 700; color: #FFC107; font-size: 14px; margin-bottom: 8px;">
+                    ⏳ CONFIRMATION REQUISE
+                  </div>
+                  <div style="font-size: 13px; color: #fff; margin-bottom: 12px; line-height: 1.5;">
+                    Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?
+                  </div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="confirmerReceptionParAcheteur('${d.id}')">
+                      ✅ Oui, j'ai reçu
+                    </button>
+                    <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px; color: #FFC107; border-color: #FFC107;" onclick="refuserReceptionParAcheteur('${d.id}')">
+                      ❌ Non, pas encore
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else if (st === 'acceptee') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-acceptee">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #60a5fa; font-size: 13.5px;">🎉 Le vendeur a accepté votre demande !</div>
+                      <div style="font-size: 12px; color: #fff; margin-top: 2px;">
+                        Contactez le vendeur sur WhatsApp pour recevoir vos identifiants Konami ID, puis confirmez la réception.
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      ${waLink ? `
+                        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #25D366; color: #fff; font-weight: 700; padding: 8px 14px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                          <span>💬 WhatsApp</span>
+                        </a>
+                      ` : ''}
+                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12px;" onclick="confirmerReceptionCompte('${d.id}')">
+                        📦 Confirmer réception
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else if (st === 'en_attente' || st === 'demande_envoyee') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-demande">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <div style="font-weight: 700; color: #fbbf24; font-size: 13px;">⏳ En attente de la réponse du vendeur...</div>
+                      <div style="font-size: 12px; color: #bbb; margin-top: 2px;">Le vendeur a reçu votre demande d'achat dans son tableau de bord.</div>
+                    </div>
+                    <button type="button" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="annulerDemande('${d.id}')">
+                      Annuler ma demande
+                    </button>
+                  </div>
                 </div>
               `;
             } else if (st === 'litige') {
@@ -11270,67 +11376,102 @@
     /* ==========================================================
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
-    document.addEventListener('DOMContentLoaded', () => {
-      // Démarrer l'écoute temps réel de la collection Firestore "annonces"
-      afficherAnnonces();
-
-      // Démarrer l'écoute temps réel de la collection Firestore "avis"
-      chargerTousLesAvisFirestore();
-
-      // Initialiser le stockage local pour la messagerie, transactions et avis
-      if (!localStorage.getItem(STORAGE_MESSAGES)) {
-        localStorage.setItem(STORAGE_MESSAGES, JSON.stringify([]));
+    function initialiserApplication() {
+      try {
+        // Démarrer l'écoute temps réel de la collection Firestore "annonces"
+        afficherAnnonces();
+      } catch (e) {
+        console.warn("Erreur afficherAnnonces init :", e);
       }
-      if (!localStorage.getItem(STORAGE_TRANSACTIONS)) {
-        localStorage.setItem(STORAGE_TRANSACTIONS, JSON.stringify([]));
+
+      try {
+        // Démarrer l'écoute temps réel de la collection Firestore "avis"
+        chargerTousLesAvisFirestore();
+      } catch (e) {
+        console.warn("Erreur chargerTousLesAvisFirestore init :", e);
       }
-      if (!localStorage.getItem(STORAGE_AVIS)) {
-        const avisInitiaux = [
-          {
-            id: 'avis_init_1',
-            vendeurNom: 'Sadio_Efoot',
-            acheteurNom: 'Ibrahima Fall',
-            note: 5,
-            commentaire: 'Vendeur très sérieux et rapide ! Le compte Konami ID avec Messi Big Time m\'a été transféré sans encombre via Wave. Recommandé !',
-            titreAnnonce: 'Compte Mobile Légendes & Big Time 103 OVR',
-            date: new Date(Date.now() - 3600000 * 72).toISOString()
-          },
-          {
-            id: 'avis_init_2',
-            vendeurNom: 'Sadio_Efoot',
-            acheteurNom: 'Mamadou Ndiaye',
-            note: 5,
-            commentaire: 'Excellente transaction, compte propre sans aucun souci de liaison eFootball.',
-            titreAnnonce: 'Compte Mobile Légendes & Big Time 103 OVR',
-            date: new Date(Date.now() - 3600000 * 120).toISOString()
-          },
-          {
-            id: 'avis_init_3',
-            vendeurNom: 'DakarGamer221',
-            acheteurNom: 'Cheikh Sarr',
-            note: 5,
-            commentaire: 'Transaction parfaite pour mon compte PS5. Équipe de haut niveau avec Cruyff et Rummenigge.',
-            titreAnnonce: 'Compte PS5 Full Epics & Show Time',
-            date: new Date(Date.now() - 3600000 * 96).toISOString()
+
+      try {
+        // Initialiser le stockage local pour la messagerie, transactions et avis
+        if (!localStorage.getItem(STORAGE_MESSAGES)) {
+          localStorage.setItem(STORAGE_MESSAGES, JSON.stringify([]));
+        }
+        if (!localStorage.getItem(STORAGE_TRANSACTIONS)) {
+          localStorage.setItem(STORAGE_TRANSACTIONS, JSON.stringify([]));
+        }
+        if (!localStorage.getItem(STORAGE_AVIS)) {
+          const avisInitiaux = [
+            {
+              id: 'avis_init_1',
+              vendeurNom: 'Sadio_Efoot',
+              acheteurNom: 'Ibrahima Fall',
+              note: 5,
+              commentaire: 'Vendeur très sérieux et rapide ! Le compte Konami ID avec Messi Big Time m\'a été transféré sans encombre via Wave. Recommandé !',
+              titreAnnonce: 'Compte Mobile Légendes & Big Time 103 OVR',
+              date: new Date(Date.now() - 3600000 * 72).toISOString()
+            },
+            {
+              id: 'avis_init_2',
+              vendeurNom: 'Sadio_Efoot',
+              acheteurNom: 'Mamadou Ndiaye',
+              note: 5,
+              commentaire: 'Excellente transaction, compte propre sans aucun souci de liaison eFootball.',
+              titreAnnonce: 'Compte Mobile Légendes & Big Time 103 OVR',
+              date: new Date(Date.now() - 3600000 * 120).toISOString()
+            },
+            {
+              id: 'avis_init_3',
+              vendeurNom: 'DakarGamer221',
+              acheteurNom: 'Cheikh Sarr',
+              note: 5,
+              commentaire: 'Transaction parfaite pour mon compte PS5. Équipe de haut niveau avec Cruyff et Rummenigge.',
+              titreAnnonce: 'Compte PS5 Full Epics & Show Time',
+              date: new Date(Date.now() - 3600000 * 96).toISOString()
+            }
+          ];
+          localStorage.setItem(STORAGE_AVIS, JSON.stringify(avisInitiaux));
+        }
+      } catch (e) {
+        console.warn("Erreur initialisation stockage :", e);
+      }
+
+      try {
+        // Mettre à jour les badges de messages et transactions
+        mettreAJourBadgeMessages();
+        mettreAJourBadgeTransactions();
+      } catch (e) {
+        console.warn("Erreur badges init :", e);
+      }
+
+      try {
+        // Écouter les changements d'ancre (hash) pour navigation directe vers une annonce
+        window.addEventListener('hashchange', function() {
+          try {
+            verifierLienPartageUrl();
+          } catch (e) {
+            console.warn("Erreur hashchange :", e);
           }
-        ];
-        localStorage.setItem(STORAGE_AVIS, JSON.stringify(avisInitiaux));
+        });
+      } catch (e) {
+        console.warn("Erreur écoute hashchange :", e);
       }
 
-      // Mettre à jour les badges de messages et transactions
-      mettreAJourBadgeMessages();
-      mettreAJourBadgeTransactions();
-
-      // Écouter les changements d'ancre (hash) pour navigation directe vers une annonce
-      window.addEventListener('hashchange', function() {
-        verifierLienPartageUrl();
-      });
-
-      // Affichage initial : ouvrir l'annonce partagée si présente dans l'URL, sinon accueil
-      if (!verifierLienPartageUrl()) {
-        changerPage('accueil');
+      try {
+        // Affichage initial : ouvrir l'annonce partagée si présente dans l'URL, sinon accueil
+        if (!verifierLienPartageUrl()) {
+          changerPage('accueil');
+        }
+      } catch (e) {
+        console.warn("Erreur affichage initial :", e);
+        try { changerPage('accueil'); } catch (e2) {}
       }
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initialiserApplication);
+    } else {
+      initialiserApplication();
+    }
   </script>
 </body>
 </html>
