@@ -3787,7 +3787,7 @@
       </div>
       <div style="background: rgba(0, 200, 83, 0.1); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: #b9f6ca; margin-bottom: 20px; line-height: 1.5;">
         ⚠️ <strong>Attention, cette action est irréversible :</strong><br>
-        • Vous confirmez avoir reçu le paiement Wave ou Orange Money<br>
+        • Vous confirmez avoir reçu le paiement Mobile Money<br>
         • L'acheteur a confirmé avoir reçu le Konami ID et mot de passe<br>
         • L'annonce sera définitivement marquée comme <strong>"VENDU"</strong>
       </div>
@@ -6178,18 +6178,18 @@
             return;
           }
 
-          // CAS 3c-bis : Demande en attente de confirmation acheteur
-          if (demande.statut === "LIVRAISON_CONFIRMEE" && annonce.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+          // CAS 3c-quater : Vendeur a marqué VENDU, en attente de confirmation acheteur
+          if ((demande.statut === "LIVRAISON_CONFIRMEE" || demande.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") && annonce && (annonce.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR" || annonce.statut === "vendue")) {
             conteneur.innerHTML = 
               '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:2px solid #FFC107; margin-bottom:15px;">' +
                 '<p style="color:#FFC107; font-size:18px; font-weight:bold; margin:0 0 10px 0;">⏳ CONFIRMATION REQUISE</p>' +
-                '<p style="color:#fff; font-size:15px; margin:0 0 8px 0; font-weight:600;">Avez-vous reçu le compte eFootball ?</p>' +
-                '<p style="color:#ccc; font-size:13px; margin:0 0 16px 0;">Vérifiez que les identifiants Konami ID fonctionnent correctement.</p>' +
+                '<p style="color:#fff; font-size:15px; margin:0 0 8px 0; font-weight:600;">Le vendeur a marqué le compte comme VENDU</p>' +
+                '<p style="color:#ccc; font-size:13px; margin:0 0 16px 0;">Avez-vous reçu le compte eFootball ?</p>' +
               '</div>' +
-              '<button onclick="confirmerReceptionParAcheteur(\'' + snapshot.docs[0].id + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">' +
+              '<button onclick="confirmerReceptionParAcheteur(\'' + snapshot.docs[0].id + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; margin-bottom:10px;">' +
                 '✅ Oui, j\'ai reçu le compte' +
               '</button>' +
-              '<button onclick="refuserReceptionParAcheteur(\'' + snapshot.docs[0].id + '\')" style="background:#333; color:#FFC107; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:600; border:1px solid #FFC107; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">' +
+              '<button onclick="refuserReceptionParAcheteur(\'' + snapshot.docs[0].id + '\')" style="background:#333; color:#FFC107; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:600; border:1px solid #FFC107; cursor:pointer;">' +
                 '❌ Non, je n\'ai pas encore reçu' +
               '</button>';
             return;
@@ -6848,6 +6848,8 @@
           return '❌ Refusée';
         case 'annulee':
           return '❌ Annulée';
+        case 'en_attente_confirmation_acheteur':
+          return '⏳ En attente confirmation acheteur';
         case 'livraison_confirmee':
           return '📦 Réception confirmée';
         case 'terminee':
@@ -6881,7 +6883,7 @@
         step1Class = 'completed';
         step2Class = 'active';
         progressWidth = '45%';
-      } else if (s === 'livraison_confirmee') {
+      } else if (s === 'livraison_confirmee' || s === 'en_attente_confirmation_acheteur') {
         step1Class = 'completed';
         step2Class = 'completed';
         step3Class = 'active';
@@ -7421,6 +7423,11 @@
             html += '<button onclick="event.stopPropagation(); refuserDemande(\'' + d.id + '\')" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée</p>';
+          } else if (d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+            html += '<p style="color:#FFC107; font-weight:600;">⏳ En attente de confirmation de l\'acheteur</p>';
+            html += '<p style="color:#aaa; font-size:12px;">Vous avez marqué le compte comme vendu. L\'acheteur doit confirmer la réception.</p>';
+          } else if (d.statut === "LIVRAISON_CONFIRMEE") {
+            html += '<p style="color:#00C853; font-weight:600;">✅ Réception confirmée par l\'acheteur !</p>';
           } else if (d.statut === "refusee") {
             html += '<p style="color:#F44336;">❌ Refusée</p>';
           }
@@ -7459,10 +7466,10 @@
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée !</p>';
             html += '<p>Le vendeur va vous contacter</p>';
-          } else if (d.statut === "LIVRAISON_CONFIRMEE") {
+          } else if (d.statut === "LIVRAISON_CONFIRMEE" || d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
             html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin:8px 0;">';
             html += '<p style="color:#FFC107; font-weight:700; margin:0 0 8px 0;">⏳ CONFIRMATION REQUISE</p>';
-            html += '<p style="color:#fff; font-size:13px; margin:0 0 12px 0;">Le vendeur a marqué le compte comme vendu. Confirmez-vous avoir reçu le compte ?</p>';
+            html += '<p style="color:#fff; font-size:13px; margin:0 0 12px 0;">Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?</p>';
             html += '<button onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 16px; border:none; border-radius:6px; font-weight:700; cursor:pointer; margin-right:8px; font-size:12.5px;">✅ Oui, j\'ai reçu</button>';
             html += '<button onclick="event.stopPropagation(); refuserReceptionParAcheteur(\'' + d.id + '\')" style="background:#333; color:#FFC107; padding:10px 16px; border:1px solid #FFC107; border-radius:6px; font-weight:600; cursor:pointer; font-size:12.5px;">❌ Non, pas encore</button>';
             html += '</div>';
@@ -8070,6 +8077,28 @@
               </div>
             </div>
           `;
+        } else if (txActive.statut === 'EN_ATTENTE_CONFIRMATION_ACHETEUR') {
+          actionBox = `
+            <div class="tx-action-box box-livraison">
+              <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 13.5px;">
+                ⏳ En attente de confirmation de l'acheteur
+              </div>
+              <div style="font-size: 12.5px; color: #fff; margin-bottom: 12px; line-height: 1.4;">
+                Vous avez marqué ce compte comme vendu. L'acheteur doit maintenant confirmer avoir reçu les identifiants Konami ID.
+              </div>
+              <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 10px; font-size: 12px; color: #fbbf24; margin-bottom: 12px;">
+                📢 L'acheteur reçoit une notification pour confirmer la réception. Vous serez notifié dès qu'il aura répondu.
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" style="background: #FFC107; color: #000; font-weight: 700; padding: 10px 18px; font-size: 13px;" onclick="relancerConfirmationAcheteur('${txActive.id}')">
+                  🔔 Relancer la confirmation
+                </button>
+                <button type="button" class="btn-danger" style="padding: 10px 14px; font-size: 12.5px;" onclick="ouvrirModalLitige('${txActive.id}')">
+                  🚨 Signaler un problème
+                </button>
+              </div>
+            </div>
+          `;
         } else if (txActive.statut === 'LIVRAISON_CONFIRMEE') {
           actionBox = `
             <div class="tx-action-box box-livraison">
@@ -8077,7 +8106,7 @@
                 ✅ L'acheteur a confirmé avoir reçu le compte !
               </div>
               <div style="font-size: 12.5px; color: #fff; margin-bottom: 12px; line-height: 1.4;">
-                Vérifiez que vous avez bien reçu l'intégralité du paiement Wave ou Orange Money, puis finalisez la clôture définitive :
+                Vérifiez que vous avez bien reçu l'intégralité du paiement Mobile Money, puis finalisez la clôture définitive :
               </div>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 18px; font-size: 13px;" onclick="ouvrirModalTerminerTransaction('${txActive.id}')">
@@ -8238,7 +8267,7 @@
               📦 Réception confirmée !
             </div>
             <div style="font-size: 12.5px; color: #ccc; line-height: 1.4;">
-              Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur après réception de son paiement Wave / Orange Money.
+              Vous avez confirmé avoir reçu le compte eFootball. En attente de la clôture définitive par le vendeur après réception de son paiement Mobile Money.
             </div>
           </div>
         `;
@@ -8578,6 +8607,25 @@
                   </div>
                 </div>
               `;
+            } else if (st === 'livraison_confirmee' || st === 'en_attente_confirmation_acheteur') {
+              actionBoxHtml = `
+                <div class="tx-action-box box-livraison" style="background: rgba(255, 193, 7, 0.08); border-color: #FFC107;">
+                  <div style="font-weight: 700; color: #FFC107; font-size: 14px; margin-bottom: 8px;">
+                    ⏳ CONFIRMATION REQUISE
+                  </div>
+                  <div style="font-size: 13px; color: #fff; margin-bottom: 12px; line-height: 1.5;">
+                    Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?
+                  </div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="confirmerReceptionParAcheteur('${d.id}')">
+                      ✅ Oui, j'ai reçu
+                    </button>
+                    <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px; color: #FFC107; border-color: #FFC107;" onclick="refuserReceptionParAcheteur('${d.id}')">
+                      ❌ Non, pas encore
+                    </button>
+                  </div>
+                </div>
+              `;
             } else if (st === 'acceptee') {
               actionBoxHtml = `
                 <div class="tx-action-box box-acceptee">
@@ -8598,25 +8646,6 @@
                         📦 Confirmer réception
                       </button>
                     </div>
-                  </div>
-                </div>
-              `;
-            } else if (st === 'livraison_confirmee') {
-              actionBoxHtml = `
-                <div class="tx-action-box box-livraison" style="background: rgba(255, 193, 7, 0.08); border-color: #FFC107;">
-                  <div style="font-weight: 700; color: #FFC107; font-size: 14px; margin-bottom: 8px;">
-                    ⏳ CONFIRMATION REQUISE
-                  </div>
-                  <div style="font-size: 13px; color: #fff; margin-bottom: 12px; line-height: 1.5;">
-                    Le vendeur a marqué le compte comme vendu. Confirmez-vous avoir reçu le compte ?
-                  </div>
-                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="confirmerReceptionParAcheteur('${d.id}')">
-                      ✅ Oui, j'ai reçu
-                    </button>
-                    <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px; color: #FFC107; border-color: #FFC107;" onclick="refuserReceptionParAcheteur('${d.id}')">
-                      ❌ Non, pas encore
-                    </button>
                   </div>
                 </div>
               `;
@@ -10657,9 +10686,7 @@
           setAnnonces(annonces);
         }
         
-        var messageNotif = acheteurNom 
-          ? "Annonce semi-fermée. En attente de confirmation de " + acheteurNom 
-          : "Annonce semi-fermée. En attente de confirmation de l'acheteur.";
+        var messageNotif = "Annonce semi-fermée. En attente de confirmation de l'acheteur.";
         
         afficherNotification(messageNotif, "⏳");
         
@@ -10684,11 +10711,13 @@
         dateConfirmationAttente: dateVal
       })
       .then(function() {
-        // 2. Mettre à jour la demande en "LIVRAISON_CONFIRMEE"
+        // 2. Mettre à jour la demande en statut intermédiaire "EN_ATTENTE_CONFIRMATION_ACHETEUR"
         if (demandeId) {
           return db.collection("demandes").doc(demandeId).update({
-            statut: "LIVRAISON_CONFIRMEE",
-            dateLivraison: dateVal
+            statut: "EN_ATTENTE_CONFIRMATION_ACHETEUR",
+            dateMarquageVendeur: dateVal,
+            dateLivraison: dateVal,
+            confirmationAcheteur: null
           });
         }
       })
@@ -10739,6 +10768,7 @@
 
     /**
      * Confirmation de la réception du compte par l'acheteur
+     * Passe la transaction en LIVRAISON_CONFIRMEE (le vendeur clôturera définitivement après vérification du paiement)
      */
     function confirmerReceptionParAcheteur(demandeId) {
       if (!demandeId) return;
@@ -10758,15 +10788,8 @@
         : new Date().toISOString();
       
       if (!db) {
-        var annonces = getAnnonces();
-        var ad = annonces.find(function(a) { return a.statut === 'EN_ATTENTE_CONFIRMATION_ACHETEUR'; });
-        if (ad) {
-          ad.statut = "vendue";
-          setAnnonces(annonces);
-        }
-        afficherNotification("✅ Réception confirmée ! Transaction terminée.", "🎉");
+        afficherNotification("✅ Réception confirmée ! En attente de la clôture du vendeur.", "📦");
         if (currentPage === 'transactions') afficherMesTransactions();
-        if (currentPage === 'mes-annonces') afficherMesAnnonces();
         if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
         return;
       }
@@ -10781,42 +10804,30 @@
         var demande = doc.data();
         var annonceId = demande.annonceId;
         
-        // 1. Marquer la demande comme TERMINÉE
         return db.collection("demandes").doc(demandeId).update({
-          statut: "terminee",
-          dateTerminee: dateVal,
+          statut: "LIVRAISON_CONFIRMEE",
+          dateLivraison: dateVal,
           confirmationAcheteur: true
         }).then(function() {
-          // 2. Marquer l'annonce comme VENDUE (définitif)
           if (annonceId) {
             return db.collection("annonces").doc(annonceId).update({
-              statut: "vendue",
-              dateVente: dateVal,
-              confirmationAcheteur: true
+              confirmationAcheteur: true,
+              dateConfirmationAcheteur: dateVal
             });
           }
         });
       })
       .then(function() {
-        // Mettre à jour localement
-        var annonces = getAnnonces();
-        var ad = annonces.find(function(a) { return a.statut === 'EN_ATTENTE_CONFIRMATION_ACHETEUR'; });
-        if (ad) {
-          ad.statut = "vendue";
-          setAnnonces(annonces);
-        }
-        
-        afficherNotification("✅ Réception confirmée ! Transaction terminée.", "🎉");
+        afficherNotification("✅ Réception confirmée ! Le vendeur va clôturer.", "📦");
         
         if (currentPage === 'transactions') afficherMesTransactions();
-        if (currentPage === 'mes-annonces') afficherMesAnnonces();
         if (currentPage === 'detail' && currentDetailAdId) {
           afficherDetailAnnonce(currentDetailAdId);
         }
       })
       .catch(function(err) {
         console.warn("Erreur confirmation :", err);
-        alert("Erreur lors de la confirmation : " + (err ? err.message : "Erreur"));
+        alert("Erreur : " + (err ? err.message : "Erreur"));
       });
     }
 
