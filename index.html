@@ -3904,6 +3904,48 @@
     </div>
   </div>
 
+  <!-- MODALE : Avertissement connexion anonyme -->
+  <div class="modal-backdrop" id="modal-avertissement-anonyme">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-title" style="color: #FFC107; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 18px;">
+        <span style="font-size: 24px;">⚠️</span>
+        <span>AVERTISSEMENT IMPORTANT</span>
+      </div>
+      
+      <div style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 18px;">
+        <p style="color: #fff; font-size: 14.5px; font-weight: 600; margin: 0 0 12px 0; line-height: 1.4;">
+          Vous êtes sur le point de vous connecter en mode <strong>INVITÉ</strong> (anonyme).
+        </p>
+        <p style="color: #ccc; font-size: 13px; margin: 0 0 12px 0; line-height: 1.5;">
+          Dans ce mode, vos données peuvent être <strong>définitivement perdues</strong> dans les cas suivants :
+        </p>
+        <ul style="color: #ccc; font-size: 13px; margin: 0 0 12px 0; padding-left: 20px; line-height: 1.7;">
+          <li>🚪 Vous vous déconnectez du site</li>
+          <li>🍪 Vous supprimez les cookies de votre navigateur</li>
+          <li>🧹 Vous videz le cache de votre navigateur</li>
+          <li>📱 Vous changez d'appareil ou de navigateur</li>
+          <li>🕵️ Vous naviguez en mode navigation privée</li>
+        </ul>
+        <p style="color: #fbbf24; font-size: 12.5px; margin: 0; font-weight: 600; line-height: 1.5;">
+          💡 Conseil : Pour conserver vos annonces, avis et messages, connectez-vous avec un compte Google.
+        </p>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="btn-primary" style="background: #00C853; padding: 14px; font-size: 14px; font-weight: 700; width: 100%;" onclick="confirmerConnexionAnonyme()">
+          ✅ J'ai compris, continuer en invité
+        </button>
+        <button type="button" class="btn-secondary" style="background: #333; color: #fff; padding: 12px; font-size: 13.5px; border: 1px solid #444; width: 100%;" onclick="fermerAvertissementAnonyme()">
+          ❌ Annuler
+        </button>
+      </div>
+      
+      <p style="color: #888; font-size: 11.5px; margin: 14px 0 0 0; text-align: center; line-height: 1.4;">
+        Nous vous recommandons d'utiliser Google pour ne rien perdre.
+      </p>
+    </div>
+  </div>
+
   <!-- ==========================================================
        NOTIFICATION TOAST GLOBALE
        ========================================================== -->
@@ -4021,6 +4063,30 @@
      * 2. CONNEXION ANONYME
      */
     function connexionAnonyme() {
+      // Afficher l'avertissement AVANT la connexion
+      afficherAvertissementAnonyme();
+    }
+
+    function afficherAvertissementAnonyme() {
+      const modal = document.getElementById('modal-avertissement-anonyme');
+      if (modal) modal.classList.add('active');
+    }
+
+    function fermerAvertissementAnonyme() {
+      const modal = document.getElementById('modal-avertissement-anonyme');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function confirmerConnexionAnonyme() {
+      // Fermer la popup
+      fermerAvertissementAnonyme();
+      
+      // Procéder à la connexion anonyme
+      executerConnexionAnonyme();
+    }
+
+    // Nouvelle fonction interne qui fait le travail réel
+    function executerConnexionAnonyme() {
       const btn = document.getElementById('btn-auth-guest');
       if (btn) {
         btn.disabled = true;
