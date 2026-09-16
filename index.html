@@ -2,32 +2,35 @@
 <html lang="fr">
 <head>
   <script>
-    // Interception défensive absolue des erreurs cross-origin ("Script error.") et rejets non gérés
+    // Interception défensive absolue des erreurs globales, cross-origin ("Script error.") et rejets
     window.onerror = function(msg, url, lineNo, columnNo, error) {
       // Retourner true empêche le signalement de l'erreur dans la console du navigateur ou le conteneur parent
       return true;
     };
 
     window.addEventListener('error', function(e) {
-      if (!e) return;
-      if (typeof e.preventDefault === 'function') e.preventDefault();
-      if (typeof e.stopPropagation === 'function') e.stopPropagation();
-      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      }
       return true;
     }, true);
 
     window.addEventListener('unhandledrejection', function(e) {
-      if (!e) return;
-      if (typeof e.preventDefault === 'function') e.preventDefault();
-      if (typeof e.stopPropagation === 'function') e.stopPropagation();
-      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      }
+      return true;
     });
   </script>
 
-  <!-- Scripts Firebase SDK Compat avec repli silencieux en cas d'indisponibilité réseau -->
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK non chargé');"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Auth SDK non chargé');"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Firestore SDK non chargé');"></script>
+  <!-- Scripts Firebase SDK Compat chargés de manière sécurisée -->
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -3904,12 +3907,17 @@
     </div>
   </div>
 
-  <!-- MODALE : Avertissement connexion anonyme -->
-  <div class="modal-backdrop" id="modal-avertissement-anonyme">
+  </div> <!-- Fin #app-wrapper -->
+
+  <!-- MODALE : Avertissement connexion anonyme (placée hors de #app-wrapper pour être accessible sur l'écran d'authentification) -->
+  <div class="modal-backdrop" id="modal-avertissement-anonyme" onclick="if(event.target===this) fermerAvertissementAnonyme()">
     <div class="modal-card" style="max-width: 480px;">
-      <div class="modal-title" style="color: #FFC107; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 18px;">
-        <span style="font-size: 24px;">⚠️</span>
-        <span>AVERTISSEMENT IMPORTANT</span>
+      <div class="modal-title" style="color: #FFC107; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; font-size: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">⚠️</span>
+          <span>AVERTISSEMENT IMPORTANT</span>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="fermerAvertissementAnonyme()" title="Fermer">✕</button>
       </div>
       
       <div style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 18px;">
@@ -3953,8 +3961,6 @@
     <span id="toast-icon">✅</span>
     <span id="toast-text">Action effectuée avec succès</span>
   </div>
-
-  </div> <!-- Fin #app-wrapper -->
 
   <!-- ==========================================================
        SCRIPTS JAVASCRIPT PUR : LOGIQUE, STOCKAGE & INTERACTION
@@ -4129,6 +4135,9 @@
      * 3. CONNEXION GOOGLE
      */
     function connexionGoogle() {
+      // S'assurer que la popup d'avertissement anonyme est fermée
+      fermerAvertissementAnonyme();
+
       const btn = document.getElementById('btn-auth-google');
       if (btn) {
         btn.disabled = true;
@@ -4515,6 +4524,10 @@
      * Bascule l'affichage vers l'écran de connexion
      */
     function afficherEcranConnexion() {
+      if (typeof fermerAvertissementAnonyme === 'function') {
+        fermerAvertissementAnonyme();
+      }
+
       const authScreen = document.getElementById('auth-screen');
       const completeScreen = document.getElementById('complete-profile-screen');
       const appWrapper = document.getElementById('app-wrapper');
@@ -5143,8 +5156,12 @@
       const mobileBtn = document.getElementById('dock-btn-' + pageId);
       if (mobileBtn) mobileBtn.classList.add('active');
 
-      // Défilement fluide vers le haut
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Défilement fluide vers le haut (sécurisé)
+      try {
+        if (typeof window.scrollTo === 'function') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } catch (scrollErr) {}
 
       // Actions spécifiques selon la page demandée
       if (pageId === 'accueil') {
