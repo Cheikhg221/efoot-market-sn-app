@@ -2971,6 +2971,188 @@
         font-size: 20px;
       }
     }
+
+    /* ==========================================================
+       FOOTER FIXE / BAS DE PAGE
+       ========================================================== */
+    .app-footer {
+      background: #1a1a1a;
+      border-top: 1px solid #333;
+      margin-top: 40px;
+      padding: 15px 0;
+      width: 100%;
+    }
+
+    .app-footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .app-footer-text {
+      color: #888888;
+      font-size: 12px;
+      margin: 0 0 8px 0;
+    }
+
+    .app-footer-links {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .app-footer-link {
+      background: none;
+      border: none;
+      color: #00C853;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+      padding: 3px 6px;
+      transition: color 0.15s ease;
+      display: inline-block;
+    }
+
+    .app-footer-link:hover {
+      color: #00E676;
+      text-decoration: underline;
+    }
+
+    .app-footer-sep {
+      color: #555555;
+      font-size: 12px;
+      user-select: none;
+    }
+
+    @media (max-width: 768px) {
+      .app-footer {
+        padding-bottom: 75px; /* Évite d'être masqué par la dock mobile fixe */
+      }
+    }
+
+    /* ==========================================================
+       PAGES LÉGALES (MENTIONS LÉGALES & CONFIDENTIALITÉ)
+       ========================================================== */
+    .legal-page-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 10px 0 40px 0;
+    }
+
+    .legal-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #2A2A2A;
+      border: 1px solid #383838;
+      color: #FFFFFF;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .legal-back-btn:hover {
+      background: #333333;
+      border-color: #00C853;
+      color: #00C853;
+      transform: translateX(-2px);
+    }
+
+    .legal-card {
+      background: #1E1E1E;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 32px 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .legal-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .legal-updated {
+      font-size: 13px;
+      color: #00C853;
+      font-weight: 500;
+      margin-bottom: 24px;
+      display: inline-block;
+    }
+
+    .legal-body h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #2e2e2e;
+      padding-bottom: 6px;
+    }
+
+    .legal-body h3 {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #E0E0E0;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    .legal-body p {
+      color: #CCCCCC;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .legal-body ul {
+      color: #CCCCCC;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 14px;
+      padding-left: 22px;
+    }
+
+    .legal-body li {
+      margin-bottom: 6px;
+    }
+
+    .legal-body a {
+      color: #00C853;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .legal-body a:hover {
+      text-decoration: underline;
+    }
+
+    .legal-body strong {
+      color: #FFFFFF;
+    }
+
+    @media (max-width: 600px) {
+      .legal-card {
+        padding: 22px 16px;
+      }
+      .legal-title {
+        font-size: 20px;
+      }
+      .legal-body h2 {
+        font-size: 16px;
+      }
+    }
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -3749,7 +3931,259 @@
       </div>
     </section>
 
+    <!-- --------------------------------------------------------
+         PAGE 8 : MENTIONS LÉGALES
+         -------------------------------------------------------- -->
+    <section id="page-mentions-legales" class="page-view">
+      <div class="legal-page-container">
+        <button type="button" class="legal-back-btn" onclick="retournerPagePrecedente()">
+          <span>←</span> <span>Retour</span>
+        </button>
+
+        <div class="legal-card">
+          <h1 class="legal-title">MENTIONS LÉGALES</h1>
+          <span class="legal-updated">Dernière mise à jour : 16 septembre 2026</span>
+
+          <div class="legal-body">
+            <h2>1. Éditeur du site</h2>
+            <p>
+              Le site <strong>EFoot Market SN</strong> accessible à l'adresse 
+              <a href="https://efootmarketsn.store" target="_blank" rel="noopener"><strong>https://efootmarketsn.store</strong></a> est édité par :
+            </p>
+            <ul>
+              <li><strong>Statut</strong> : Particulier / Auto-entrepreneur</li>
+              <li><strong>Adresse</strong> : Dakar, Sénégal</li>
+              <li><strong>Email</strong> : <a href="mailto:efootmarketsn@gmail.com">efootmarketsn@gmail.com</a></li>
+            </ul>
+
+            <h2>2. Hébergement</h2>
+            <p>Le site est hébergé gratuitement par :</p>
+            <ul>
+              <li><strong>GitHub Pages</strong></li>
+              <li><strong>Adresse</strong> : 88 Colin P Kelly Jr St, San Francisco, CA 94107, États-Unis</li>
+              <li><strong>Site web</strong> : <a href="https://pages.github.com" target="_blank" rel="noopener">https://pages.github.com</a></li>
+            </ul>
+            <p>La base de données est hébergée par :</p>
+            <ul>
+              <li><strong>Google Firebase</strong></li>
+              <li><strong>Adresse</strong> : 1600 Amphitheatre Parkway, Mountain View, CA 94043, États-Unis</li>
+              <li><strong>Site web</strong> : <a href="https://firebase.google.com" target="_blank" rel="noopener">https://firebase.google.com</a></li>
+            </ul>
+
+            <h2>3. Nature de l'activité</h2>
+            <p>
+              EFoot Market SN est une <strong>plateforme de mise en relation</strong> entre 
+              utilisateurs. Elle permet à des particuliers d'acheter et de vendre 
+              des comptes de jeux de football (type eFootball, PES).
+            </p>
+            <p>EFoot Market SN :</p>
+            <ul>
+              <li>N'est <strong>PAS</strong> un vendeur de comptes</li>
+              <li>N'est <strong>PAS</strong> affilié à Konami, ou à aucun éditeur de jeux vidéo</li>
+              <li>N'intervient <strong>PAS</strong> dans les transactions financières entre utilisateurs</li>
+              <li>N'est <strong>PAS</strong> responsable des transactions effectuées entre utilisateurs</li>
+            </ul>
+
+            <h2>4. Propriété intellectuelle</h2>
+            <p>
+              Les marques, logos et noms de jeux cités sur ce site sont la propriété 
+              exclusive de leurs détenteurs respectifs.
+            </p>
+            <p>
+              L'utilisateur s'engage à ne pas publier de contenu violant les droits 
+              d'auteur ou les marques déposées.
+            </p>
+
+            <h2>5. Responsabilité</h2>
+            <p>EFoot Market SN ne peut être tenu responsable :</p>
+            <ul>
+              <li>Du contenu publié par les utilisateurs</li>
+              <li>Des transactions effectuées entre utilisateurs</li>
+              <li>Des éventuels litiges entre acheteurs et vendeurs</li>
+              <li>De la suspension ou bannissement des comptes par les éditeurs de jeux</li>
+            </ul>
+
+            <h2>6. Droit applicable</h2>
+            <p>
+              Les présentes mentions légales sont soumises au droit sénégalais.
+            </p>
+            <p>
+              En cas de litige, les tribunaux compétents seront ceux de Dakar, Sénégal.
+            </p>
+
+            <h2>7. Contact</h2>
+            <p>
+              Pour toute question : <a href="mailto:efootmarketsn@gmail.com">efootmarketsn@gmail.com</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
+         PAGE 9 : POLITIQUE DE CONFIDENTIALITÉ
+         -------------------------------------------------------- -->
+    <section id="page-politique-confidentialite" class="page-view">
+      <div class="legal-page-container">
+        <button type="button" class="legal-back-btn" onclick="retournerPagePrecedente()">
+          <span>←</span> <span>Retour</span>
+        </button>
+
+        <div class="legal-card">
+          <h1 class="legal-title">POLITIQUE DE CONFIDENTIALITÉ</h1>
+          <span class="legal-updated">Dernière mise à jour : 16 septembre 2026</span>
+
+          <div class="legal-body">
+            <h2>1. Introduction</h2>
+            <p>
+              EFoot Market SN accorde une grande importance à la protection de vos 
+              données personnelles. Cette politique explique quelles données nous 
+              collectons et comment nous les utilisons.
+            </p>
+
+            <h2>2. Données collectées</h2>
+            <p>
+              Nous collectons uniquement les données nécessaires au fonctionnement 
+              du service :
+            </p>
+
+            <h3>a) Lors de la connexion Google</h3>
+            <ul>
+              <li>Nom et prénom (via Google)</li>
+              <li>Adresse email (via Google)</li>
+              <li>Photo de profil (via Google)</li>
+            </ul>
+
+            <h3>b) Lors de la complétion du profil</h3>
+            <ul>
+              <li>Prénom</li>
+              <li>Nom</li>
+              <li>Numéro de téléphone</li>
+              <li>Localisation (région du Sénégal)</li>
+              <li>Photo de profil (optionnelle)</li>
+            </ul>
+
+            <h3>c) Lors de la publication d'annonces</h3>
+            <ul>
+              <li>Titre et description de l'annonce</li>
+              <li>Prix en FCFA</li>
+              <li>Photos du compte (uploadées par vous)</li>
+              <li>Plateforme (PS4, PS5, Xbox, Mobile)</li>
+              <li>Type de compte et puissance d'équipe</li>
+              <li>Numéro WhatsApp de contact</li>
+            </ul>
+
+            <h3>d) Lors des transactions</h3>
+            <ul>
+              <li>Historique des demandes d'achat</li>
+              <li>Avis et notes échangés</li>
+              <li>Messages internes</li>
+            </ul>
+
+            <h2>3. Utilisation des données</h2>
+            <p>Vos données sont utilisées pour :</p>
+            <ul>
+              <li>Permettre la mise en relation entre acheteurs et vendeurs</li>
+              <li>Afficher vos annonces aux autres utilisateurs</li>
+              <li>Faciliter les transactions entre utilisateurs</li>
+              <li>Améliorer le service</li>
+              <li>Assurer la sécurité de la plateforme</li>
+            </ul>
+
+            <h2>4. Stockage des données</h2>
+            <p>Vos données sont stockées de manière sécurisée sur :</p>
+            <ul>
+              <li><strong>Google Firebase</strong> (Firestore Database)</li>
+              <li>Serveurs situés en Europe (Francfort)</li>
+            </ul>
+            <p>Les données sont chiffrées en transit (HTTPS) et au repos.</p>
+
+            <h2>5. Partage des données</h2>
+            <p>
+              Nous ne vendons NI ne partageons vos données personnelles avec des tiers.
+            </p>
+            <p>Exceptions :</p>
+            <ul>
+              <li>Vos annonces sont publiques (visibles par tous)</li>
+              <li>Votre numéro WhatsApp est visible dans vos annonces pour être contacté</li>
+              <li>En cas d'obligation légale</li>
+            </ul>
+
+            <h2>6. Cookies et stockage local</h2>
+            <p>EFoot Market SN utilise :</p>
+            <ul>
+              <li><strong>Cookies de session</strong> (via Firebase Authentication)</li>
+              <li><strong>localStorage</strong> (pour sauvegarder vos préférences locales)</li>
+              <li><strong>Aucun cookie publicitaire</strong></li>
+              <li><strong>Aucun cookie de tracking tiers</strong></li>
+            </ul>
+
+            <h2>7. Vos droits</h2>
+            <p>
+              Conformément aux lois sur la protection des données, vous avez le droit :
+            </p>
+            <ul>
+              <li>D'accéder à vos données</li>
+              <li>De modifier vos données</li>
+              <li>De supprimer votre compte</li>
+              <li>De supprimer vos annonces</li>
+              <li>De demander une copie de vos données</li>
+            </ul>
+            <p>
+              Pour exercer ces droits : <a href="mailto:efootmarketsn@gmail.com">efootmarketsn@gmail.com</a>
+            </p>
+
+            <h2>8. Sécurité</h2>
+            <p>Nous mettons en place les mesures suivantes :</p>
+            <ul>
+              <li>Authentification sécurisée (Firebase Auth)</li>
+              <li>Communication chiffrée (HTTPS)</li>
+              <li>Règles de sécurité Firestore</li>
+              <li>Accès limité aux données personnelles</li>
+            </ul>
+
+            <h2>9. Mineurs</h2>
+            <p>
+              EFoot Market SN est déconseillé aux personnes de moins de 15 ans.
+              Nous ne collectons pas sciemment de données de mineurs.
+            </p>
+
+            <h2>10. Modifications</h2>
+            <p>
+              Cette politique peut être modifiée à tout moment. Les utilisateurs 
+              seront informés en cas de changement majeur.
+            </p>
+
+            <h2>11. Contact</h2>
+            <p>Pour toute question concernant vos données personnelles :</p>
+            <ul>
+              <li>Email : <a href="mailto:efootmarketsn@gmail.com">efootmarketsn@gmail.com</a></li>
+              <li>WhatsApp : Assistance disponible directement via la messagerie et les annonces de la plateforme</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
+
+  <!-- ==========================================================
+       PIED DE PAGE (FOOTER FIXE / BAS DE PAGE)
+       ========================================================== -->
+  <footer class="app-footer">
+    <div class="app-footer-inner">
+      <p class="app-footer-text">
+        © 2026 EFoot Market SN
+      </p>
+      <div class="app-footer-links">
+        <button type="button" class="app-footer-link" onclick="changerPage('mentions-legales')">Mentions légales</button>
+        <span class="app-footer-sep">•</span>
+        <button type="button" class="app-footer-link" onclick="changerPage('politique-confidentialite')">Politique de confidentialité</button>
+        <span class="app-footer-sep">•</span>
+        <a href="mailto:efootmarketsn@gmail.com" class="app-footer-link">Contact</a>
+      </div>
+    </div>
+  </footer>
 
   <!-- ==========================================================
        MODALE DE COMPLÉTION / MODIFICATION DU PROFIL
@@ -5281,10 +5715,17 @@
        SECTION 4 : NAVIGATION ENTRE LES ONGLETS (SPA)
        ========================================================== */
 
+    let dernierePagePrecedente = 'accueil';
+
     /**
      * Change la page active et met à jour les indicateurs visuels des menus
      */
     function changerPage(pageId, params = {}) {
+      // Sauvegarder la page précédente pour le bouton retour des pages légales
+      if (typeof currentPage !== 'undefined' && currentPage && currentPage !== 'mentions-legales' && currentPage !== 'politique-confidentialite') {
+        dernierePagePrecedente = currentPage;
+      }
+
       // Masquer toutes les vues
       document.querySelectorAll('.page-view').forEach(view => {
         view.classList.remove('active');
@@ -5339,9 +5780,18 @@
       } else if (pageId === 'transactions') {
         nettoyerHashAnnonce();
         afficherMesTransactions();
+      } else if (pageId === 'mentions-legales' || pageId === 'politique-confidentialite') {
+        nettoyerHashAnnonce();
       }
 
       mettreAJourBadgeTransactions();
+    }
+
+    /**
+     * Retourne à la page précédente avant la consultation des pages légales
+     */
+    function retournerPagePrecedente() {
+      changerPage(dernierePagePrecedente || 'accueil');
     }
 
     /**
