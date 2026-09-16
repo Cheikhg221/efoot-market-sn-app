@@ -6856,139 +6856,114 @@
         };
       }
       
-      // 1. Fusionner toutes les sources d'avis
+      // 1. Fusionner toutes les sources
       const avisLocaux = getAvis();
       const avisFirestore = (typeof avisFirestoreCache !== 'undefined' && avisFirestoreCache) 
         ? avisFirestoreCache 
         : [];
       
       const tousAvis = [];
-      const idsVus = new Set();
+      const signaturesVues = new Set();  // Détection par signature unique
       
+      // Fonction pour générer une signature unique d'un avis
+      function genererSignature(avis) {
+        // Utiliser transactionId + acheteurId + note comme clé unique
+        return (
+          (avis.transactionId || 'no_tx') + '|' +
+          (avis.acheteurId || avis.acheteurNom || 'no_acheteur') + '|' +
+          (avis.note || 5)
+        );
+      }
+      
+      // 2. Ajouter les avis Firestore en PRIORITÉ
       avisFirestore.forEach(function(a) {
-        if (a.id && !idsVus.has(a.id)) {
+        var signature = genererSignature(a);
+        if (!signaturesVues.has(signature)) {
           tousAvis.push(a);
-          idsVus.add(a.id);
+          signaturesVues.add(signature);
         }
       });
       
+      // 3. Ajouter les avis locaux SEULEMENT s'ils ne sont pas déjà présents
       avisLocaux.forEach(function(a) {
-        if (a.id && !idsVus.has(a.id)) {
+        var signature = genererSignature(a);
+        if (!signaturesVues.has(signature)) {
           tousAvis.push(a);
-          idsVus.add(a.id);
-        } else if (!a.id) {
-          const existeDeja = tousAvis.some(function(x) {
-            return x.transactionId === a.transactionId && 
-                   x.acheteurNom === a.acheteurNom &&
-                   x.note === a.note;
-          });
-          if (!existeDeja) tousAvis.push(a);
+          signaturesVues.add(signature);
         }
       });
       
-      // 2. NORMALISER l'identifiant recherché
+      // 4. Normaliser l'identifiant
       const identifiantNorm = String(vendeurIdentifiant).trim().toLowerCase();
-      
-      // Extraire le prénom (premier mot)
       const parties = identifiantNorm.split(/\s+/);
       const prenomNorm = parties[0] || "";
-      
-      // Retirer le préfixe "vendeur_" si présent
       const identifiantSansPrefixe = identifiantNorm.replace(/^vendeur_/, "").replace(/_/g, " ");
       const partiesSansPrefixe = identifiantSansPrefixe.split(/\s+/);
       const prenomSansPrefixe = partiesSansPrefixe[0] || "";
       
-      console.log("🔍 getNoteEtAvisVendeur(" + vendeurIdentifiant + ")");
-      console.log("   Prénom normalisé :", prenomNorm);
-      console.log("   Prénom sans préfixe :", prenomSansPrefixe);
-      console.log("   Total avis disponibles :", tousAvis.length);
-      
-      // 3. Filtrer avec PLUSIEURS critères (correspondances larges)
+      // 5. Filtrer par vendeur
       const avisVendeur = tousAvis.filter(function(a) {
         const aVendeurId = (a.vendeurId || "").trim();
         const aVendeurNom = (a.vendeurNom || a.vendeur || "").trim().toLowerCase();
         const aVendeurNomSansPrefixe = aVendeurNom.replace(/^vendeur_/, "").replace(/_/g, " ");
         
-        // 1. Correspondance exacte par UID Firebase
-        if (aVendeurId && aVendeurId === vendeurIdentifiant) {
-          return true;
-        }
+        if (aVendeurId && aVendeurId === vendeurIdentifiant) return true;
+        if (aVendeurNom === identifiantNorm) return true;
+        if (aVendeurNomSansPrefixe === identifiantSansPrefixe) return true;
         
-        // 2. Correspondance exacte du nom complet
-        if (aVendeurNom === identifiantNorm) {
-          return true;
-        }
-        
-        // 3. Correspondance avec le nom sans préfixe
-        if (aVendeurNomSansPrefixe === identifiantSansPrefixe) {
-          return true;
-        }
-        
-        // 4. Correspondance par prénom (pour gérer "Cheikh G." vs "Cheikh Gueye")
         if (prenomNorm && prenomNorm.length >= 3) {
-          if (aVendeurNom.startsWith(prenomNorm + " ")) {
-            return true;
-          }
-          if (aVendeurNomSansPrefixe.startsWith(prenomNorm + " ")) {
-            return true;
-          }
+          if (aVendeurNom.startsWith(prenomNorm + " ")) return true;
+          if (aVendeurNomSansPrefixe.startsWith(prenomNorm + " ")) return true;
         }
         
-        // 5. Correspondance par prénom sans préfixe
         if (prenomSansPrefixe && prenomSansPrefixe.length >= 3 && prenomSansPrefixe !== prenomNorm) {
-          if (aVendeurNom.startsWith(prenomSansPrefixe + " ")) {
-            return true;
-          }
+          if (aVendeurNom.startsWith(prenomSansPrefixe + " ")) return true;
         }
         
         return false;
       });
       
-      console.log("   ✅ Avis trouvés :", avisVendeur.length);
+      // 6. DEUXIÈME PASSAGE : Éliminer les doublons restants par comparaison
+      const avisUniques = [];
+      const signaturesFinales = new Set();
       
-      // FALLBACK : Si aucun avis trouvé, chercher par vendeurPrenom
-      if (avisVendeur.length === 0 && vendeurIdentifiant) {
-        const prenom = String(vendeurIdentifiant).trim().split(/\s+/)[0].toLowerCase();
-        const avisParPrenom = tousAvis.filter(function(a) {
-          const aPrenom = (a.vendeurPrenom || '').toLowerCase();
-          const aNom = (a.vendeurNom || a.vendeur || '').toLowerCase();
-          return aPrenom === prenom || aNom.startsWith(prenom + ' ');
-        });
-        
-        if (avisParPrenom.length > 0) {
-          avisVendeur.push(...avisParPrenom);
-        }
-      }
-
-      const statsEtoiles = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
       avisVendeur.forEach(function(a) {
+        var signature = genererSignature(a);
+        if (!signaturesFinales.has(signature)) {
+          avisUniques.push(a);
+          signaturesFinales.add(signature);
+        }
+      });
+      
+      const statsEtoiles = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      avisUniques.forEach(function(a) {
         const n = Math.min(5, Math.max(1, Math.round(Number(a.note) || 5)));
         statsEtoiles[n] = (statsEtoiles[n] || 0) + 1;
       });
       
-      if (avisVendeur.length === 0) {
+      if (avisUniques.length === 0) {
         return {
           noteMoyenne: 0, noteTotale: 0, totalAvis: 0, nombreAvis: 0,
           badge: "nouveau", avis: [], statsEtoiles: statsEtoiles
         };
       }
       
-      const somme = avisVendeur.reduce(function(acc, a) {
+      const somme = avisUniques.reduce(function(acc, a) {
         return acc + (Number(a.note) || 5);
       }, 0);
-      const moyenne = Number((somme / avisVendeur.length).toFixed(1));
+      const moyenne = Number((somme / avisUniques.length).toFixed(1));
       const badge = calculerBadge({ 
-        nombreAvis: avisVendeur.length, 
+        nombreAvis: avisUniques.length, 
         noteMoyenne: moyenne 
       });
       
       return {
         noteMoyenne: moyenne,
         noteTotale: somme,
-        totalAvis: avisVendeur.length,
-        nombreAvis: avisVendeur.length,
+        totalAvis: avisUniques.length,
+        nombreAvis: avisUniques.length,
         badge: badge,
-        avis: avisVendeur.sort(function(a, b) {
+        avis: avisUniques.sort(function(a, b) {
           const dateA = a.dateCreation ? 
             (a.dateCreation.toDate ? a.dateCreation.toDate() : new Date(a.dateCreation)) : 
             (a.date ? new Date(a.date) : new Date(0));
