@@ -5497,17 +5497,17 @@
             <div class="card-media">
               ${mediaHtml}
               <div class="card-platform-badge">
-                <span>🎮</span>
-                <span>${ad.plateforme}</span>
+                <span>${(ad.plateforme && (ad.plateforme.toLowerCase().includes('mobile') || ad.plateforme.toLowerCase().includes('android') || ad.plateforme.toLowerCase().includes('ios'))) ? '📱' : '🎮'}</span>
+                <span>${escapeHtml(ad.plateforme || 'Mobile')}</span>
               </div>
-              ${ad.typeCompte ? `<div class="card-type-badge">${ad.typeCompte}</div>` : ''}
+              ${(ad.typeCompte && ad.typeCompte.toLowerCase() !== (ad.plateforme || '').toLowerCase() && ad.typeCompte !== 'Standard' && ad.typeCompte !== 'Console') ? `<div class="card-type-badge">${escapeHtml(ad.typeCompte)}</div>` : ''}
               ${(ad.statut === 'vendue' || ad.statut === 'VENDU') ? `<div style="position: absolute; top: 10px; right: 10px; background: #F44336; color: white; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🔴 VENDU</div>` : ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS') ? `<div style="position: absolute; top: 10px; right: 10px; background: #FFC107; color: black; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🟡 En cours</div>` : '')}
             </div>
             <div class="card-body">
-              <h3 class="card-title">${ad.titre}</h3>
+              <h3 class="card-title">${escapeHtml(ad.titre || 'Compte eFootball')}</h3>
               <div class="card-price-row">
                 <div class="card-price">${formaterPrix(ad.prix)}</div>
-                ${ad.puissance ? `<div class="card-power-badge">💪 ${ad.puissance}</div>` : ''}
+                ${ad.puissance ? `<div class="card-power-badge">💪 ${escapeHtml(String(ad.puissance))}</div>` : ''}
               </div>
               <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}', '${ad.vendeurId || ''}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);" title="Voir le profil et les avis de ${ad.vendeur}">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -6128,10 +6128,10 @@
 
           <div class="detail-badges-row">
             ${estVendue ? `<span class="badge-pill" style="color: #fff; background: #F44336; font-weight: 700;">🔴 VENDU</span>` : ''}
-            <span class="badge-pill primary">🎮 ${escapeHtml(ad.plateforme || 'Mobile')}</span>
+            <span class="badge-pill primary">${(ad.plateforme && (ad.plateforme.toLowerCase().includes('mobile') || ad.plateforme.toLowerCase().includes('android') || ad.plateforme.toLowerCase().includes('ios'))) ? '📱' : '🎮'} ${escapeHtml(ad.plateforme || 'Mobile')}</span>
             <span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.12); border: 1px solid rgba(33, 150, 243, 0.25);">📍 ${escapeHtml(ad.region || 'Dakar')}</span>
             ${ad.puissance ? `<span class="badge-pill" style="color: var(--primary); background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">💪 ${escapeHtml(String(ad.puissance))}</span>` : ''}
-            ${ad.typeCompte ? `<span class="badge-pill">💎 ${escapeHtml(ad.typeCompte)}</span>` : ''}
+            ${(ad.typeCompte && ad.typeCompte.toLowerCase() !== (ad.plateforme || '').toLowerCase() && ad.typeCompte !== 'Standard' && ad.typeCompte !== 'Console') ? `<span class="badge-pill">💎 ${escapeHtml(ad.typeCompte)}</span>` : ''}
           </div>
 
           <h1 class="detail-title" style="${estVendue ? 'color: #aaa;' : ''}">${escapeHtml(ad.titre || 'Compte eFootball')}</h1>
