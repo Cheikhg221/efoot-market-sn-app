@@ -168,6 +168,22 @@
       user-select: none;
     }
 
+    .logo-brand img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      border-radius: 50%;
+      background: #1a1a1a;
+      padding: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      border: 1px solid rgba(0, 200, 83, 0.25);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      flex-shrink: 0;
+    }
+
     .logo-brand .logo-icon {
       font-size: 22px;
     }
@@ -2436,6 +2452,18 @@
       filter: drop-shadow(0 6px 18px rgba(0, 200, 83, 0.35));
     }
 
+    .auth-logo img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      border-radius: 50%;
+      background: #1a1a1a;
+      padding: 10px;
+      border: 2px solid rgba(0, 200, 83, 0.35);
+      box-shadow: 0 8px 24px rgba(0, 200, 83, 0.25), 0 2px 10px rgba(0, 0, 0, 0.6);
+      display: inline-block;
+    }
+
     .auth-title {
       font-size: 26px;
       font-weight: 800;
@@ -2639,6 +2667,11 @@
       .logo-brand {
         font-size: 14.5px;
         gap: 5px;
+      }
+      .logo-brand img {
+        width: 32px;
+        height: 32px;
+        padding: 3px;
       }
       .user-pill {
         font-size: 11px;
@@ -2924,7 +2957,7 @@
   <div id="auth-screen" class="auth-screen" style="display: flex;">
     <div class="auth-card">
       <div class="auth-logo" style="text-align: center; font-size: 0;">
-        <img src="/logo.png" alt="EFoot Market SN" style="width: 100px; height: 100px; object-fit: contain;">
+        <img src="/logo.png" alt="EFoot Market SN">
       </div>
       <h1 class="auth-title">EFOOT MARKET <span class="logo-accent">SN</span></h1>
       <p class="auth-subtitle">Marketplace de comptes eFootball au Sénégal</p>
@@ -3061,7 +3094,7 @@
     <header class="header-nav">
       <div class="nav-left">
         <div class="logo-brand" onclick="changerPage('accueil')">
-          <img src="/logo.png" alt="EFoot Market SN" style="height: 40px; width: 40px; object-fit: contain; vertical-align: middle;">
+          <img src="/logo.png" alt="EFoot Market SN">
           <span>EFoot <span class="logo-market-text">Market </span><span class="logo-accent">SN</span></span>
         </div>
 
