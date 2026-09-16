@@ -2224,7 +2224,11 @@
     }
 
     .modal-backdrop.active {
-      display: flex;
+      display: flex !important;
+    }
+
+    #modal-avertissement-anonyme {
+      z-index: 2000000 !important;
     }
 
     .modal-card {
@@ -2274,7 +2278,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      z-index: 3000;
+      z-index: 3000000;
       opacity: 0;
       visibility: hidden;
       transition: all 0.25s ease-in-out;
@@ -2362,7 +2366,7 @@
       right: 0;
       bottom: 0;
       background-color: #121212;
-      z-index: 999999;
+      z-index: 1500;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3910,7 +3914,7 @@
   </div> <!-- Fin #app-wrapper -->
 
   <!-- MODALE : Avertissement connexion anonyme (placée hors de #app-wrapper pour être accessible sur l'écran d'authentification) -->
-  <div class="modal-backdrop" id="modal-avertissement-anonyme" onclick="if(event.target===this) fermerAvertissementAnonyme()">
+  <div class="modal-backdrop" id="modal-avertissement-anonyme" style="z-index: 2000000;" onclick="if(event.target===this) fermerAvertissementAnonyme()">
     <div class="modal-card" style="max-width: 480px;">
       <div class="modal-title" style="color: #FFC107; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; font-size: 18px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -4075,12 +4079,19 @@
 
     function afficherAvertissementAnonyme() {
       const modal = document.getElementById('modal-avertissement-anonyme');
-      if (modal) modal.classList.add('active');
+      if (modal) {
+        modal.classList.add('active');
+        console.log("Popup anonyme affichée");
+      } else {
+        console.error("Modale introuvable !");
+      }
     }
 
     function fermerAvertissementAnonyme() {
       const modal = document.getElementById('modal-avertissement-anonyme');
-      if (modal) modal.classList.remove('active');
+      if (modal) {
+        modal.classList.remove('active');
+      }
     }
 
     function confirmerConnexionAnonyme() {
@@ -4090,6 +4101,12 @@
       // Procéder à la connexion anonyme
       executerConnexionAnonyme();
     }
+
+    // Export explicite sur window pour compatibilité absolue avec les gestionnaires onclick
+    window.connexionAnonyme = connexionAnonyme;
+    window.afficherAvertissementAnonyme = afficherAvertissementAnonyme;
+    window.fermerAvertissementAnonyme = fermerAvertissementAnonyme;
+    window.confirmerConnexionAnonyme = confirmerConnexionAnonyme;
 
     // Nouvelle fonction interne qui fait le travail réel
     function executerConnexionAnonyme() {
@@ -4130,6 +4147,7 @@
           alert("Erreur de connexion : " + error.message);
         });
     }
+    window.executerConnexionAnonyme = executerConnexionAnonyme;
 
     /**
      * 3. CONNEXION GOOGLE
@@ -4188,6 +4206,7 @@
           alert("Erreur de connexion Google : " + error.message);
         });
     }
+    window.connexionGoogle = connexionGoogle;
 
     /**
      * 4. VÉRIFICATION DE SESSION AU CHARGEMENT
