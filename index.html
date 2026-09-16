@@ -101,24 +101,6 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/logo.png">
   <meta name="theme-color" content="#00C853">
 
-  <!-- Données structurées Schema.org JSON-LD -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "EFoot Market SN",
-    "url": "https://efootmarketsn.store/",
-    "applicationCategory": "ShoppingApplication",
-    "operatingSystem": "All",
-    "description": "La marketplace n°1 au Sénégal pour acheter et vendre des comptes eFootball en toute sécurité.",
-    "image": "https://efootmarketsn.store/logo.png",
-    "author": {
-      "@type": "Organization",
-      "name": "EFoot Market SN"
-    }
-  }
-  </script>
-
   <!-- Police Google Fonts : Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2990,6 +2972,39 @@
       }
     }
   </style>
+
+  <!-- Données structurées Schema.org (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "EFoot Market SN",
+    "url": "https://efootmarketsn.store/",
+    "description": "Marketplace de comptes eFootball au Sénégal",
+    "inLanguage": "fr-SN",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://efootmarketsn.store/?search={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "EFoot Market SN",
+    "url": "https://efootmarketsn.store/",
+    "logo": "https://efootmarketsn.store/logo.png",
+    "description": "Marketplace de comptes eFootball au Sénégal",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "SN",
+      "addressLocality": "Dakar"
+    }
+  }
+  </script>
 </head>
 <body>
 
