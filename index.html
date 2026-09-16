@@ -8511,17 +8511,12 @@
             <div style="font-weight: 700; color: #60a5fa; margin-bottom: 6px; font-size: 13.5px;">
               🎉 Le vendeur a accepté votre demande !
             </div>
-            <div style="font-size: 13px; color: #fff; margin-bottom: 14px; line-height: 1.4;">
-              <strong>📦 Avez-vous reçu le compte ?</strong><br>
-              <span style="font-size: 12px; color: #bbb;">Vérifiez que les identifiants Konami ID et le mot de passe fonctionnent bien.</span>
+            <div style="font-size: 13px; color: #fff; margin-bottom: 14px; line-height: 1.5;">
+              💬 <strong>Contactez le vendeur sur WhatsApp</strong> pour recevoir vos identifiants Konami ID.<br>
+              <span style="font-size: 12px; color: #bbb;">Une fois le compte reçu, vous pourrez confirmer la réception.</span>
             </div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 16px; font-size: 13px;" onclick="demanderConfirmationLivraison('${maTx.id}')">
-                📦 Oui, j'ai reçu le compte
-              </button>
-              <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 12.5px;" onclick="rappelerAttenteLivraison('${maTx.id}')">
-                Non, pas encore
-              </button>
+            <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 8px; padding: 10px; font-size: 12px; color: #93c5fd; margin-bottom: 12px;">
+              ⏳ En attente du marquage "VENDU" par le vendeur. Les options de confirmation apparaîtront ensuite.
             </div>
           </div>
         `;
@@ -8927,20 +8922,18 @@
                   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
                       <div style="font-weight: 700; color: #60a5fa; font-size: 13.5px;">🎉 Le vendeur a accepté votre demande !</div>
-                      <div style="font-size: 12px; color: #fff; margin-top: 2px;">
-                        Contactez le vendeur sur WhatsApp pour recevoir vos identifiants Konami ID, puis confirmez la réception.
+                      <div style="font-size: 12px; color: #fff; margin-top: 4px;">
+                        Contactez le vendeur sur WhatsApp pour recevoir vos identifiants.
+                      </div>
+                      <div style="font-size: 11.5px; color: #93c5fd; margin-top: 6px;">
+                        ⏳ En attente du marquage "VENDU" par le vendeur.
                       </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                      ${waLink ? `
-                        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #25D366; color: #fff; font-weight: 700; padding: 8px 14px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                          <span>💬 WhatsApp</span>
-                        </a>
-                      ` : ''}
-                      <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12px;" onclick="confirmerReceptionCompte('${d.id}')">
-                        📦 Confirmer réception
-                      </button>
-                    </div>
+                    ${waLink ? `
+                      <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #25D366; color: #fff; font-weight: 700; padding: 8px 14px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>💬 WhatsApp</span>
+                      </a>
+                    ` : ''}
                   </div>
                 </div>
               `;
@@ -10415,23 +10408,14 @@
               <div class="tx-banner-left">
                 <span class="tx-status-badge ACCEPTEE">🔵 Vente acceptée</span>
                 <div class="tx-banner-info">
-                  <div class="tx-banner-title">📦 Avez-vous reçu le compte eFootball ?</div>
-                  <div class="tx-banner-sub">Vérifiez la connexion avec le Konami ID fourni par le vendeur avant de confirmer.</div>
+                  <div class="tx-banner-title">🎉 Le vendeur a accepté votre demande !</div>
+                  <div class="tx-banner-sub">Échangez avec le vendeur pour recevoir vos identifiants. En attente du marquage "VENDU".</div>
                 </div>
               </div>
               <div class="tx-banner-actions">
-                ${maTx ? `
-                  <button class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; font-size: 11.5px; padding: 6px 14px;" onclick="demanderConfirmationLivraison('${maTx.id}')">
-                    📦 Oui, j'ai reçu le compte
-                  </button>
-                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="rappelerAttenteLivraison('${maTx.id}')">
-                    Non, pas encore
-                  </button>
-                ` : `
-                  <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions')">
-                    Suivre la transaction
-                  </button>
-                `}
+                <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions', { filtre: 'achats' })">
+                  📋 Mes transactions
+                </button>
               </div>
             `;
           } else {
