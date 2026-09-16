@@ -2,6 +2,40 @@
 <html lang="fr">
 <head>
   <script>
+    // Protection universelle contre les erreurs de conversion de structures circulaires en JSON
+    (function() {
+      var originalStringify = JSON.stringify;
+      JSON.stringify = function(value, replacer, space) {
+        try {
+          return originalStringify.apply(this, arguments);
+        } catch (err) {
+          if (err instanceof TypeError && /circular|cyclic/i.test(err.message)) {
+            try {
+              var seen = new WeakSet();
+              return originalStringify.call(this, value, function(key, val) {
+                if (typeof val === 'object' && val !== null) {
+                  if (seen.has(val)) {
+                    return undefined;
+                  }
+                  seen.add(val);
+                }
+                if (typeof replacer === 'function') {
+                  return replacer.call(this, key, val);
+                }
+                if (Array.isArray(replacer) && key !== '' && !replacer.includes(key)) {
+                  return undefined;
+                }
+                return val;
+              }, space);
+            } catch (fallbackErr) {
+              return Array.isArray(value) ? '[]' : '{}';
+            }
+          }
+          throw err;
+        }
+      };
+    })();
+
     // Interception défensive absolue des erreurs globales, cross-origin ("Script error.") et rejets
     window.onerror = function(msg, url, lineNo, columnNo, error) {
       // Retourner true empêche le signalement de l'erreur dans la console du navigateur ou le conteneur parent
@@ -36,6 +70,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EFoot Market SN - Marketplace de Comptes eFootball au Sénégal</title>
   <meta name="description" content="Achetez et vendez des comptes eFootball au Sénégal en toute sécurité avec EFoot Market SN.">
+
+  <!-- Favicon et icônes de l'application -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/logo.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/logo.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo.png">
+  <meta name="theme-color" content="#00C853">
 
   <!-- Police Google Fonts : Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2883,7 +2923,9 @@
        ========================================================== -->
   <div id="auth-screen" class="auth-screen" style="display: flex;">
     <div class="auth-card">
-      <div class="auth-logo">⚽</div>
+      <div class="auth-logo" style="text-align: center; font-size: 0;">
+        <img src="/logo.png" alt="EFoot Market SN" style="width: 100px; height: 100px; object-fit: contain;">
+      </div>
       <h1 class="auth-title">EFOOT MARKET <span class="logo-accent">SN</span></h1>
       <p class="auth-subtitle">Marketplace de comptes eFootball au Sénégal</p>
 
@@ -3019,7 +3061,7 @@
     <header class="header-nav">
       <div class="nav-left">
         <div class="logo-brand" onclick="changerPage('accueil')">
-          <span class="logo-icon">⚽</span>
+          <img src="/logo.png" alt="EFoot Market SN" style="height: 40px; width: 40px; object-fit: contain; vertical-align: middle;">
           <span>EFoot <span class="logo-market-text">Market </span><span class="logo-accent">SN</span></span>
         </div>
 
@@ -6587,7 +6629,11 @@
      * Enregistre la liste des avis
      */
     function setAvis(liste) {
-      localStorage.setItem(STORAGE_AVIS, JSON.stringify(liste));
+      try {
+        localStorage.setItem(STORAGE_AVIS, JSON.stringify(liste));
+      } catch (e) {
+        console.warn("Erreur sauvegarde locale avis :", e);
+      }
     }
 
     /**
@@ -6738,7 +6784,11 @@
      * Enregistre la liste des transactions
      */
     function setTransactions(liste) {
-      localStorage.setItem(STORAGE_TRANSACTIONS, JSON.stringify(liste));
+      try {
+        localStorage.setItem(STORAGE_TRANSACTIONS, JSON.stringify(liste));
+      } catch (e) {
+        console.warn("Erreur sauvegarde locale transactions :", e);
+      }
     }
 
     /**
@@ -10144,7 +10194,11 @@
      * Sauvegarde les conversations dans localStorage
      */
     function setConversations(liste) {
-      localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(liste));
+      try {
+        localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(liste));
+      } catch (e) {
+        console.warn("Erreur sauvegarde locale conversations :", e);
+      }
       mettreAJourBadgeMessages();
     }
 
