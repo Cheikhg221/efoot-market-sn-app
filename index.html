@@ -3312,6 +3312,11 @@
         font-size: 16px;
       }
     }
+
+    @keyframes pulseLogo {
+      0%, 100% { opacity: 0.5; transform: scale(0.95); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -3350,9 +3355,17 @@
 <body>
 
   <!-- ==========================================================
+       ÉCRAN DE CHARGEMENT INITIAL NEUTRE (ANTI-FLASH)
+       ========================================================== -->
+  <div id="loading-screen" style="position: fixed; inset: 0; background: #121212; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+    <img src="/logo.png" alt="EFoot Market SN" style="width: 90px; height: 90px; object-fit: contain; animation: pulseLogo 1.5s infinite ease-in-out;">
+    <div style="color: #00C853; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;">Chargement...</div>
+  </div>
+
+  <!-- ==========================================================
        ÉCRAN DE CONNEXION FIREBASE (ANONYME & GOOGLE)
        ========================================================== -->
-  <div id="auth-screen" class="auth-screen" style="display: flex;">
+  <div id="auth-screen" class="auth-screen" style="display: none;">
     <div class="auth-card">
       <div class="auth-logo" style="text-align: center; font-size: 0;">
         <img src="/logo.png" alt="EFoot Market SN">
@@ -4986,6 +4999,8 @@
                 var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
                 if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
               }
+              const loading = document.getElementById('loading-screen');
+              if (loading) loading.style.display = 'none';
             } else {
               if (typeof arreterEcouteDemandesFirestore === 'function') {
                 arreterEcouteDemandesFirestore();
@@ -4995,18 +5010,28 @@
                 if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
               }
               afficherEcranConnexion();
+              const loading = document.getElementById('loading-screen');
+              if (loading) loading.style.display = 'none';
             }
           } catch (e) {
             console.warn("Erreur dans auth callback :", e);
+            const loading = document.getElementById('loading-screen');
+            if (loading) loading.style.display = 'none';
           }
         }, function(authError) {
           console.warn("Erreur onAuthStateChanged :", authError);
+          const loading = document.getElementById('loading-screen');
+          if (loading) loading.style.display = 'none';
         });
       } catch (authEx) {
         console.warn("Exception auth.onAuthStateChanged :", authEx);
+        const loading = document.getElementById('loading-screen');
+        if (loading) loading.style.display = 'none';
       }
     } else {
       afficherEcranConnexion();
+      const loading = document.getElementById('loading-screen');
+      if (loading) loading.style.display = 'none';
     }
 
     /**
@@ -5275,6 +5300,9 @@
      * Bascule l'affichage vers l'application principale
      */
     function afficherApplication() {
+      const loading = document.getElementById('loading-screen');
+      if (loading) loading.style.display = 'none';
+
       const authScreen = document.getElementById('auth-screen');
       const completeScreen = document.getElementById('complete-profile-screen');
       const appWrapper = document.getElementById('app-wrapper');
@@ -5294,6 +5322,9 @@
      * Bascule l'affichage vers l'écran de connexion
      */
     function afficherEcranConnexion() {
+      const loading = document.getElementById('loading-screen');
+      if (loading) loading.style.display = 'none';
+
       if (typeof fermerAvertissementAnonyme === 'function') {
         fermerAvertissementAnonyme();
       }
@@ -12649,6 +12680,12 @@
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
     function initialiserApplication() {
+      // Sécurité anti-blocage : masquer l'écran de chargement après 3 secondes max même si Firebase tarde
+      setTimeout(function() {
+        const loading = document.getElementById('loading-screen');
+        if (loading) loading.style.display = 'none';
+      }, 3000);
+
       try {
         // Démarrer l'écoute temps réel de la collection Firestore "annonces"
         afficherAnnonces();
