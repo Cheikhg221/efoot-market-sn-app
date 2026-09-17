@@ -687,13 +687,91 @@
     .card-type-badge {
       position: absolute;
       top: 10px;
-      right: 10px;
+      right: 48px;
       background: rgba(0, 200, 83, 0.9);
       color: #000;
       font-size: 11px;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: var(--radius-sm);
+      z-index: 3;
+    }
+
+    /* Bouton Cœur Favoris sur cartes et détail */
+    .card-fav-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(18, 18, 18, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 4;
+      transition: var(--transition);
+      user-select: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-fav-btn:hover {
+      transform: scale(1.12);
+      border-color: #FF5252;
+      background: rgba(25, 25, 25, 0.95);
+    }
+
+    .card-fav-btn:active {
+      transform: scale(0.92);
+    }
+
+    .card-fav-btn.is-favorite {
+      color: #FF5252;
+      border-color: rgba(255, 82, 82, 0.5);
+      background: rgba(255, 82, 82, 0.15);
+      text-shadow: 0 0 10px rgba(255, 82, 82, 0.6);
+    }
+
+    .btn-detail-fav {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-color);
+      color: var(--text-white);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-detail-fav:hover {
+      border-color: #FF5252;
+      background: rgba(255, 82, 82, 0.1);
+      color: #FF5252;
+    }
+
+    .btn-detail-fav.is-favorite {
+      background: rgba(255, 82, 82, 0.18);
+      border-color: #FF5252;
+      color: #FF5252;
+    }
+
+    .fav-count-bubble {
+      background: #FF5252;
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 2px;
     }
 
     .card-body {
@@ -3395,6 +3473,10 @@
           <span>🤝</span> Transactions
           <span class="unread-bubble pulse" id="tx-count-desktop" style="display: none;">0</span>
         </button>
+        <button class="nav-link-btn" id="nav-btn-favoris" onclick="changerPage('favoris')">
+          <span>❤️</span> Mes Favoris
+          <span class="fav-count-bubble" id="fav-count-desktop" style="display: none;">0</span>
+        </button>
         <button class="nav-link-btn" id="nav-btn-mes-annonces" onclick="changerPage('mes-annonces')">
           <span>📋</span> Mes annonces
         </button>
@@ -3430,6 +3512,11 @@
       <span class="dock-icon">🤝</span>
       <span>Transactions</span>
       <span class="unread-bubble pulse" id="tx-count-mobile" style="display: none; position: absolute; top: 4px; right: 18%;">0</span>
+    </button>
+    <button class="dock-btn" id="dock-btn-favoris" onclick="changerPage('favoris')" style="position: relative;">
+      <span class="dock-icon">❤️</span>
+      <span>Favoris</span>
+      <span class="fav-count-bubble" id="fav-count-mobile" style="display: none; position: absolute; top: 4px; right: 16%;">0</span>
     </button>
     <button class="dock-btn" id="dock-btn-publier" onclick="changerPage('publier')">
       <span class="dock-icon">➕</span>
@@ -3883,6 +3970,27 @@
 
       <div class="my-ads-list" id="my-ads-container">
         <!-- Rendu dynamique via JavaScript -->
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
+         PAGE FAVORIS : MES COMPTES FAVORIS
+         -------------------------------------------------------- -->
+    <section id="page-favoris" class="page-view">
+      <div style="max-width: 1280px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span>❤️</span> Mes Favoris
+          </h2>
+          <p style="font-size: 13px; color: var(--text-gray); margin-top: 4px;">Retrouvez rapidement les annonces que vous avez enregistrées pour les suivre ou contacter le vendeur plus tard.</p>
+        </div>
+        <button class="btn-secondary" onclick="changerPage('accueil')">
+          ← Continuer mes achats
+        </button>
+      </div>
+
+      <div class="ads-grid" id="favorites-container">
+        <!-- Rendu dynamique via afficherFavoris() -->
       </div>
     </section>
 
@@ -4625,6 +4733,7 @@
     var STORAGE_PROFIL = 'efoot_profil';
     var STORAGE_TRANSACTIONS = 'efoot_transactions';
     var STORAGE_AVIS = 'efoot_avis';
+    var STORAGE_FAVORIS = 'efoot_favoris';
 
     // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
     var annoncesFirestore = [];
@@ -5822,11 +5931,15 @@
       } else if (pageId === 'transactions') {
         nettoyerHashAnnonce();
         afficherMesTransactions();
+      } else if (pageId === 'favoris') {
+        nettoyerHashAnnonce();
+        afficherFavoris();
       } else if (pageId === 'mentions-legales' || pageId === 'politique-confidentialite') {
         nettoyerHashAnnonce();
       }
 
       mettreAJourBadgeTransactions();
+      mettreAJourBadgeFavoris();
     }
 
     /**
@@ -6115,6 +6228,7 @@
         const statsVendeur = getNoteEtAvisVendeur(ad.vendeurId || ad.vendeur);
         const infoBadge = afficherBadge(statsVendeur.badge);
         const noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
+        const isFav = estFavori(ad.id);
 
         return `
           <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
@@ -6124,8 +6238,18 @@
                 <span>${(ad.plateforme && (ad.plateforme.toLowerCase().includes('mobile') || ad.plateforme.toLowerCase().includes('android') || ad.plateforme.toLowerCase().includes('ios'))) ? '📱' : '🎮'}</span>
                 <span>${escapeHtml(ad.plateforme || 'Mobile')}</span>
               </div>
+              <button 
+                type="button" 
+                class="card-fav-btn ${isFav ? 'is-favorite' : ''}" 
+                data-fav-id="${ad.id}"
+                onclick="toggleFavori('${ad.id}', event)" 
+                title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+                aria-label="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+              >
+                ${isFav ? '❤️' : '🤍'}
+              </button>
               ${(ad.typeCompte && ad.typeCompte.toLowerCase() !== (ad.plateforme || '').toLowerCase() && ad.typeCompte !== 'Standard' && ad.typeCompte !== 'Console') ? `<div class="card-type-badge">${escapeHtml(ad.typeCompte)}</div>` : ''}
-              ${(ad.statut === 'vendue' || ad.statut === 'VENDU') ? `<div style="position: absolute; top: 10px; right: 10px; background: #F44336; color: white; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🔴 VENDU</div>` : ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS') ? `<div style="position: absolute; top: 10px; right: 10px; background: #FFC107; color: black; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🟡 En cours</div>` : '')}
+              ${(ad.statut === 'vendue' || ad.statut === 'VENDU') ? `<div style="position: absolute; top: 10px; right: 48px; background: #F44336; color: white; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🔴 VENDU</div>` : ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS') ? `<div style="position: absolute; top: 10px; right: 48px; background: #FFC107; color: black; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🟡 En cours</div>` : '')}
             </div>
             <div class="card-body">
               <h3 class="card-title">${escapeHtml(ad.titre || 'Compte eFootball')}</h3>
@@ -6200,6 +6324,8 @@
             appliquerFiltres();
           } else if (currentPage === 'mes-annonces') {
             afficherMesAnnonces();
+          } else if (currentPage === 'favoris') {
+            afficherFavoris();
           } else if (currentPage === 'detail' && currentDetailAdId) {
             afficherDetailAnnonce(currentDetailAdId);
           }
@@ -6759,6 +6885,7 @@
 
       // Formatage du nom et du badge vérifié pour l'annonce
       const nomVendeurAffiche = formaterNomAffichage(ad.vendeurPrenom || ad.vendeur, ad.vendeurNom);
+      const isFavDetail = estFavori(ad.id);
 
       // Bandeau rouge visible si vendue
       const bandeauVenduHtml = estVendue ? `
@@ -6769,11 +6896,20 @@
       ` : '';
 
       container.innerHTML = `
-        <div class="detail-top-nav">
+        <div class="detail-top-nav" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <button class="btn-secondary" onclick="changerPage('accueil')">
             ← Retour à l'accueil
           </button>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button 
+              type="button" 
+              id="detail-fav-btn-${ad.id}" 
+              class="btn-detail-fav ${isFavDetail ? 'is-favorite' : ''}" 
+              onclick="toggleFavori('${ad.id}', event)"
+              title="${isFavDetail ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+            >
+              ${isFavDetail ? '❤️ Favori' : '🤍 Enregistrer en favori'}
+            </button>
             <span style="font-size: 12px; color: var(--text-muted);">Publié le ${formaterDate(ad.datePublication || ad.date)}</span>
           </div>
         </div>
@@ -11297,6 +11433,280 @@
     }
 
     /* ==========================================================
+       GESTION DES FAVORIS (localStorage)
+       ========================================================== */
+
+    /**
+     * Récupère la liste des IDs d'annonces favorites depuis le localStorage
+     */
+    function getFavoris() {
+      try {
+        var favs = localStorage.getItem(STORAGE_FAVORIS);
+        if (!favs) return [];
+        var parsed = JSON.parse(favs);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn("Erreur lecture favoris :", e);
+        return [];
+      }
+    }
+
+    /**
+     * Vérifie si une annonce fait partie des favoris
+     */
+    function estFavori(annonceId) {
+      if (!annonceId) return false;
+      var favs = getFavoris();
+      return favs.indexOf(String(annonceId)) !== -1;
+    }
+
+    /**
+     * Bascule l'état favori d'une annonce (ajout ou retrait)
+     */
+    function toggleFavori(annonceId, event) {
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      if (!annonceId) return;
+
+      var strId = String(annonceId);
+      var favs = getFavoris();
+      var idx = favs.indexOf(strId);
+      var estAjout = false;
+
+      if (idx === -1) {
+        favs.push(strId);
+        estAjout = true;
+      } else {
+        favs.splice(idx, 1);
+        estAjout = false;
+      }
+
+      try {
+        localStorage.setItem(STORAGE_FAVORIS, JSON.stringify(favs));
+      } catch (e) {
+        console.warn("Erreur sauvegarde favoris :", e);
+      }
+
+      // Notification utilisateur
+      if (estAjout) {
+        afficherNotification("Ajouté à vos favoris ❤️", "❤️");
+      } else {
+        afficherNotification("Retiré de vos favoris", "🤍");
+      }
+
+      // Mettre à jour l'icône sur tous les boutons de cette annonce dans le DOM
+      mettreAJourBoutonsFavori(strId, estAjout);
+
+      // Mettre à jour les compteurs du header et du dock
+      mettreAJourBadgeFavoris();
+
+      // Si l'utilisateur est actuellement sur la page des favoris, rafraîchir
+      if (currentPage === 'favoris') {
+        afficherFavoris();
+      }
+    }
+
+    /**
+     * Met à jour dynamiquement les boutons favoris pour un ID donné
+     */
+    function mettreAJourBoutonsFavori(annonceId, isFav) {
+      // Boutons sur les cartes
+      var btns = document.querySelectorAll('.card-fav-btn[data-fav-id="' + annonceId + '"]');
+      btns.forEach(function(b) {
+        if (isFav) {
+          b.classList.add('is-favorite');
+          b.setAttribute('title', 'Retirer des favoris');
+          b.setAttribute('aria-label', 'Retirer des favoris');
+          b.innerHTML = '❤️';
+        } else {
+          b.classList.remove('is-favorite');
+          b.setAttribute('title', 'Ajouter aux favoris');
+          b.setAttribute('aria-label', 'Ajouter aux favoris');
+          b.innerHTML = '🤍';
+        }
+      });
+
+      // Bouton sur la vue de détail
+      var detailBtn = document.getElementById('detail-fav-btn-' + annonceId);
+      if (detailBtn) {
+        if (isFav) {
+          detailBtn.classList.add('is-favorite');
+          detailBtn.innerHTML = '❤️ Favori';
+          detailBtn.setAttribute('title', 'Retirer des favoris');
+        } else {
+          detailBtn.classList.remove('is-favorite');
+          detailBtn.innerHTML = '🤍 Enregistrer en favori';
+          detailBtn.setAttribute('title', 'Ajouter aux favoris');
+        }
+      }
+    }
+
+    /**
+     * Met à jour les bulles de compteur de favoris dans le header et le dock mobile
+     */
+    function mettreAJourBadgeFavoris() {
+      try {
+        var count = getFavoris().length;
+        var desktopBadge = document.getElementById('fav-count-desktop');
+        var mobileBadge = document.getElementById('fav-count-mobile');
+
+        if (desktopBadge) {
+          if (count > 0) {
+            desktopBadge.textContent = count;
+            desktopBadge.style.display = 'inline-block';
+          } else {
+            desktopBadge.style.display = 'none';
+          }
+        }
+
+        if (mobileBadge) {
+          if (count > 0) {
+            mobileBadge.textContent = count;
+            mobileBadge.style.display = 'inline-block';
+          } else {
+            mobileBadge.style.display = 'none';
+          }
+        }
+      } catch (e) {
+        console.warn("Erreur badge favoris :", e);
+      }
+    }
+
+    /**
+     * Rend la page des favoris
+     */
+    function afficherFavoris() {
+      var container = document.getElementById('favorites-container');
+      if (!container) return;
+
+      var favIds = getFavoris();
+
+      if (favIds.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: var(--radius); border: 1px dashed var(--border-color); max-width: 600px; margin: 30px auto;">
+            <div style="font-size: 48px; margin-bottom: 16px;">💔</div>
+            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-white);">Aucun compte en favori</h3>
+            <p style="font-size: 14px; color: var(--text-gray); margin-bottom: 24px; line-height: 1.5;">
+              Vous n'avez pas encore enregistré de compte. Cliquez sur le bouton cœur 🤍 présent sur les cartes pour retrouver vos annonces préférées ici.
+            </p>
+            <button class="btn-primary" onclick="changerPage('accueil')" style="padding: 12px 24px;">
+              🔍 Parcourir les comptes
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // Récupérer toutes les annonces disponibles (Firestore + Locales)
+      var toutesAnnonces = [];
+      if (Array.isArray(annoncesFirestore) && annoncesFirestore.length > 0) {
+        toutesAnnonces = toutesAnnonces.concat(annoncesFirestore);
+      }
+      try {
+        var locales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
+        if (Array.isArray(locales) && locales.length > 0) {
+          toutesAnnonces = toutesAnnonces.concat(locales);
+        }
+      } catch (e) {}
+
+      // Dédupliquer par ID
+      var mapUniq = new Map();
+      toutesAnnonces.forEach(function(a) {
+        if (a && a.id) mapUniq.set(String(a.id), a);
+      });
+
+      // Filtrer les annonces correspondant aux IDs favoris
+      var annoncesFavorites = [];
+      favIds.forEach(function(id) {
+        if (mapUniq.has(String(id))) {
+          annoncesFavorites.push(mapUniq.get(String(id)));
+        }
+      });
+
+      if (annoncesFavorites.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: var(--radius); border: 1px dashed var(--border-color); max-width: 600px; margin: 30px auto;">
+            <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-white);">Chargement de vos favoris...</h3>
+            <p style="font-size: 14px; color: var(--text-gray); margin-bottom: 20px;">
+              Les annonces sélectionnées sont en cours de synchronisation avec le serveur.
+            </p>
+            <button class="btn-secondary" onclick="changerPage('accueil')">
+              ← Retour à l'accueil
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // Rendu des cartes de favoris avec le bouton cœur activé
+      container.innerHTML = annoncesFavorites.map(function(ad) {
+        var mediaHtml = ad.image ? 
+          `<img src="${ad.image}" alt="${escapeHtml(ad.titre || 'Compte')}" loading="lazy">` : 
+          `<div class="card-placeholder">
+             <span class="placeholder-ball">⚽</span>
+             <span class="placeholder-label">eFootball</span>
+           </div>`;
+
+        var statsVendeur = getNoteEtAvisVendeur(ad.vendeurId || ad.vendeur);
+        var infoBadge = afficherBadge(statsVendeur.badge);
+        var noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
+        var isFav = estFavori(ad.id);
+
+        return `
+          <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
+            <div class="card-media">
+              ${mediaHtml}
+              <div class="card-platform-badge">
+                <span>${(ad.plateforme && (ad.plateforme.toLowerCase().includes('mobile') || ad.plateforme.toLowerCase().includes('android') || ad.plateforme.toLowerCase().includes('ios'))) ? '📱' : '🎮'}</span>
+                <span>${escapeHtml(ad.plateforme || 'Mobile')}</span>
+              </div>
+              <button 
+                type="button" 
+                class="card-fav-btn ${isFav ? 'is-favorite' : ''}" 
+                data-fav-id="${ad.id}"
+                onclick="toggleFavori('${ad.id}', event)" 
+                title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+                aria-label="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+              >
+                ${isFav ? '❤️' : '🤍'}
+              </button>
+              ${(ad.typeCompte && ad.typeCompte.toLowerCase() !== (ad.plateforme || '').toLowerCase() && ad.typeCompte !== 'Standard' && ad.typeCompte !== 'Console') ? `<div class="card-type-badge">${escapeHtml(ad.typeCompte)}</div>` : ''}
+              ${(ad.statut === 'vendue' || ad.statut === 'VENDU') ? `<div style="position: absolute; top: 10px; right: 48px; background: #F44336; color: white; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🔴 VENDU</div>` : ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS') ? `<div style="position: absolute; top: 10px; right: 48px; background: #FFC107; color: black; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); z-index: 2;">🟡 En cours</div>` : '')}
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">${escapeHtml(ad.titre || 'Compte eFootball')}</h3>
+              <div class="card-price-row">
+                <div class="card-price">${formaterPrix(ad.prix)}</div>
+                ${ad.puissance ? `<div class="card-power-badge">💪 ${escapeHtml(String(ad.puissance))}</div>` : ''}
+              </div>
+              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}', '${ad.vendeurId || ''}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);" title="Voir le profil et les avis de ${ad.vendeur}">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: var(--text-white);">
+                    <span title="${infoBadge.texte}" style="font-size: 14px;">${infoBadge.icone}</span>
+                    <span class="card-seller-name">${ad.vendeur}</span>
+                    ${statsVendeur.totalAvis > 0 ? `
+                      <span style="color: #FFD700; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; margin-left: 2px;">
+                        ⭐ ${noteAffichage} <span style="color: var(--text-muted); font-size: 11px; font-weight: normal;">(${statsVendeur.totalAvis} avis)</span>
+                      </span>
+                    ` : `
+                      <span style="color: #888; font-size: 11px; font-weight: normal;">• Nouveau</span>
+                    `}
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 11.5px; color: var(--text-muted);">
+                  <span>📍 ${ad.region || ad.localisation || 'Dakar'}</span>
+                  <span style="font-size: 10.5px;">${formaterDate(ad.datePublication || ad.date)}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    /* ==========================================================
        SECTION 9 : PAGE 5 : MES ANNONCES & SUPPRESSION
        ========================================================== */
 
@@ -12275,9 +12685,10 @@
       }
 
       try {
-        // Mettre à jour les badges de messages et transactions
+        // Mettre à jour les badges de messages, transactions et favoris
         mettreAJourBadgeMessages();
         mettreAJourBadgeTransactions();
+        mettreAJourBadgeFavoris();
       } catch (e) {
         console.warn("Erreur badges init :", e);
       }
