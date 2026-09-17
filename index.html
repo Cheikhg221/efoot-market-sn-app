@@ -363,6 +363,44 @@
       transform: scale(0.95);
     }
 
+    /* Style distinctif pour le bouton Publier central dans le dock mobile */
+    .dock-btn-center {
+      flex: 0 0 auto;
+      width: 64px;
+      position: relative;
+    }
+
+    .dock-btn-center .dock-icon {
+      width: 52px;
+      height: 52px;
+      background: #00C853;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-top: -18px;
+      box-shadow: 0 4px 12px rgba(0, 200, 83, 0.45);
+      border: 3px solid #121212;
+      transition: transform var(--transition);
+    }
+
+    .dock-btn-center .dock-label {
+      font-size: 10px;
+      color: #00C853;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .dock-btn-center:hover .dock-icon {
+      transform: scale(1.05);
+    }
+
+    .dock-btn-center:active .dock-icon {
+      transform: scale(0.95);
+    }
+
     /* ==========================================================
        3. CONTENEUR PRINCIPAL ET GESTION DES VUES (SPA)
        ========================================================== */
@@ -2702,6 +2740,12 @@
       flex-shrink: 0;
       cursor: pointer;
       transition: var(--transition);
+      user-select: none;
+    }
+
+    .user-pill:hover {
+      background: #333333;
+      border-color: rgba(255, 255, 255, 0.28);
     }
 
     .btn-logout {
@@ -3480,9 +3524,6 @@
         <button class="nav-link-btn" id="nav-btn-mes-annonces" onclick="changerPage('mes-annonces')">
           <span>📋</span> Mes annonces
         </button>
-        <button class="nav-link-btn" id="nav-btn-profil" onclick="changerPage('profil')">
-          <span>👤</span> Profil
-        </button>
         <button class="btn-publish-header" onclick="changerPage('publier')">
           <span>➕</span> Publier
         </button>
@@ -3506,29 +3547,25 @@
   <nav class="mobile-dock">
     <button class="dock-btn active" id="dock-btn-accueil" onclick="changerPage('accueil')">
       <span class="dock-icon">🏠</span>
-      <span>Accueil</span>
+      <span class="dock-label">Accueil</span>
     </button>
     <button class="dock-btn" id="dock-btn-transactions" onclick="changerPage('transactions')" style="position: relative;">
       <span class="dock-icon">🤝</span>
-      <span>Transactions</span>
+      <span class="dock-label">Transactions</span>
       <span class="unread-bubble pulse" id="tx-count-mobile" style="display: none; position: absolute; top: 4px; right: 18%;">0</span>
     </button>
-    <button class="dock-btn" id="dock-btn-favoris" onclick="changerPage('favoris')" style="position: relative;">
-      <span class="dock-icon">❤️</span>
-      <span>Favoris</span>
-      <span class="fav-count-bubble" id="fav-count-mobile" style="display: none; position: absolute; top: 4px; right: 16%;">0</span>
-    </button>
-    <button class="dock-btn" id="dock-btn-publier" onclick="changerPage('publier')">
+    <button class="dock-btn dock-btn-center" id="dock-btn-publier" onclick="changerPage('publier')">
       <span class="dock-icon">➕</span>
-      <span>Publier</span>
+      <span class="dock-label">Publier</span>
     </button>
     <button class="dock-btn" id="dock-btn-mes-annonces" onclick="changerPage('mes-annonces')">
       <span class="dock-icon">📋</span>
-      <span>Annonces</span>
+      <span class="dock-label">Annonces</span>
     </button>
-    <button class="dock-btn" id="dock-btn-profil" onclick="changerPage('profil')">
-      <span class="dock-icon">👤</span>
-      <span>Profil</span>
+    <button class="dock-btn" id="dock-btn-favoris" onclick="changerPage('favoris')" style="position: relative;">
+      <span class="dock-icon">❤️</span>
+      <span class="dock-label">Favoris</span>
+      <span class="fav-count-bubble" id="fav-count-mobile" style="display: none; position: absolute; top: 4px; right: 16%;">0</span>
     </button>
   </nav>
 
