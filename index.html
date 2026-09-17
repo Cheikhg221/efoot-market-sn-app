@@ -4796,6 +4796,7 @@
     var demandesAcheteurCache = [];
     var unsubscribeDemandesVendeur = null;
     var unsubscribeDemandesAcheteur = null;
+    var compteurNotificationsTx = 0;
 
     // Cache et abonnement temps réel Firestore pour tous les avis
     var avisFirestoreCache = [];
@@ -5998,7 +5999,35 @@
         preRemplirFormulairePublication();
       } else if (pageId === 'transactions') {
         nettoyerHashAnnonce();
+        // Marquer toutes les transactions en attente comme lues pour l'utilisateur connecté
+        var userTx = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+        if (userTx && userTx.uid) {
+          (demandesVendeurCache || []).forEach(function(tx) {
+            var st = (tx.statut || '').toLowerCase();
+            if (st === 'en_attente' || st === 'demande_envoyee') {
+              var cle = "tx_lu_" + userTx.uid + "_" + tx.id + "_" + tx.statut;
+              try {
+                localStorage.setItem(cle, "1");
+                localStorage.setItem("tx_lu_" + userTx.uid + "_" + tx.id + "_" + st, "1");
+              } catch (e) {}
+            }
+          });
+          (demandesAcheteurCache || []).forEach(function(tx) {
+            var st = (tx.statut || '').toLowerCase();
+            if (st === 'acceptee') {
+              var cle = "tx_lu_" + userTx.uid + "_" + tx.id + "_" + tx.statut;
+              try {
+                localStorage.setItem(cle, "1");
+                localStorage.setItem("tx_lu_" + userTx.uid + "_" + tx.id + "_" + st, "1");
+              } catch (e) {}
+            }
+          });
+          try {
+            localStorage.setItem("efoot_tx_lues_" + userTx.uid, Date.now().toString());
+          } catch (e) {}
+        }
         afficherMesTransactions();
+        mettreAJourBadgeTransactions();
       } else if (pageId === 'favoris') {
         nettoyerHashAnnonce();
         afficherFavoris();
@@ -7863,51 +7892,66 @@
     }
 
     /**
+     * Formate le nombre affiché dans les badges de notification
+     * "" si n <= 0, String(n) si n <= 9, "9+" si n > 9
+     */
+    function formaterBadgeNombre(n) {
+      var val = parseInt(n, 10) || 0;
+      if (val <= 0) return "";
+      if (val <= 9) return String(val);
+      return "9+";
+    }
+
+    /**
      * Met à jour les badges de notification de transactions sur desktop et mobile
      */
     function mettreAJourBadgeTransactions() {
-      const profil = getProfilUtilisateur();
-      const txs = getTransactions();
       const countDesktop = document.getElementById('tx-count-desktop');
       const countMobile = document.getElementById('tx-count-mobile');
 
-      if (!profil) {
+      const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user || !user.uid) {
+        compteurNotificationsTx = 0;
         if (countDesktop) countDesktop.style.display = 'none';
         if (countMobile) countMobile.style.display = 'none';
         return;
       }
 
-      const monNom = profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "");
-      const monNomFormate = formaterNomAffichage(profil.prenom, profil.nom);
+      let total = 0;
 
-      let actionsEnAttente = 0;
-      txs.forEach(t => {
-        const estVendeur = (profil.id && t.vendeurId === profil.id) ||
-                           t.vendeur === monNom || t.vendeur === monNomFormate ||
-                           (profil.prenom && t.vendeurPrenom === profil.prenom);
-        const estAcheteur = (profil.id && t.acheteurId === profil.id) ||
-                            t.acheteur === monNom || t.acheteur === monNomFormate ||
-                            t.acheteurNom === monNom;
-
-        if (estVendeur && (t.statut === 'DEMANDE_ENVOYEE' || t.statut === 'LIVRAISON_CONFIRMEE')) {
-          actionsEnAttente++;
-        } else if (estAcheteur && t.statut === 'ACCEPTEE') {
-          actionsEnAttente++;
+      // Côté vendeur : statut "en_attente" ou "demande_envoyee" (nouvelle demande reçue)
+      const vCache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+      vCache.forEach(function(tx) {
+        const st = (tx.statut || '').toLowerCase();
+        if (st === 'en_attente' || st === 'demande_envoyee') {
+          const cle = "tx_lu_" + user.uid + "_" + tx.id + "_" + tx.statut;
+          if (!localStorage.getItem(cle) && !localStorage.getItem("tx_lu_" + user.uid + "_" + tx.id + "_" + st)) {
+            total++;
+          }
         }
       });
 
-      if (actionsEnAttente > 0) {
-        if (countDesktop) {
-          countDesktop.textContent = actionsEnAttente;
-          countDesktop.style.display = 'inline-block';
+      // Côté acheteur : statut "acceptee" (demande acceptée par le vendeur)
+      const aCache = (typeof demandesAcheteurCache !== 'undefined' && Array.isArray(demandesAcheteurCache)) ? demandesAcheteurCache : [];
+      aCache.forEach(function(tx) {
+        const st = (tx.statut || '').toLowerCase();
+        if (st === 'acceptee') {
+          const cle = "tx_lu_" + user.uid + "_" + tx.id + "_" + tx.statut;
+          if (!localStorage.getItem(cle) && !localStorage.getItem("tx_lu_" + user.uid + "_" + tx.id + "_" + st)) {
+            total++;
+          }
         }
-        if (countMobile) {
-          countMobile.textContent = actionsEnAttente;
-          countMobile.style.display = 'block';
-        }
-      } else {
-        if (countDesktop) countDesktop.style.display = 'none';
-        if (countMobile) countMobile.style.display = 'none';
+      });
+
+      compteurNotificationsTx = total;
+
+      if (countDesktop) {
+        countDesktop.textContent = formaterBadgeNombre(total);
+        countDesktop.style.display = total > 0 ? "inline-block" : "none";
+      }
+      if (countMobile) {
+        countMobile.textContent = formaterBadgeNombre(total);
+        countMobile.style.display = total > 0 ? "inline-block" : "none";
       }
     }
 
@@ -8341,6 +8385,18 @@
           premierChargementVendeur = false;
           
           demandesVendeurCache = demandes;
+          // Si l'utilisateur consulte déjà la page des transactions, marquer comme lu
+          if (currentPage === 'transactions' && user && user.uid) {
+            demandes.forEach(function(tx) {
+              var st = (tx.statut || '').toLowerCase();
+              if (st === 'en_attente' || st === 'demande_envoyee') {
+                try {
+                  localStorage.setItem("tx_lu_" + user.uid + "_" + tx.id + "_" + tx.statut, "1");
+                  localStorage.setItem("tx_lu_" + user.uid + "_" + tx.id + "_" + st, "1");
+                } catch (e) {}
+              }
+            });
+          }
           afficherSectionDemandesRecues(demandes);
           if (typeof mettreAJourBadgeTransactions === 'function') {
             mettreAJourBadgeTransactions();
@@ -8406,6 +8462,18 @@
           premierChargementAcheteur = false;
           
           demandesAcheteurCache = demandes;
+          // Si l'utilisateur consulte déjà la page des transactions, marquer comme lu
+          if (currentPage === 'transactions' && user && user.uid) {
+            demandes.forEach(function(tx) {
+              var st = (tx.statut || '').toLowerCase();
+              if (st === 'acceptee') {
+                try {
+                  localStorage.setItem("tx_lu_" + user.uid + "_" + tx.id + "_" + tx.statut, "1");
+                  localStorage.setItem("tx_lu_" + user.uid + "_" + tx.id + "_" + st, "1");
+                } catch (e) {}
+              }
+            });
+          }
           afficherSectionDemandesEnvoyees(demandes);
           if (typeof mettreAJourBadgeTransactions === 'function') {
             mettreAJourBadgeTransactions();
@@ -8527,9 +8595,12 @@
       
       var section = document.getElementById("sectionDemandesRecues");
       if (section) section.innerHTML = html;
-      // Mettre à jour les compteurs
+      // Mettre à jour les compteurs et le badge
       if (typeof mettreAJourCompteursOngletsTransactions === 'function') {
         mettreAJourCompteursOngletsTransactions();
+      }
+      if (typeof mettreAJourBadgeTransactions === 'function') {
+        mettreAJourBadgeTransactions();
       }
     }
 
@@ -8607,9 +8678,12 @@
       
       var section = document.getElementById("sectionDemandesEnvoyees");
       if (section) section.innerHTML = html;
-      // Mettre à jour les compteurs
+      // Mettre à jour les compteurs et le badge
       if (typeof mettreAJourCompteursOngletsTransactions === 'function') {
         mettreAJourCompteursOngletsTransactions();
+      }
+      if (typeof mettreAJourBadgeTransactions === 'function') {
+        mettreAJourBadgeTransactions();
       }
     }
 
