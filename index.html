@@ -379,16 +379,25 @@
 
     .page-view {
       display: none;
-      animation: fadeIn 0.2s ease-in-out;
+      opacity: 0;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
     }
 
     .page-view.active {
       display: block;
+      animation: pageCrossFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes pageCrossFade {
+      from {
+        opacity: 0;
+        transform: translateY(5px) scale(0.998);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     /* ==========================================================
@@ -4620,6 +4629,8 @@
     // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
     var annoncesFirestore = [];
     var firestoreUnsubscribeAnnonces = null;
+    var annoncesEnAttenteCache = [];
+    var unsubscribeAnnoncesEnAttente = null;
 
     // Cache et abonnements temps réel Firestore pour les demandes d'achat
     var demandesVendeurCache = [];
@@ -5792,6 +5803,9 @@
         if (typeof chargerMesAnnoncesVenduesFirestore === 'function') {
           chargerMesAnnoncesVenduesFirestore();
         }
+        if (typeof ecouterAnnoncesEnAttenteFirestore === 'function') {
+          ecouterAnnoncesEnAttenteFirestore();
+        }
         afficherMesAnnonces();
       } else if (pageId === 'messages') {
         nettoyerHashAnnonce();
@@ -6267,10 +6281,45 @@
             }
           });
 
+        // Requête 3 : annonces du vendeur connecté en attente de confirmation acheteur
+        ecouterAnnoncesEnAttenteFirestore();
+
         firestoreUnsubscribeAnnonces = true;
 
       } catch (e) {
         console.error("Erreur initialisation Firestore :", e);
+      }
+    }
+
+    /**
+     * Écoute en temps réel les annonces du vendeur connecté avec le statut EN_ATTENTE_CONFIRMATION_ACHETEUR
+     */
+    function ecouterAnnoncesEnAttenteFirestore() {
+      var userCourant = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!userCourant || !userCourant.uid || !db) return;
+
+      if (unsubscribeAnnoncesEnAttente) {
+        unsubscribeAnnoncesEnAttente();
+        unsubscribeAnnoncesEnAttente = null;
+      }
+
+      try {
+        unsubscribeAnnoncesEnAttente = db.collection("annonces")
+          .where("vendeurId", "==", userCourant.uid)
+          .where("statut", "==", "EN_ATTENTE_CONFIRMATION_ACHETEUR")
+          .onSnapshot(function(snapshot) {
+            annoncesEnAttenteCache = [];
+            snapshot.forEach(function(doc) {
+              annoncesEnAttenteCache.push({ id: doc.id, ...doc.data() });
+            });
+            if (currentPage === 'mes-annonces') {
+              afficherMesAnnonces();
+            }
+          }, function(error) {
+            console.warn("Erreur écoute annonces en attente de confirmation :", error);
+          });
+      } catch (exAttente) {
+        console.warn("Exception écoute annonces en attente de confirmation :", exAttente);
       }
     }
 
@@ -8185,6 +8234,9 @@
       if (typeof chargerMesAnnoncesVenduesFirestore === 'function') {
         chargerMesAnnoncesVenduesFirestore();
       }
+      if (typeof ecouterAnnoncesEnAttenteFirestore === 'function') {
+        ecouterAnnoncesEnAttenteFirestore();
+      }
     }
 
     function arreterEcouteDemandesFirestore() {
@@ -8200,6 +8252,10 @@
         unsubscribeMesAnnoncesVendues();
         unsubscribeMesAnnoncesVendues = null;
       }
+      if (unsubscribeAnnoncesEnAttente) {
+        unsubscribeAnnoncesEnAttente();
+        unsubscribeAnnoncesEnAttente = null;
+      }
       demandesVendeurCache = [];
       demandesAcheteurCache = [];
       etatPrecedentDemandesVendeur = {};
@@ -8208,6 +8264,9 @@
       premierChargementAcheteur = true;
       if (typeof mesAnnoncesVenduesCache !== 'undefined') {
         mesAnnoncesVenduesCache = [];
+      }
+      if (typeof annoncesEnAttenteCache !== 'undefined') {
+        annoncesEnAttenteCache = [];
       }
     }
 
@@ -11299,6 +11358,15 @@
         (profil && profil.prenom && a.vendeurPrenom === profil.prenom)
       );
 
+      // Intégrer les annonces en attente de confirmation acheteur depuis le cache Firestore
+      if (typeof annoncesEnAttenteCache !== 'undefined' && annoncesEnAttenteCache && annoncesEnAttenteCache.length > 0) {
+        annoncesEnAttenteCache.forEach(function(ae) {
+          if (!mesAnnonces.some(a => a.id === ae.id)) {
+            mesAnnonces.push(ae);
+          }
+        });
+      }
+
       // Intégrer les annonces vendues du vendeur depuis Firestore
       if (mesAnnoncesVenduesCache && mesAnnoncesVenduesCache.length > 0) {
         mesAnnoncesVenduesCache.forEach(function(av) {
@@ -11308,11 +11376,11 @@
         });
       }
 
-      // Intégrer les annonces vendues depuis le stockage local si nécessaire
+      // Intégrer les annonces depuis le stockage local (dont vendues ou en attente) si nécessaire
       try {
         var annoncesLocales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
         annoncesLocales.forEach(function(al) {
-          if ((al.statut === 'vendue' || al.statut === 'VENDU') && !mesAnnonces.some(a => a.id === al.id)) {
+          if (!mesAnnonces.some(a => a.id === al.id)) {
             if ((user && al.vendeurId === user.uid) || (profil && al.vendeurId && al.vendeurId === profil.id) || al.vendeur === monNomComplet || al.vendeur === monNomFormate) {
               mesAnnonces.push(al);
             }
