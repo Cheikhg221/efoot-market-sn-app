@@ -9129,6 +9129,7 @@
             </div>
           `;
         } else if (txActive.statut === 'LIVRAISON_CONFIRMEE') {
+          // L'acheteur a confirmé avoir reçu le compte : seul le bouton pour terminer la vente est disponible
           actionBox = `
             <div class="tx-action-box box-livraison">
               <div style="font-weight: 700; color: #fb923c; margin-bottom: 6px; font-size: 13.5px;">
@@ -9140,9 +9141,6 @@
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 10px 18px; font-size: 13px;" onclick="ouvrirModalTerminerTransaction('${txActive.id}')">
                   ✅ Marquer comme terminée
-                </button>
-                <button type="button" class="btn-danger" style="padding: 10px 14px; font-size: 12.5px;" onclick="ouvrirModalLitige('${txActive.id}')">
-                  🚨 Signaler un problème
                 </button>
               </div>
             </div>
@@ -9576,6 +9574,7 @@
                 </div>
               `;
             } else if (st === 'livraison_confirmee') {
+              // L'acheteur a confirmé avoir reçu le compte : seul le bouton pour marquer comme vendue est disponible
               actionBoxHtml = `
                 <div class="tx-action-box box-livraison">
                   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -9588,9 +9587,6 @@
                     <div style="display: flex; gap: 8px;">
                       <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 16px; font-size: 12.5px;" onclick="marquerCommeVendue('${d.id}')">
                         🎉 Marquer comme vendue
-                      </button>
-                      <button type="button" class="btn-danger" style="padding: 8px 12px; font-size: 12px;" onclick="ouvrirModalLitige('${d.id}')">
-                        🚨 Problème
                       </button>
                     </div>
                   </div>
@@ -11253,9 +11249,6 @@
                 ${maTx ? `
                   <button class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; font-size: 11.5px; padding: 6px 14px;" onclick="ouvrirModalTerminerTransaction('${maTx.id}')">
                     ✅ Marquer comme terminée
-                  </button>
-                  <button class="btn-danger" style="font-size: 11.5px; padding: 6px 12px;" onclick="ouvrirModalLitige('${maTx.id}')">
-                    🚨 Litige
                   </button>
                 ` : `
                   <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="changerPage('transactions', { filtre: 'ventes' })">
