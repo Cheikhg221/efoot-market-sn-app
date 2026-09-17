@@ -2981,6 +2981,18 @@
       margin-top: 40px;
       padding: 15px 0;
       width: 100%;
+      animation: footerFadeIn 0.4s ease-out forwards;
+    }
+
+    @keyframes footerFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .app-footer-inner {
@@ -2994,6 +3006,7 @@
       color: #888888;
       font-size: 12px;
       margin: 0 0 8px 0;
+      transition: opacity 0.3s ease;
     }
 
     .app-footer-links {
@@ -3013,13 +3026,16 @@
       text-decoration: none;
       font-family: inherit;
       padding: 3px 6px;
-      transition: color 0.15s ease;
+      transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
       display: inline-block;
+      opacity: 0.95;
     }
 
     .app-footer-link:hover {
       color: #00E676;
       text-decoration: underline;
+      transform: translateY(-1px);
+      opacity: 1;
     }
 
     .app-footer-sep {
@@ -3041,6 +3057,18 @@
       max-width: 800px;
       margin: 0 auto;
       padding: 10px 0 40px 0;
+      animation: legalFadeIn 0.35s ease-out forwards;
+    }
+
+    @keyframes legalFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .legal-back-btn {
@@ -8301,8 +8329,13 @@
             html += '<p style="color:#888; font-size:12px;">Le vendeur a été notifié et doit vous recontacter.</p>';
             html += '<button type="button" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px; margin-top:8px;" onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')">✅ Confirmer la réception maintenant</button>';
           } else if (d.statut === "acceptee") {
+            var telVendeur = d.vendeurTelephone || d.telephoneWhatsAppVendeur || d.vendeurWhatsapp || "";
             html += '<p style="color:#00C853;">✅ Acceptée !</p>';
-            html += '<p>Le vendeur va vous contacter</p>';
+            html += '<p>Vous pouvez désormais contacter le vendeur par WhatsApp pour finaliser la transaction</p>';
+            if (telVendeur) {
+              var numeroClean = String(telVendeur).replace(/[^0-9]/g, "");
+              html += '<button onclick="event.stopPropagation(); contacterWhatsApp(\'' + numeroClean + '\')" class="btn-whatsapp" style="padding:8px 14px; border:none; border-radius:6px; cursor:pointer; margin-top:6px;">📱 Contacter sur WhatsApp</button>';
+            }
           } else if (d.statut === "en_attente") {
             html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
             html += '<button onclick="event.stopPropagation(); retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
