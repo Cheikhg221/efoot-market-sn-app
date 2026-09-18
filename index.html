@@ -4630,8 +4630,9 @@
     <section id="page-favoris" class="page-view">
       <div style="max-width: 1280px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div>
-          <h2 style="font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <h2 style="font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span>❤️</span> Mes Favoris
+            <span id="badge-compteur-favoris-page" style="font-size: 13px; font-weight: 700; background: rgba(0, 200, 83, 0.15); color: #00E676; border: 1px solid rgba(0, 230, 118, 0.35); padding: 3px 10px; border-radius: 12px; letter-spacing: 0.5px;">0 / 10</span>
           </h2>
           <p style="font-size: 13px; color: var(--text-gray); margin-top: 4px;">Retrouvez rapidement les annonces que vous avez enregistrées pour les suivre ou contacter le vendeur plus tard.</p>
         </div>
@@ -5321,6 +5322,39 @@
   </div>
 
   <!-- ==========================================================
+       MODALE : LIMITE DE FAVORIS ATTEINTE (MAX 10)
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-limite-favoris" onclick="if(event.target===this) fermerModalLimiteFavoris()">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      
+      <div style="font-size: 52px; margin-bottom: 12px;">❤️</div>
+
+      <h3 style="font-size: 20px; font-weight: 800; color: #FFFFFF; margin-bottom: 10px;">
+        Limite de favoris atteinte
+      </h3>
+
+      <p style="font-size: 14px; color: #AAAAAA; line-height: 1.6; margin-bottom: 22px;">
+        Vous avez atteint la limite de <strong style="color: #00C853;">10 annonces en favori</strong>.<br><br>
+        Pour enregistrer cette nouvelle annonce, vous devez d'abord retirer une annonce existante de vos favoris.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="btn-primary" 
+          style="background: #00C853; color: #000; font-weight: 700; padding: 14px 20px; font-size: 14px; width: 100%;" 
+          onclick="allerAuxFavorisDepuisLimite()">
+          ❤️ Voir mes favoris et en libérer
+        </button>
+        <button type="button" class="btn-secondary" 
+          style="padding: 12px 20px; font-size: 13.5px; width: 100%;" 
+          onclick="fermerModalLimiteFavoris()">
+          Annuler
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================
        NOTIFICATION TOAST GLOBALE
        ========================================================== -->
   <div class="toast-box" id="global-toast">
@@ -5385,6 +5419,7 @@
     var STORAGE_TRANSACTIONS = 'efoot_transactions';
     var STORAGE_AVIS = 'efoot_avis';
     var STORAGE_FAVORIS = 'efoot_favoris';
+    var LIMITE_FAVORIS = 10;
 
     // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
     var annoncesFirestore = [];
@@ -12204,6 +12239,27 @@
     }
 
     /**
+     * Fonctions de gestion de la modale de limite de favoris
+     */
+    function ouvrirModalLimiteFavoris() {
+      var modal = document.getElementById('modal-limite-favoris');
+      if (modal) modal.classList.add('active');
+    }
+    window.ouvrirModalLimiteFavoris = ouvrirModalLimiteFavoris;
+
+    function fermerModalLimiteFavoris() {
+      var modal = document.getElementById('modal-limite-favoris');
+      if (modal) modal.classList.remove('active');
+    }
+    window.fermerModalLimiteFavoris = fermerModalLimiteFavoris;
+
+    function allerAuxFavorisDepuisLimite() {
+      fermerModalLimiteFavoris();
+      changerPage('favoris');
+    }
+    window.allerAuxFavorisDepuisLimite = allerAuxFavorisDepuisLimite;
+
+    /**
      * Bascule l'état favori d'une annonce (ajout ou retrait)
      */
     function toggleFavori(annonceId, event) {
@@ -12218,9 +12274,16 @@
       var estAjout = false;
 
       if (idx === -1) {
+        // On veut AJOUTER un favori
+        if (favs.length >= LIMITE_FAVORIS) {
+          // Afficher la modale d'avertissement
+          ouvrirModalLimiteFavoris();
+          return;   // Ne pas ajouter
+        }
         favs.push(strId);
         estAjout = true;
       } else {
+        // Retirer le favori (pas de limite)
         favs.splice(idx, 1);
         estAjout = false;
       }
@@ -12311,6 +12374,12 @@
             mobileBadge.style.display = 'none';
           }
         }
+
+        // Mettre à jour le badge sur la page Favoris si présent
+        var pageBadge = document.getElementById('badge-compteur-favoris-page');
+        if (pageBadge) {
+          pageBadge.textContent = `${count} / ${LIMITE_FAVORIS}`;
+        }
       } catch (e) {
         console.warn("Erreur badge favoris :", e);
       }
@@ -12324,6 +12393,12 @@
       if (!container) return;
 
       var favIds = getFavoris();
+
+      // Mettre à jour le badge de la page favoris (ex: "7 / 10")
+      var pageBadge = document.getElementById('badge-compteur-favoris-page');
+      if (pageBadge) {
+        pageBadge.textContent = `${favIds.length} / 10`;
+      }
 
       if (favIds.length === 0) {
         container.innerHTML = `
