@@ -2579,6 +2579,442 @@
       overflow-y: auto;
     }
 
+    /* Style spécifique de l'écran d'accueil de connexion (#auth-screen) */
+    #auth-screen {
+      background-color: #060a07;
+      background-image: 
+        radial-gradient(circle at 50% 18%, rgba(0, 200, 83, 0.18) 0%, rgba(6, 10, 7, 0.65) 45%, #060a07 100%),
+        radial-gradient(circle at 85% 85%, rgba(0, 230, 118, 0.1) 0%, transparent 45%),
+        radial-gradient(circle at 10% 20%, rgba(0, 200, 83, 0.08) 0%, transparent 35%);
+      padding: 30px 16px;
+      overflow-x: hidden;
+    }
+
+    /* Décorations d'arrière-plan en filigrane */
+    .auth-bg-decorations {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .auth-bg-gamepad {
+      position: absolute;
+      top: -30px;
+      left: -40px;
+      width: 320px;
+      height: 320px;
+      opacity: 0.12;
+      transform: rotate(-12deg);
+      filter: drop-shadow(0 0 18px rgba(0, 200, 83, 0.35));
+    }
+
+    .auth-bg-ball {
+      position: absolute;
+      bottom: -60px;
+      right: -50px;
+      width: 360px;
+      height: 360px;
+      opacity: 0.15;
+      transform: rotate(15deg);
+      filter: drop-shadow(0 0 25px rgba(0, 230, 118, 0.4));
+    }
+
+    .auth-bg-lines-tr {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 220px;
+      height: 220px;
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .auth-bg-lines-bl {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 220px;
+      height: 220px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* Conteneur principal centré */
+    #auth-screen .auth-content-wrap {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin: auto;
+    }
+
+    /* Logo dans un cercle avec halo vert */
+    .auth-halo-circle {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #0e2717 0%, #06150b 70%, #040d07 100%);
+      border: 2px solid #00E676;
+      box-shadow: 
+        0 0 32px rgba(0, 230, 118, 0.6),
+        0 0 65px rgba(0, 200, 83, 0.25),
+        inset 0 0 18px rgba(0, 230, 118, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 22px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: default;
+    }
+
+    .auth-halo-circle:hover {
+      transform: scale(1.03);
+      box-shadow: 
+        0 0 40px rgba(0, 230, 118, 0.75),
+        0 0 75px rgba(0, 200, 83, 0.35),
+        inset 0 0 22px rgba(0, 230, 118, 0.4);
+    }
+
+    .auth-halo-circle img {
+      width: 78px;
+      height: 78px;
+      object-fit: contain;
+      border-radius: 50%;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+    }
+
+    .auth-halo-svg-fallback {
+      width: 72px;
+      height: 72px;
+      filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.6));
+    }
+
+    /* Titre bicolore : EFOOT (blanc) MARKET (vert) SN (blanc) */
+    .auth-brand-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: 0.6px;
+      margin: 0 0 14px 0;
+      text-transform: uppercase;
+      line-height: 1.15;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    }
+
+    .auth-brand-title .auth-brand-market {
+      color: #00E676;
+      text-shadow: 0 0 20px rgba(0, 230, 118, 0.45);
+    }
+
+    /* Textes de bienvenue */
+    .auth-welcome-heading {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0 0 6px 0;
+      line-height: 1.35;
+      letter-spacing: 0.2px;
+    }
+
+    .auth-welcome-sub {
+      font-size: 13.5px;
+      color: #94A3B8;
+      line-height: 1.45;
+      max-width: 320px;
+      margin: 0 auto 28px auto;
+    }
+
+    /* 3 Badges de confiance */
+    .auth-trust-badges {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto 28px auto;
+      padding: 0 4px;
+    }
+
+    .auth-trust-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      padding: 0 4px;
+    }
+
+    .auth-trust-icon {
+      color: #00E676;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      filter: drop-shadow(0 0 8px rgba(0, 230, 118, 0.4));
+    }
+
+    .auth-trust-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .auth-trust-text {
+      font-size: 11px;
+      font-weight: 500;
+      color: #CBD5E1;
+      line-height: 1.35;
+    }
+
+    .auth-trust-divider {
+      width: 1px;
+      background: rgba(255, 255, 255, 0.12);
+      margin: 4px 4px;
+      flex-shrink: 0;
+    }
+
+    /* Actions du formulaire d'authentification */
+    .auth-actions-group {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    /* Bouton vert : "Continuer en invité" avec flèche */
+    #auth-screen .btn-auth-guest {
+      background-color: #00C853;
+      background-image: linear-gradient(135deg, #00C853 0%, #00E676 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 16px;
+      padding: 16px 22px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0, 200, 83, 0.45);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    #auth-screen .btn-auth-guest:hover {
+      background-image: linear-gradient(135deg, #00E676 0%, #69F0AE 100%);
+      color: #04240f;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 230, 118, 0.65);
+    }
+
+    #auth-screen .btn-auth-guest:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 16px rgba(0, 200, 83, 0.4);
+    }
+
+    #auth-screen .btn-auth-guest .auth-btn-arrow {
+      margin-left: 2px;
+      transition: transform 0.2s ease;
+    }
+
+    #auth-screen .btn-auth-guest:hover .auth-btn-arrow {
+      transform: translateX(4px);
+    }
+
+    /* Séparateur "OU" */
+    .auth-or-separator {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 380px;
+      margin: 18px auto;
+      gap: 14px;
+    }
+
+    .auth-or-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .auth-or-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748B;
+      letter-spacing: 0.8px;
+    }
+
+    /* Bouton avec bordure verte : "Continuer avec Google" */
+    #auth-screen .btn-auth-google {
+      background: rgba(12, 24, 17, 0.85);
+      color: #FFFFFF;
+      border: 1.5px solid rgba(0, 200, 83, 0.45);
+      border-radius: 16px;
+      padding: 15px 22px;
+      font-size: 15.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #auth-screen .btn-auth-google:hover {
+      background: rgba(16, 36, 23, 0.95);
+      border-color: #00E676;
+      color: #FFFFFF;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 230, 118, 0.25);
+    }
+
+    #auth-screen .btn-auth-google:active {
+      transform: translateY(0);
+    }
+
+    /* Lien "Déjà un compte ? Se connecter →" */
+    .auth-already-account {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .auth-already-text {
+      font-size: 13px;
+      color: #94A3B8;
+      font-weight: 400;
+    }
+
+    .auth-login-link-btn {
+      background: none;
+      border: none;
+      color: #00E676;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 3px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: inherit;
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .auth-login-link-btn:hover {
+      color: #69F0AE;
+      text-decoration: underline;
+    }
+
+    .auth-login-link-btn .auth-link-arrow {
+      transition: transform 0.2s ease;
+    }
+
+    .auth-login-link-btn:hover .auth-link-arrow {
+      transform: translateX(3px);
+    }
+
+    /* Signature footer : PLAY • TRADE • GROW */
+    .auth-footer-brand {
+      margin-top: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .auth-footer-line-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 250px;
+      justify-content: center;
+    }
+
+    .auth-footer-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-footer-name {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #64748B;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .auth-footer-tagline {
+      font-size: 9px;
+      font-weight: 700;
+      color: #475569;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 480px) {
+      #auth-screen {
+        padding: 24px 16px;
+      }
+      .auth-brand-title {
+        font-size: 26px;
+      }
+      .auth-halo-circle {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 18px;
+      }
+      .auth-halo-circle img {
+        width: 68px;
+        height: 68px;
+      }
+      .auth-welcome-heading {
+        font-size: 15px;
+      }
+      .auth-welcome-sub {
+        font-size: 12.5px;
+        margin-bottom: 22px;
+      }
+      .auth-trust-badges {
+        margin-bottom: 22px;
+      }
+      .auth-trust-text {
+        font-size: 10.5px;
+      }
+      #auth-screen .btn-auth-guest {
+        padding: 14px 18px;
+        font-size: 15px;
+      }
+      #auth-screen .btn-auth-google {
+        padding: 13px 18px;
+        font-size: 14.5px;
+      }
+      .auth-footer-brand {
+        margin-top: 26px;
+      }
+    }
+
     .auth-card {
       background: #1E1E1E;
       border: 1px solid #333333;
@@ -3366,21 +3802,165 @@
        ÉCRAN DE CONNEXION FIREBASE (ANONYME & GOOGLE)
        ========================================================== -->
   <div id="auth-screen" class="auth-screen" style="display: none;">
-    <div class="auth-card">
-      <div class="auth-logo" style="text-align: center; font-size: 0;">
-        <img src="/logo.png" alt="EFoot Market SN">
-      </div>
-      <h1 class="auth-title">EFOOT MARKET <span class="logo-accent">SN</span></h1>
-      <p class="auth-subtitle">Marketplace de comptes eFootball au Sénégal</p>
+    <!-- Décorations d'arrière-plan en filigrane (Manette, Ballon, Rayons diagonaux) -->
+    <div class="auth-bg-decorations" aria-hidden="true">
+      <!-- Manette haut-gauche en filigrane -->
+      <svg class="auth-bg-gamepad" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gpGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00E676" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#00C853" stop-opacity="0.05"/>
+          </linearGradient>
+          <linearGradient id="gpBody" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0f2918" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#051008" stop-opacity="0.1"/>
+          </linearGradient>
+        </defs>
+        <path d="M125 70 C160 65 240 65 275 70 C310 75 365 110 380 185 C395 255 350 290 315 280 C280 270 255 210 240 210 C220 210 180 210 160 210 C145 210 120 270 85 280 C50 290 5 255 20 185 C35 110 90 75 125 70 Z" fill="url(#gpBody)" stroke="url(#gpGlow)" stroke-width="2.5"/>
+        <path d="M100 135 H115 V120 H130 V135 H145 V150 H130 V165 H115 V150 H100 Z" stroke="#00E676" stroke-opacity="0.35" stroke-width="2" fill="#00E676" fill-opacity="0.06"/>
+        <circle cx="285" cy="130" r="7" stroke="#00E676" stroke-opacity="0.35" stroke-width="2" fill="#00E676" fill-opacity="0.06"/>
+        <circle cx="270" cy="145" r="7" stroke="#00E676" stroke-opacity="0.35" stroke-width="2" fill="#00E676" fill-opacity="0.06"/>
+        <circle cx="300" cy="145" r="7" stroke="#00E676" stroke-opacity="0.35" stroke-width="2" fill="#00E676" fill-opacity="0.06"/>
+        <circle cx="285" cy="160" r="7" stroke="#00E676" stroke-opacity="0.35" stroke-width="2" fill="#00E676" fill-opacity="0.06"/>
+        <circle cx="160" cy="175" r="18" stroke="#00E676" stroke-opacity="0.3" stroke-width="2"/>
+        <circle cx="160" cy="175" r="8" fill="#00E676" fill-opacity="0.18"/>
+        <circle cx="240" cy="175" r="18" stroke="#00E676" stroke-opacity="0.3" stroke-width="2"/>
+        <circle cx="240" cy="175" r="8" fill="#00E676" fill-opacity="0.18"/>
+        <rect x="165" y="95" width="70" height="42" rx="6" stroke="#00E676" stroke-opacity="0.3" stroke-width="2" fill="none"/>
+      </svg>
 
-      <div class="auth-buttons-group">
-        <!-- Bouton 1 : "👤 Continuer en invité" (vert #00C853, texte blanc) -->
+      <!-- Rayons diagonaux haut-droite -->
+      <svg class="auth-bg-lines-tr" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="80" y1="0" x2="200" y2="120" stroke="#00E676" stroke-width="1.5" stroke-opacity="0.2"/>
+        <line x1="120" y1="0" x2="200" y2="80" stroke="#00E676" stroke-width="2" stroke-opacity="0.35"/>
+        <line x1="150" y1="0" x2="200" y2="50" stroke="#00E676" stroke-width="3" stroke-opacity="0.5"/>
+        <line x1="175" y1="0" x2="200" y2="25" stroke="#00E676" stroke-width="1" stroke-opacity="0.25"/>
+      </svg>
+
+      <!-- Rayons diagonaux bas-gauche -->
+      <svg class="auth-bg-lines-bl" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="0" y1="120" x2="120" y2="200" stroke="#00E676" stroke-width="2.5" stroke-opacity="0.4"/>
+        <line x1="0" y1="155" x2="90" y2="200" stroke="#00E676" stroke-width="1.5" stroke-opacity="0.25"/>
+        <line x1="0" y1="85" x2="150" y2="200" stroke="#00E676" stroke-width="3.5" stroke-opacity="0.3"/>
+      </svg>
+
+      <!-- Ballon de football bas-droite en filigrane -->
+      <svg class="auth-bg-ball" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="ballGlow" cx="65%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#00E676" stop-opacity="0.25"/>
+            <stop offset="60%" stop-color="#00C853" stop-opacity="0.08"/>
+            <stop offset="100%" stop-color="#030a05" stop-opacity="0.01"/>
+          </radialGradient>
+        </defs>
+        <circle cx="160" cy="160" r="150" fill="url(#ballGlow)" stroke="#00E676" stroke-opacity="0.35" stroke-width="2.5"/>
+        <polygon points="160,110 195,135 182,175 138,175 125,135" fill="#00E676" fill-opacity="0.12" stroke="#00E676" stroke-opacity="0.45" stroke-width="2.5"/>
+        <line x1="160" y1="110" x2="160" y2="45" stroke="#00E676" stroke-opacity="0.4" stroke-width="2.5"/>
+        <line x1="195" y1="135" x2="255" y2="105" stroke="#00E676" stroke-opacity="0.4" stroke-width="2.5"/>
+        <line x1="182" y1="175" x2="235" y2="225" stroke="#00E676" stroke-opacity="0.4" stroke-width="2.5"/>
+        <line x1="138" y1="175" x2="85" y2="225" stroke="#00E676" stroke-opacity="0.4" stroke-width="2.5"/>
+        <line x1="125" y1="135" x2="65" y2="105" stroke="#00E676" stroke-opacity="0.4" stroke-width="2.5"/>
+        <polygon points="160,45 220,50 255,105 195,135 160,110" stroke="#00E676" stroke-opacity="0.25" stroke-width="2"/>
+        <polygon points="255,105 295,155 275,215 235,225 182,175 195,135" stroke="#00E676" stroke-opacity="0.25" stroke-width="2"/>
+        <polygon points="182,175 235,225 210,285 160,270 138,175" stroke="#00E676" stroke-opacity="0.25" stroke-width="2"/>
+        <polygon points="138,175 160,270 110,285 85,225" stroke="#00E676" stroke-opacity="0.25" stroke-width="2"/>
+        <polygon points="65,105 125,135 138,175 85,225 45,215 25,155" stroke="#00E676" stroke-opacity="0.25" stroke-width="2"/>
+        <polygon points="160,45 100,50 65,105 125,135 160,110" stroke="#00E676" stroke-opacity="0.25" stroke-width="2"/>
+      </svg>
+    </div>
+
+    <!-- Conteneur central d'authentification -->
+    <div class="auth-content-wrap">
+      
+      <!-- Logo centré dans un cercle avec halo vert -->
+      <div class="auth-halo-circle">
+        <img src="/logo.png" alt="EFoot Market SN" class="auth-halo-logo-img" onerror="this.style.display='none'; document.getElementById('auth-halo-svg').style.display='block';">
+        <svg id="auth-halo-svg" class="auth-halo-svg-fallback" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M78 40 C74 24 58 14 42 16 C30 18 20 26 16 38" stroke="#00E676" stroke-width="4.5" stroke-linecap="round"/>
+          <polyline points="26,38 15,39 17,28" stroke="#00E676" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22 60 C26 76 42 86 58 84 C70 82 80 74 84 62" stroke="#00E676" stroke-width="4.5" stroke-linecap="round"/>
+          <polyline points="74,62 85,61 83,72" stroke="#00E676" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M36 38 C42 36 58 36 64 38 C72 40 82 48 83 62 C84 72 76 77 70 75 C64 73 60 62 56 62 C52 62 48 62 44 62 C40 62 36 73 30 75 C24 77 16 72 17 62 C18 48 28 40 36 38 Z" stroke="#00E676" stroke-width="3" fill="#0c2415" fill-opacity="0.8"/>
+          <path d="M31 48 H37 M34 45 V51" stroke="#00E676" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="63" cy="46" r="1.5" fill="#00E676"/>
+          <circle cx="67" cy="49" r="1.5" fill="#00E676"/>
+          <circle cx="59" cy="49" r="1.5" fill="#00E676"/>
+          <circle cx="63" cy="52" r="1.5" fill="#00E676"/>
+          <circle cx="43" cy="56" r="3.5" stroke="#00E676" stroke-width="1.8"/>
+          <circle cx="57" cy="56" r="3.5" stroke="#00E676" stroke-width="1.8"/>
+        </svg>
+      </div>
+
+      <!-- Titre EFOOT MARKET SN (bicolore blanc + vert) -->
+      <h1 class="auth-brand-title">EFOOT <span class="auth-brand-market">MARKET</span> SN</h1>
+
+      <!-- Textes de bienvenue -->
+      <h2 class="auth-welcome-heading">Bienvenue sur eFoot Market SN</h2>
+      <p class="auth-welcome-sub">Achetez et vendez vos comptes eFootball<br>au Sénégal.</p>
+
+      <!-- 3 Badges de confiance -->
+      <div class="auth-trust-badges">
+        <!-- Badge 1 : Transactions sécurisées -->
+        <div class="auth-trust-item">
+          <div class="auth-trust-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+          </div>
+          <span class="auth-trust-text">Transactions<br>sécurisées</span>
+        </div>
+
+        <div class="auth-trust-divider"></div>
+
+        <!-- Badge 2 : Livraison rapide et fiable -->
+        <div class="auth-trust-item">
+          <div class="auth-trust-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <span class="auth-trust-text">Livraison rapide<br>et fiable</span>
+        </div>
+
+        <div class="auth-trust-divider"></div>
+
+        <!-- Badge 3 : Communauté active -->
+        <div class="auth-trust-item">
+          <div class="auth-trust-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <span class="auth-trust-text">Communauté<br>active</span>
+        </div>
+      </div>
+
+      <!-- Actions : Boutons de connexion -->
+      <div class="auth-actions-group">
+        <!-- Bouton 1 : "Continuer en invité" (vert avec flèche →) -->
         <button type="button" class="btn-auth-guest" id="btn-auth-guest" onclick="connexionAnonyme()">
-          <span class="auth-btn-icon">👤</span>
-          <span>Continuer en invité</span>
+          <svg class="auth-btn-user-icon" viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          <span class="auth-btn-label">Continuer en invité</span>
+          <svg class="auth-btn-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
         </button>
 
-        <!-- Bouton 2 : "Se connecter avec Google" (fond blanc, texte noir) -->
+        <!-- Séparateur "OU" -->
+        <div class="auth-or-separator">
+          <span class="auth-or-line"></span>
+          <span class="auth-or-text">OU</span>
+          <span class="auth-or-line"></span>
+        </div>
+
+        <!-- Bouton 2 : "Continuer avec Google" (bordure verte) -->
         <button type="button" class="btn-auth-google" id="btn-auth-google" onclick="connexionGoogle()">
           <svg class="google-svg" viewBox="0 0 24 24" width="20" height="20">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -3388,11 +3968,32 @@
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
-          <span>Se connecter avec Google</span>
+          <span class="auth-btn-label">Continuer avec Google</span>
         </button>
       </div>
 
-      <div class="auth-hint">Aucune inscription requise pour tester</div>
+      <!-- Lien "Déjà un compte ? Se connecter →" -->
+      <div class="auth-already-account">
+        <span class="auth-already-text">Déjà un compte ?</span>
+        <button type="button" class="auth-login-link-btn" onclick="connexionGoogle()">
+          <span>Se connecter</span>
+          <svg class="auth-link-arrow" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Signature "PLAY • TRADE • GROW" -->
+      <div class="auth-footer-brand">
+        <div class="auth-footer-line-wrap">
+          <span class="auth-footer-line"></span>
+          <span class="auth-footer-name">EFOOT MARKET SN</span>
+          <span class="auth-footer-line"></span>
+        </div>
+        <div class="auth-footer-tagline">PLAY &bull; TRADE &bull; GROW</div>
+      </div>
+
     </div>
   </div>
 
@@ -4873,6 +5474,42 @@
     window.fermerAvertissementAnonyme = fermerAvertissementAnonyme;
     window.confirmerConnexionAnonyme = confirmerConnexionAnonyme;
 
+    // Fonctions d'assistance pour restaurer l'état visuel exact des boutons de connexion
+    function restaurerBoutonGuest(btn) {
+      if (!btn) btn = document.getElementById('btn-auth-guest');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="auth-btn-user-icon" viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          <span class="auth-btn-label">Continuer en invité</span>
+          <svg class="auth-btn-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        `;
+      }
+    }
+    window.restaurerBoutonGuest = restaurerBoutonGuest;
+
+    function restaurerBoutonGoogle(btn) {
+      if (!btn) btn = document.getElementById('btn-auth-google');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="google-svg" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span class="auth-btn-label">Continuer avec Google</span>
+        `;
+      }
+    }
+    window.restaurerBoutonGoogle = restaurerBoutonGoogle;
+
     // Nouvelle fonction interne qui fait le travail réel
     function executerConnexionAnonyme() {
       const btn = document.getElementById('btn-auth-guest');
@@ -4887,8 +5524,7 @@
         mettreAJourAffichageUtilisateur({ isAnonymous: true, displayName: nomInvite, uid: "guest_" + Date.now() });
         afficherNotification("Connecté en invité", "👤");
         if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = `<span class="auth-btn-icon">👤</span><span>Continuer en invité</span>`;
+          restaurerBoutonGuest(btn);
         }
         return;
       }
@@ -4906,8 +5542,7 @@
         })
         .catch(function(error) {
           if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = `<span class="auth-btn-icon">👤</span><span>Continuer en invité</span>`;
+            restaurerBoutonGuest(btn);
           }
           alert("Erreur de connexion : " + error.message);
         });
@@ -4930,8 +5565,7 @@
       if (!auth || typeof firebase.auth.GoogleAuthProvider !== 'function') {
         alert("La connexion Google nécessite la connexion aux services Firebase.");
         if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = `<span>Se connecter avec Google</span>`;
+          restaurerBoutonGoogle(btn);
         }
         return;
       }
@@ -4957,16 +5591,7 @@
         })
         .catch(function(error) {
           if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = `
-              <svg class="google-svg" viewBox="0 0 24 24" width="20" height="20">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-              <span>Se connecter avec Google</span>
-            `;
+            restaurerBoutonGoogle(btn);
           }
           alert("Erreur de connexion Google : " + error.message);
         });
@@ -5340,21 +5965,11 @@
 
       const btnGuest = document.getElementById('btn-auth-guest');
       if (btnGuest) {
-        btnGuest.disabled = false;
-        btnGuest.innerHTML = `<span class="auth-btn-icon">👤</span><span>Continuer en invité</span>`;
+        restaurerBoutonGuest(btnGuest);
       }
       const btnGoogle = document.getElementById('btn-auth-google');
       if (btnGoogle) {
-        btnGoogle.disabled = false;
-        btnGoogle.innerHTML = `
-          <svg class="google-svg" viewBox="0 0 24 24" width="20" height="20">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span>Se connecter avec Google</span>
-        `;
+        restaurerBoutonGoogle(btnGoogle);
       }
     }
 
