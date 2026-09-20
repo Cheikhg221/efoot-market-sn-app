@@ -59,12 +59,40 @@
       }
       return true;
     });
+
+    // Gestion propre des avertissements Firestore en mode hors-ligne / réseau ralenti
+    (function() {
+      var origConsoleError = console.error;
+      console.error = function() {
+        var args = Array.prototype.slice.call(arguments);
+        if (args.length > 0) {
+          var str = "";
+          for (var i = 0; i < args.length; i++) {
+            str += (typeof args[i] === 'string' ? args[i] : (args[i] && args[i].message ? args[i].message : '')) + " ";
+          }
+          if (str.indexOf("Could not reach Cloud Firestore backend") !== -1 ||
+              str.indexOf("client is offline") !== -1 ||
+              str.indexOf("@firebase/firestore") !== -1) {
+            console.warn.apply(console, args);
+            return;
+          }
+        }
+        return origConsoleError.apply(console, args);
+      };
+    })();
   </script>
 
   <!-- Scripts Firebase SDK Compat chargés de manière sécurisée -->
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
+  <script>
+    if (typeof firebase !== 'undefined' && firebase.firestore && typeof firebase.firestore.setLogLevel === 'function') {
+      try {
+        firebase.firestore.setLogLevel('silent');
+      } catch (_) {}
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
   <!-- Charset et viewport -->
@@ -5006,7 +5034,7 @@
             <ul>
               <li><strong>Statut</strong> : Particulier / Auto-entrepreneur</li>
               <li><strong>Adresse</strong> : Dakar, Sénégal</li>
-              <li><strong>Email</strong> : <a href="mailto:efootmarket221@gmail.com">efootmarket221@gmail.com</a></li>
+              <li><strong>Email</strong> : <a href="mailto:efootmarketcontact@gmail.com">efootmarketcontact@gmail.com</a></li>
             </ul>
 
             <h2>2. Hébergement</h2>
@@ -5066,7 +5094,7 @@
 
             <h2>7. Contact</h2>
             <p>
-              Pour toute question : <a href="mailto:efootmarket221@gmail.com">efootmarket221@gmail.com</a>
+              Pour toute question : <a href="mailto:efootmarketcontact@gmail.com">efootmarketcontact@gmail.com</a>
             </p>
           </div>
         </div>
@@ -5183,7 +5211,7 @@
               <li>De demander une copie de vos données</li>
             </ul>
             <p>
-              Pour exercer ces droits : <a href="mailto:efootmarket221@gmail.com">efootmarket221@gmail.com</a>
+              Pour exercer ces droits : <a href="mailto:efootmarketcontact@gmail.com">efootmarketcontact@gmail.com</a>
             </p>
 
             <h2>8. Sécurité</h2>
@@ -5210,7 +5238,7 @@
             <h2>11. Contact</h2>
             <p>Pour toute question concernant vos données personnelles :</p>
             <ul>
-              <li>Email : <a href="mailto:efootmarket221@gmail.com">efootmarket221@gmail.com</a></li>
+              <li>Email : <a href="mailto:efootmarketcontact@gmail.com">efootmarketcontact@gmail.com</a></li>
               <li>WhatsApp : Assistance disponible directement via la messagerie et les annonces de la plateforme</li>
             </ul>
           </div>
@@ -5233,7 +5261,7 @@
         <span class="app-footer-sep">•</span>
         <button type="button" class="app-footer-link" onclick="changerPage('politique-confidentialite')">Politique de confidentialité</button>
         <span class="app-footer-sep">•</span>
-        <a href="mailto:efootmarket221@gmail.com" class="app-footer-link">Contact</a>
+        <a href="mailto:efootmarketcontact@gmail.com" class="app-footer-link">Contact</a>
       </div>
     </div>
   </footer>
@@ -5721,10 +5749,33 @@
     var auth = null;
     try {
       if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+        if (firebase.firestore && typeof firebase.firestore.setLogLevel === 'function') {
+          try {
+            firebase.firestore.setLogLevel('silent');
+          } catch (_) {}
+        }
         if (!firebase.apps || !firebase.apps.length) {
           firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
+        try {
+          db.settings({
+            experimentalAutoDetectLongPolling: true
+          });
+        } catch (errSettings) {
+          try {
+            db.settings({
+              experimentalForceLongPolling: true
+            });
+          } catch (errSettings2) {
+            console.warn("Paramètres Firestore non appliqués :", errSettings2);
+          }
+        }
+        if (typeof db.enablePersistence === 'function') {
+          db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
+            console.warn("ℹ️ Persistance hors-ligne Firestore :", err ? (err.code || err.message) : "");
+          });
+        }
         auth = firebase.auth();
       }
     } catch (e) {
@@ -6105,7 +6156,13 @@
           }
         })
         .catch(function(err) {
-          console.error("❌ [FIRESTORE] Erreur :", err);
+          var errStr = err && (err.message || err.code) ? (err.message || err.code) : String(err);
+          var isOffline = errStr.toLowerCase().indexOf("offline") !== -1 || (err && err.code === "unavailable");
+          if (isOffline) {
+            console.warn("ℹ️ [FIRESTORE] Mode hors-ligne / lecture non disponible :", errStr);
+          } else {
+            console.warn("⚠️ [FIRESTORE] Erreur lecture document :", errStr);
+          }
           if (callback) callback(null);
         });
     }
@@ -6404,6 +6461,8 @@
         complete: true   // ← FORCER à true
       }).then(function() {
         console.log("✅ [PROFIL] Sauvegardé dans Firestore avec complete:true");
+      }).catch(function(err) {
+        console.warn("ℹ️ [PROFIL] Sauvegarde Firestore en attente / différée :", err);
       });
 
       cacherEcranCompleterProfil();
@@ -6600,7 +6659,7 @@
           return null;
         })
         .catch(function(err) {
-          console.error("❌ [DEBUG] Erreur lecture:", err);
+          console.warn("⚠️ [DEBUG] Erreur lecture email :", err ? (err.message || err.code || err) : "");
           return null;
         });
     }
@@ -7520,12 +7579,39 @@
     }
 
     /**
+     * Affiche un message d'erreur si le chargement des annonces a échoué
+     */
+    function afficherErreurChargement() {
+      var container = document.getElementById('products-grid-container');
+      var counter = document.getElementById('ads-counter');
+      if (counter) counter.textContent = "?";
+      if (!container) return;
+      
+      container.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-title">Impossible de charger les annonces</div>
+          <div class="empty-desc">
+            Vérifie ta connexion internet puis réessaie.
+          </div>
+          <button class="btn-primary" onclick="location.reload()" 
+            style="padding: 12px 24px;">
+            🔄 Réessayer
+          </button>
+        </div>
+      `;
+    }
+
+    /**
      * Filtre et trie les annonces en fonction des critères sélectionnés
      */
     function appliquerFiltres() {
-      // Si les annonces ne sont pas encore chargées, afficher le skeleton loader
-      if (!annoncesChargees) {
+      // Si les annonces ne sont pas encore chargées ET qu'on est sur l'accueil → skeleton
+      if (!annoncesChargees && currentPage === 'accueil') {
         afficherSkeletonLoader();
+        return;
+      }
+      if (!annoncesChargees) {
         return;
       }
 
@@ -7715,9 +7801,18 @@
       var annoncesEnCours = [];
       var requetesTerminees = 0;
 
+      var securiteFirestore = setTimeout(function() {
+        if (!annoncesChargees && requetesTerminees < 2) {
+          console.warn("⚠️ Une requête Firestore a échoué, on force l'affichage");
+          requetesTerminees = 2; // Forcer
+          combinerAnnonces();
+        }
+      }, 8000);
+
       function combinerAnnonces() {
         requetesTerminees++;
         if (requetesTerminees >= 2) {
+          clearTimeout(securiteFirestore);
           var toutesAnnonces = annoncesActives.concat(annoncesEnCours);
           
           // Supprimer les doublons éventuels
@@ -7733,7 +7828,7 @@
           });
           
           annoncesFirestore = annonces;
-          annoncesChargees = true;
+          annoncesChargees = true;  // ← IMPORTANT : avant appliquerFiltres
           
           // Aucune annonce : afficher l'état vide normal
           // (pas de seeding automatique)
@@ -7754,10 +7849,12 @@
 
       // Si déjà initialisé, ne pas relancer
       if (firestoreUnsubscribeAnnonces === true) {
+        clearTimeout(securiteFirestore);
         return;
       }
 
       if (!db) {
+        clearTimeout(securiteFirestore);
         console.warn("Firestore non disponible, utilisation du stockage local");
         var locales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
         if (locales.length > 0) {
@@ -7774,6 +7871,7 @@
           .where("statut", "==", "active")
           .orderBy("datePublication", "desc")
           .onSnapshot(function(snapshot) {
+            clearTimeout(securiteFirestore);
             annoncesActives = [];
             snapshot.forEach(function(doc) {
               annoncesActives.push({ id: doc.id, ...doc.data() });
@@ -7785,6 +7883,7 @@
               db.collection("annonces")
                 .where("statut", "==", "active")
                 .onSnapshot(function(snapshot) {
+                  clearTimeout(securiteFirestore);
                   annoncesActives = [];
                   snapshot.forEach(function(doc) {
                     annoncesActives.push({ id: doc.id, ...doc.data() });
@@ -7803,6 +7902,7 @@
           .where("statut", "==", "en_cours")
           .orderBy("datePublication", "desc")
           .onSnapshot(function(snapshot) {
+            clearTimeout(securiteFirestore);
             annoncesEnCours = [];
             snapshot.forEach(function(doc) {
               annoncesEnCours.push({ id: doc.id, ...doc.data() });
@@ -7814,6 +7914,7 @@
               db.collection("annonces")
                 .where("statut", "==", "en_cours")
                 .onSnapshot(function(snapshot) {
+                  clearTimeout(securiteFirestore);
                   annoncesEnCours = [];
                   snapshot.forEach(function(doc) {
                     annoncesEnCours.push({ id: doc.id, ...doc.data() });
@@ -9754,7 +9855,7 @@
             synchroniserTransactionsDepuisFirestore();
           }
         }, function(error) {
-          console.error("Erreur écoute demandes reçues :", error);
+          console.warn("Écoute demandes reçues (hors-ligne/injoignable) :", error ? (error.message || error.code || error) : "");
         });
       
       // SECTION 2 : Demandes envoyées (je suis acheteur)
@@ -9831,7 +9932,7 @@
             synchroniserTransactionsDepuisFirestore();
           }
         }, function(error) {
-          console.error("Erreur écoute demandes envoyées :", error);
+          console.warn("Écoute demandes envoyées (hors-ligne/injoignable) :", error ? (error.message || error.code || error) : "");
         });
 
       // Mettre à jour les compteurs après chargement
@@ -14154,14 +14255,13 @@
         if (loading) loading.style.display = 'none';
       }, 3000);
 
-      // Délai de sécurité : si après 5 secondes Firestore n'a pas répondu, forcer l'affichage
+      // Délai de sécurité : si après 15 secondes Firestore n'a pas répondu, afficher l'erreur
       setTimeout(function() {
         if (!annoncesChargees) {
-          console.warn("Firestore n'a pas répondu après 5 secondes");
-          annoncesChargees = true; // Forcer l'affichage
-          appliquerFiltres();
+          console.warn("Firestore n'a pas répondu après 15 secondes");
+          afficherErreurChargement();
         }
-      }, 5000);
+      }, 15000);
 
       // Initialiser EmailJS
       try {
