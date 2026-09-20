@@ -65,6 +65,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
   <!-- Charset et viewport -->
   <meta charset="UTF-8">
@@ -5470,6 +5471,10 @@
     /* ==========================================================
        SECTION 1 : ÉTAT GLOBAL DE L'APPLICATION & CONSTANTES
        ========================================================== */
+    var EMAILJS_PUBLIC_KEY = "aguuo0HEwXN1MODGC";
+    var EMAILJS_SERVICE_ID = "service_1b1i1wc";
+    var EMAILJS_TEMPLATE_ID = "template_2okbv8r";
+
     var currentPage = 'accueil';
     var currentDetailAdId = null;
     var activeConversationId = null;
@@ -6255,6 +6260,56 @@
     /* ==========================================================
        SECTION 2 : UTILITAIRES & NOTIFICATIONS
        ========================================================== */
+
+    /**
+     * Envoie un email de notification via EmailJS
+     */
+    function envoyerEmail(destinataire, sujet, message) {
+      if (!destinataire || destinataire.indexOf('@') === -1) {
+        console.log("Email non envoyé : destinataire manquant");
+        return Promise.resolve(false);
+      }
+      if (typeof emailjs === 'undefined') {
+        console.log("EmailJS non chargé");
+        return Promise.resolve(false);
+      }
+      var parametres = {
+        to_email: destinataire,
+        sujet: sujet,
+        message: message,
+        date: new Date().toLocaleString('fr-FR', {
+          day: '2-digit', month: 'long', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        })
+      };
+      return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, parametres)
+        .then(function() {
+          console.log("✅ Email envoyé à", destinataire);
+          return true;
+        })
+        .catch(function(err) {
+          console.warn("❌ Erreur email :", err);
+          return false;
+        });
+    }
+
+    /**
+     * Récupère l'adresse email d'un utilisateur depuis Firestore
+     */
+    function recupererEmailUtilisateur(uid) {
+      if (!uid || !db) return Promise.resolve(null);
+      return db.collection("utilisateurs").doc(uid).get()
+        .then(function(doc) {
+          if (doc.exists) {
+            var data = doc.data();
+            return data.email || null;
+          }
+          return null;
+        })
+        .catch(function() {
+          return null;
+        });
+    }
 
     /**
      * Échappe les caractères HTML dangereux
@@ -9124,9 +9179,10 @@
       var tel = p.telephone || localStorage.getItem("efoot_tel") || "";
 
       // Récupérer l'annonce
+      var annonce = null;
       db.collection("annonces").doc(annonceId).get()
       .then(function(doc) {
-        var annonce = doc.exists ? doc.data() : null;
+        annonce = doc.exists ? doc.data() : null;
         if (!annonce && typeof getAnnonces === 'function') {
           var adsLocales = getAnnonces();
           annonce = adsLocales.find(function(a) { return a.id === annonceId; });
@@ -9159,6 +9215,29 @@
         });
       })
       .then(function() {
+        // Récupérer l'email du vendeur et envoyer la notification
+        var vendeurUid = annonce ? annonce.vendeurId : null;
+        if (vendeurUid) {
+          recupererEmailUtilisateur(vendeurUid).then(function(emailVendeur) {
+            if (emailVendeur) {
+              var messageVendeur =
+                "Bonjour,\n\n" +
+                "Bonne nouvelle ! Tu viens de recevoir une nouvelle demande " +
+                "d'achat sur EFoot Market SN.\n\n" +
+                "📦 Compte : " + (annonce.titre || 'Compte eFootball') + "\n" +
+                "💰 Prix : " + (annonce.prix ? Number(annonce.prix).toLocaleString('fr-FR') + ' FCFA' : '—') + "\n" +
+                "👤 Acheteur : " + nomPrenom.trim() + "\n\n" +
+                "Connecte-toi sur efootmarketsn.store pour accepter ou " +
+                "refuser cette demande.";
+              envoyerEmail(
+                emailVendeur, 
+                "📩 Nouvelle demande d'achat sur EFoot Market SN", 
+                messageVendeur
+              );
+            }
+          });
+        }
+
         alert("✅ Demande envoyée ! Le vendeur va être notifié.");
         if (typeof fermerModalIntentionAchat === 'function') {
           fermerModalIntentionAchat();
@@ -9653,6 +9732,38 @@
               setAnnonces(annonces);
             }
           }
+
+          // Notifier l'acheteur par email
+          db.collection("demandes").doc(demandeId).get().then(function(doc) {
+            if (!doc.exists) return;
+            var demande = doc.data();
+            var acheteurUid = demande.acheteurId;
+            if (acheteurUid) {
+              recupererEmailUtilisateur(acheteurUid).then(function(emailAcheteur) {
+                if (emailAcheteur) {
+                  var messageAcheteur =
+                    "Bonjour,\n\n" +
+                    "🎉 Excellente nouvelle ! Le vendeur a accepté ta demande " +
+                    "d'achat sur EFoot Market SN.\n\n" +
+                    "📦 Compte : " + (demande.annonceTitre || 'Compte eFootball') + "\n" +
+                    "💰 Prix : " + (demande.annoncePrix ? Number(demande.annoncePrix).toLocaleString('fr-FR') + ' FCFA' : '—') + "\n" +
+                    "👤 Vendeur : " + (demande.vendeurNom || 'Vendeur') + "\n\n" +
+                    "Contacte le vendeur sur WhatsApp pour finaliser la " +
+                    "transaction et recevoir tes identifiants Konami ID.\n\n" +
+                    "Connecte-toi sur efootmarketsn.store pour suivre ta " +
+                    "transaction.";
+                  envoyerEmail(
+                    emailAcheteur, 
+                    "✅ Ta demande a été acceptée sur EFoot Market SN", 
+                    messageAcheteur
+                  );
+                }
+              });
+            }
+          }).catch(function(err) {
+            console.warn("Erreur notification email acheteur :", err);
+          });
+
           afficherNotification("Demande acceptée ! Transaction en cours.", "✅");
           if (typeof afficherDemandesVendeur === 'function') afficherDemandesVendeur();
           if (currentPage === 'mes-annonces') afficherMesAnnonces();
@@ -13706,6 +13817,16 @@
         const loading = document.getElementById('loading-screen');
         if (loading) loading.style.display = 'none';
       }, 3000);
+
+      // Initialiser EmailJS
+      try {
+        if (typeof emailjs !== 'undefined' && emailjs.init) {
+          emailjs.init(EMAILJS_PUBLIC_KEY);
+          console.log("✅ EmailJS initialisé");
+        }
+      } catch (e) {
+        console.warn("Erreur initialisation EmailJS :", e);
+      }
 
       try {
         // Démarrer l'écoute temps réel de la collection Firestore "annonces"
