@@ -4415,7 +4415,7 @@
       <!-- En-tête de la grille -->
       <div class="ads-header-row">
         <div class="ads-count-text">
-          <span id="ads-counter">0</span> annonce(s) disponible(s)
+          <span id="ads-counter">...</span> annonce(s) disponible(s)
         </div>
         <button class="btn-primary" style="padding: 6px 12px; font-size: 13px;" onclick="changerPage('publier')">
           ➕ Déposer une annonce
@@ -4424,7 +4424,13 @@
 
       <!-- Grille des cartes de comptes eFootball -->
       <div class="products-grid" id="products-grid-container">
-        <!-- Rendu dynamique via JavaScript -->
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <div class="empty-icon" style="animation: pulseLogo 1.5s infinite;">⏳</div>
+          <div class="empty-title">Chargement des annonces...</div>
+          <div class="empty-desc">
+            Nous récupérons les meilleures offres eFootball du Sénégal.
+          </div>
+        </div>
       </div>
     </section>
 
@@ -5502,6 +5508,7 @@
 
     // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
     var annoncesFirestore = [];
+    var annoncesChargees = false;
     var firestoreUnsubscribeAnnonces = null;
     var annoncesEnAttenteCache = [];
     var unsubscribeAnnoncesEnAttente = null;
@@ -6003,6 +6010,7 @@
       if (popup) {
         popup.style.display = "none";
       }
+      annoncesChargees = false;
       if (typeof arreterEcouteDemandesFirestore === 'function') {
         arreterEcouteDemandesFirestore();
       }
@@ -7245,6 +7253,25 @@
      * Filtre et trie les annonces en fonction des critères sélectionnés
      */
     function appliquerFiltres() {
+      // Si les annonces ne sont pas encore chargées, afficher un loader
+      if (!annoncesChargees) {
+        var container = document.getElementById('products-grid-container');
+        var counter = document.getElementById('ads-counter');
+        if (counter) counter.textContent = "...";
+        if (container) {
+          container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+              <div class="empty-icon" style="animation: pulseLogo 1.5s infinite;">⏳</div>
+              <div class="empty-title">Chargement des annonces...</div>
+              <div class="empty-desc">
+                Nous récupérons les meilleures offres eFootball du Sénégal.
+              </div>
+            </div>
+          `;
+        }
+        return;
+      }
+
       const annonces = getAnnonces();
       const motCle = (document.getElementById('search-input-desktop').value || document.getElementById('search-input-mobile').value || "").toLowerCase().trim();
       const prixMin = parseFloat(document.getElementById('filter-price-min').value) || 0;
@@ -7449,6 +7476,7 @@
           });
           
           annoncesFirestore = annonces;
+          annoncesChargees = true;
           
           // Aucune annonce : afficher l'état vide normal
           // (pas de seeding automatique)
@@ -7477,8 +7505,9 @@
         var locales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
         if (locales.length > 0) {
           annoncesFirestore = locales;
-          if (currentPage === 'accueil') appliquerFiltres();
         }
+        annoncesChargees = true;
+        if (currentPage === 'accueil') appliquerFiltres();
         return;
       }
 
@@ -13867,6 +13896,15 @@
         const loading = document.getElementById('loading-screen');
         if (loading) loading.style.display = 'none';
       }, 3000);
+
+      // Délai de sécurité : si après 5 secondes Firestore n'a pas répondu, forcer l'affichage
+      setTimeout(function() {
+        if (!annoncesChargees) {
+          console.warn("Firestore n'a pas répondu après 5 secondes");
+          annoncesChargees = true; // Forcer l'affichage
+          appliquerFiltres();
+        }
+      }, 5000);
 
       // Initialiser EmailJS
       try {
