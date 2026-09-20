@@ -5697,6 +5697,7 @@
             profilExistant.photo = user.photoURL || profilExistant.photo;
             profilExistant.email = user.email || profilExistant.email;
             localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilExistant));
+            sauvegarderProfilFirestore(profilExistant);
           }
 
           mettreAJourAffichageUtilisateur(user);
@@ -5755,6 +5756,7 @@
           }
 
           localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profil));
+          sauvegarderProfilFirestore(profil);
 
           // Mettre à jour l'affichage
           mettreAJourAffichageUtilisateur(user);
@@ -5808,15 +5810,15 @@
     function sauvegarderProfilFirestore(profilData) {
       var user = (typeof firebase !== 'undefined' && firebase.auth) 
         ? firebase.auth().currentUser : null;
-      if (!user || !db) return Promise.resolve();
+      if (!user || !db) return Promise.resolve(false);
       
       var data = {
         prenom: profilData.prenom || "",
         nom: profilData.nom || "",
         telephone: profilData.telephone || "",
         localisation: profilData.localisation || "Dakar",
-        photo: profilData.photo || null,
-        email: profilData.email || null,
+        photo: profilData.photo || user.photoURL || null,
+        email: profilData.email || user.email || null,
         complete: profilData.complete === true,
         dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -5825,12 +5827,46 @@
         .set(data, { merge: true })
         .then(function() {
           console.log("✅ Profil sauvegardé dans Firestore");
+          return true;
         })
         .catch(function(err) {
           console.warn("❌ Erreur sauvegarde profil :", err);
+          return false;
         });
     }
     window.sauvegarderProfilFirestore = sauvegarderProfilFirestore;
+
+    /**
+     * Crée automatiquement le document Firestore au login si absent
+     */
+    function creerProfilFirestoreSiAbsent(user) {
+      if (!user || !db) return;
+      
+      db.collection("utilisateurs").doc(user.uid).get()
+        .then(function(doc) {
+          if (!doc.exists) {
+            // Créer un document minimal avec les infos Google
+            var dataMinimal = {
+              prenom: user.displayName ? user.displayName.split(' ')[0] : "",
+              nom: user.displayName ? user.displayName.split(' ').slice(1).join(' ') : "",
+              telephone: "",
+              localisation: "Dakar",
+              photo: user.photoURL || null,
+              email: user.email || null,
+              complete: false,
+              dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            return db.collection("utilisateurs").doc(user.uid).set(dataMinimal);
+          }
+        })
+        .then(function() {
+          console.log("✅ Document utilisateurs vérifié/créé");
+        })
+        .catch(function(err) {
+          console.warn("Erreur création profil Firestore :", err);
+        });
+    }
+    window.creerProfilFirestoreSiAbsent = creerProfilFirestoreSiAbsent;
 
     /**
      * Charge le profil utilisateur depuis Firestore et le synchronise dans le localStorage
@@ -5888,6 +5924,7 @@
                 }
               }
               mettreAJourAffichageUtilisateur(user);
+              creerProfilFirestoreSiAbsent(user);
 
               // Charger le profil depuis Firestore AVANT de décider quoi afficher
               chargerProfilDepuisFirestore(function(profilFirestore) {
@@ -6150,6 +6187,7 @@
           complete: false
         };
         localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profil));
+        sauvegarderProfilFirestore(profil);
       }
 
       cacherEcranCompleterProfil();
