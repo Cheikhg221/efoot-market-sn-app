@@ -130,10 +130,86 @@
       --transition: all 0.2s ease-in-out;
     }
 
+    /* Suppression du tap highlight bleu sur mobile */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      -webkit-touch-callout: none;
+    }
+
+    /* Pour les boutons, liens et éléments cliquables */
+    button,
+    a,
+    .nav-link-btn,
+    .dock-btn,
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .btn-publish-header,
+    .btn-auth-guest,
+    .btn-auth-google,
+    .ad-card,
+    .card-fav-btn,
+    .conv-item,
+    .tx-card,
+    .carte-demande,
+    .transactions-tab-btn,
+    .app-footer-link,
+    .legal-back-btn,
+    .modal-close-btn,
+    .btn-logout,
+    .user-pill,
+    .power-chip,
+    .review-quick-chip,
+    .star-btn,
+    .card-seller-row,
+    [onclick] {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      outline: none;
+    }
+
+    /* Désactiver le contour bleu au focus (mais on le garde pour l'accessibilité clavier sur desktop) */
+    button:focus,
+    a:focus,
+    [onclick]:focus {
+      outline: none;
+    }
+
+    /* Rétablir un contour visible uniquement pour la navigation clavier (accessibilité) */
+    button:focus-visible,
+    a:focus-visible,
+    [onclick]:focus-visible {
+      outline: 2px solid #00C853;
+      outline-offset: 2px;
+    }
+
+    /* Feedback visuel propre pour remplacer le tap highlight (mobile & desktop) */
+    .btn-primary:active,
+    .btn-auth-guest:active,
+    #auth-screen .btn-auth-guest:active,
+    .btn-publish-header:active,
+    .btn-pay:active {
+      transform: scale(0.97) !important;
+      opacity: 0.9;
+      transition: transform 0.1s ease;
+    }
+
+    .ad-card:active,
+    .tx-card:active {
+      transform: scale(0.99) !important;
+      transition: transform 0.1s ease;
+    }
+
+    .dock-btn:active {
+      transform: scale(0.9) !important;
+    }
+
+    .card-fav-btn:active {
+      transform: scale(0.85) !important;
     }
 
     body {
