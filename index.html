@@ -5883,7 +5883,19 @@
           }
 
           mettreAJourAffichageUtilisateur(user);
-          verifierProfilApresConnexion(user);
+          if (profilExistant && profilExistant.complete === true) {
+            verifierProfilApresConnexion(user);
+          } else {
+            chargerProfilDepuisFirestore(function(profilFirestore) {
+              if (profilFirestore && profilFirestore.complete) {
+                localStorage.removeItem("efoot_profil_saute");
+                cacherEcranCompleterProfil();
+                afficherApplication();
+              } else {
+                verifierProfilApresConnexion(user);
+              }
+            });
+          }
           afficherNotification(`Bienvenue ${nomGoogle} !`, "⚽");
         })
         .catch(function(error) {
@@ -6061,14 +6073,26 @@
         return;
       }
       
+      console.log("🔍 [FIRESTORE] Lecture doc utilisateurs/" + user.uid);
       db.collection("utilisateurs").doc(user.uid).get()
         .then(function(doc) {
+          console.log("🔍 [FIRESTORE] Doc exists :", doc.exists);
           if (doc.exists) {
+            console.log("🔍 [FIRESTORE] Data :", doc.data());
             var data = doc.data();
             // Fusionner avec les infos Google si disponibles
             if (!data.photo && user.photoURL) data.photo = user.photoURL;
             if (!data.email && user.email) data.email = user.email;
             data.id = user.uid;
+
+            // En cas de conflit : Firestore gagne si complete: true
+            // Si Firestore a complete !== true mais le localStorage a déjà complete: true,
+            // préserver le statut complet local pour ne pas écraser les données locales
+            var profilLocal = getProfilUtilisateur();
+            if (data.complete !== true && profilLocal && profilLocal.complete === true) {
+              data.complete = true;
+              sauvegarderProfilFirestore(profilLocal);
+            }
             
             // Sauvegarder dans localStorage pour accès rapide
             localStorage.setItem(STORAGE_PROFIL, JSON.stringify(data));
@@ -6081,7 +6105,7 @@
           }
         })
         .catch(function(err) {
-          console.warn("❌ Erreur chargement profil :", err);
+          console.error("❌ [FIRESTORE] Erreur :", err);
           if (callback) callback(null);
         });
     }
@@ -6095,6 +6119,10 @@
         auth.onAuthStateChanged(function(user) {
           try {
             if (user) {
+              console.log("🔍 [AUTH] User connecté :", user.uid);
+              console.log("🔍 [AUTH] isAnonymous :", user.isAnonymous);
+              console.log("🔍 [AUTH] email :", user.email);
+
               if (!localStorage.getItem("efoot_nom")) {
                 if (user.isAnonymous) {
                   var nomInvite = "Invité " + Math.floor(Math.random() * 9000 + 1000);
@@ -6108,18 +6136,10 @@
               mettreAJourAffichageUtilisateur(user);
               creerProfilFirestoreSiAbsent(user);
 
-              // Charger le profil depuis Firestore AVANT de décider quoi afficher
-              chargerProfilDepuisFirestore(function(profilFirestore) {
-                if (profilFirestore && profilFirestore.complete) {
-                  // Profil complet trouvé dans Firestore → afficher l'application
-                  localStorage.removeItem("efoot_profil_saute");
-                  cacherEcranCompleterProfil();
-                  afficherApplication();
-                } else {
-                  // Pas de profil Firestore ou incomplet → comportement normal
-                  verifierProfilApresConnexion(user);
-                }
-
+              var initPostAuthEffectue = false;
+              function finaliserInitPostAuth() {
+                if (initPostAuthEffectue) return;
+                initPostAuthEffectue = true;
                 if (typeof demarrerEcouteDemandesFirestore === 'function') {
                   demarrerEcouteDemandesFirestore();
                 }
@@ -6129,6 +6149,33 @@
                 }
                 const loading = document.getElementById('loading-screen');
                 if (loading) loading.style.display = 'none';
+              }
+
+              // TIMEOUT de 3 secondes : si Firestore ne répond pas dans les 3 secondes, vérifier le localStorage
+              var timeoutProfil = setTimeout(function() {
+                console.warn("⚠️ [AUTH] Firestore timeout → fallback localStorage");
+                verifierProfilApresConnexion(user);
+                finaliserInitPostAuth();
+              }, 3000);
+
+              // Charger le profil depuis Firestore AVANT de décider quoi afficher
+              chargerProfilDepuisFirestore(function(profilFirestore) {
+                clearTimeout(timeoutProfil);
+                console.log("🔍 [AUTH] Profil Firestore reçu :", profilFirestore);
+                console.log("🔍 [AUTH] complete :", profilFirestore ? profilFirestore.complete : "NULL");
+
+                // Si Firestore a un profil complet → app directe
+                if (profilFirestore && profilFirestore.complete) {
+                  localStorage.removeItem("efoot_profil_saute");
+                  cacherEcranCompleterProfil();
+                  afficherApplication();
+                  finaliserInitPostAuth();
+                  return;
+                }
+
+                // Sinon → vérifier localStorage (déjà fait dans verifierProfilApresConnexion)
+                verifierProfilApresConnexion(user);
+                finaliserInitPostAuth();
               });
             } else {
               if (typeof arreterEcouteDemandesFirestore === 'function') {
@@ -6211,23 +6258,30 @@
      */
     function verifierProfilApresConnexion(user) {
       const profil = getProfilUtilisateur();
-      const aPasse = localStorage.getItem("efoot_profil_saute") === "true";
-
-      // Si le profil est déjà complet (complete === true)
+      
+      // PRIORITÉ 1 : Firestore (déjà vérifié dans le callback auth, 
+      // mais on revérifie par sécurité)
+      // (le callback auth gère déjà ce cas en amont)
+      
+      // PRIORITÉ 2 : localStorage
       if (profil && profil.complete === true) {
+        console.log("✅ [AUTH] Profil local complet → app");
         cacherEcranCompleterProfil();
         afficherApplication();
         return;
       }
-
-      // Si l'utilisateur a déjà cliqué sur "Passer pour l'instant" lors d'une session précédente
+      
+      // PRIORITÉ 3 : flag "passé"
+      const aPasse = localStorage.getItem("efoot_profil_saute") === "true";
       if (aPasse) {
+        console.log("✅ [AUTH] Profil sauté → app");
         cacherEcranCompleterProfil();
         afficherApplication();
         return;
       }
-
-      // PREMIÈRE CONNEXION : afficher le formulaire de profil AVANT d'accéder à l'application
+      
+      // Sinon : écran de complétion
+      console.log("⚠️ [AUTH] Aucun profil → écran de complétion");
       afficherEcranCompleterProfil(user);
     }
 
@@ -6339,7 +6393,18 @@
       localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilData));
       localStorage.setItem("efoot_nom", `${prenom} ${nom}`.trim());
       localStorage.removeItem("efoot_profil_saute");
-      sauvegarderProfilFirestore(profilData);
+
+      sauvegarderProfilFirestore({
+        prenom: prenom,
+        nom: nom,
+        telephone: telFormate,
+        localisation: loc,
+        photo: profilData.photo,
+        email: profilData.email,
+        complete: true   // ← FORCER à true
+      }).then(function() {
+        console.log("✅ [PROFIL] Sauvegardé dans Firestore avec complete:true");
+      });
 
       cacherEcranCompleterProfil();
       afficherApplication();
