@@ -6303,30 +6303,29 @@
      * Envoie un email de notification via EmailJS
      */
     function envoyerEmail(destinataire, sujet, message) {
+      console.log("📧 [DEBUG] envoyerEmail appelé");
+      console.log("📧 [DEBUG] Destinataire:", destinataire);
+      console.log("📧 [DEBUG] emailjs:", typeof emailjs);
       if (!destinataire || destinataire.indexOf('@') === -1) {
-        console.log("Email non envoyé : destinataire manquant");
+        console.warn("⚠️ [DEBUG] Destinataire invalide");
         return Promise.resolve(false);
       }
       if (typeof emailjs === 'undefined') {
-        console.log("EmailJS non chargé");
+        console.warn("⚠️ [DEBUG] EmailJS non chargé");
         return Promise.resolve(false);
       }
       var parametres = {
-        to_email: destinataire,
-        sujet: sujet,
-        message: message,
-        date: new Date().toLocaleString('fr-FR', {
-          day: '2-digit', month: 'long', year: 'numeric',
-          hour: '2-digit', minute: '2-digit'
-        })
+        to_email: destinataire, sujet: sujet, message: message,
+        date: new Date().toLocaleString('fr-FR')
       };
+      console.log("📧 [DEBUG] Paramètres:", parametres);
       return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, parametres)
-        .then(function() {
-          console.log("✅ Email envoyé à", destinataire);
+        .then(function(r) {
+          console.log("✅ [DEBUG] Email envoyé ! Réponse:", r);
           return true;
         })
         .catch(function(err) {
-          console.warn("❌ Erreur email :", err);
+          console.error("❌ [DEBUG] Erreur:", err);
           return false;
         });
     }
@@ -6335,16 +6334,25 @@
      * Récupère l'adresse email d'un utilisateur depuis Firestore
      */
     function recupererEmailUtilisateur(uid) {
-      if (!uid || !db) return Promise.resolve(null);
+      console.log("🔍 [DEBUG] recupererEmailUtilisateur pour uid:", uid);
+      console.log("🔍 [DEBUG] db:", db ? "OK" : "NULL");
+      if (!uid || !db) {
+        console.warn("⚠️ [DEBUG] Abandon : uid ou db manquant");
+        return Promise.resolve(null);
+      }
       return db.collection("utilisateurs").doc(uid).get()
         .then(function(doc) {
+          console.log("🔍 [DEBUG] Doc exists:", doc.exists);
           if (doc.exists) {
             var data = doc.data();
+            console.log("🔍 [DEBUG] Données:", data);
+            console.log("🔍 [DEBUG] Email:", data.email);
             return data.email || null;
           }
           return null;
         })
-        .catch(function() {
+        .catch(function(err) {
+          console.error("❌ [DEBUG] Erreur lecture:", err);
           return null;
         });
     }
@@ -9255,6 +9263,8 @@
       .then(function() {
         // Récupérer l'email du vendeur et envoyer la notification
         var vendeurUid = annonce ? annonce.vendeurId : null;
+        console.log("📧 [DEBUG] vendeurUid:", vendeurUid);
+        console.log("📧 [DEBUG] annonce complète:", annonce);
         if (vendeurUid) {
           recupererEmailUtilisateur(vendeurUid).then(function(emailVendeur) {
             if (emailVendeur) {
@@ -9776,6 +9786,8 @@
             if (!doc.exists) return;
             var demande = doc.data();
             var acheteurUid = demande.acheteurId;
+            console.log("📧 [DEBUG] Tentative envoi email acheteur");
+            console.log("📧 [DEBUG] acheteurUid:", acheteurUid);
             if (acheteurUid) {
               recupererEmailUtilisateur(acheteurUid).then(function(emailAcheteur) {
                 if (emailAcheteur) {
