@@ -5798,6 +5798,73 @@
     window.lierCompteGoogle = lierCompteGoogle;
 
     /**
+     * Sauvegarde le profil utilisateur dans Firestore (collection "utilisateurs", doc ID = user.uid)
+     */
+    function sauvegarderProfilFirestore(profilData) {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) 
+        ? firebase.auth().currentUser : null;
+      if (!user || !db) return Promise.resolve();
+      
+      var data = {
+        prenom: profilData.prenom || "",
+        nom: profilData.nom || "",
+        telephone: profilData.telephone || "",
+        localisation: profilData.localisation || "Dakar",
+        photo: profilData.photo || null,
+        email: profilData.email || null,
+        complete: profilData.complete === true,
+        dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      
+      return db.collection("utilisateurs").doc(user.uid)
+        .set(data, { merge: true })
+        .then(function() {
+          console.log("✅ Profil sauvegardé dans Firestore");
+        })
+        .catch(function(err) {
+          console.warn("❌ Erreur sauvegarde profil :", err);
+        });
+    }
+    window.sauvegarderProfilFirestore = sauvegarderProfilFirestore;
+
+    /**
+     * Charge le profil utilisateur depuis Firestore et le synchronise dans le localStorage
+     */
+    function chargerProfilDepuisFirestore(callback) {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) 
+        ? firebase.auth().currentUser : null;
+      if (!user || !db) {
+        if (callback) callback(null);
+        return;
+      }
+      
+      db.collection("utilisateurs").doc(user.uid).get()
+        .then(function(doc) {
+          if (doc.exists) {
+            var data = doc.data();
+            // Fusionner avec les infos Google si disponibles
+            if (!data.photo && user.photoURL) data.photo = user.photoURL;
+            if (!data.email && user.email) data.email = user.email;
+            data.id = user.uid;
+            
+            // Sauvegarder dans localStorage pour accès rapide
+            localStorage.setItem(STORAGE_PROFIL, JSON.stringify(data));
+            
+            console.log("✅ Profil chargé depuis Firestore");
+            if (callback) callback(data);
+          } else {
+            console.log("ℹ️ Aucun profil Firestore trouvé");
+            if (callback) callback(null);
+          }
+        })
+        .catch(function(err) {
+          console.warn("❌ Erreur chargement profil :", err);
+          if (callback) callback(null);
+        });
+    }
+    window.chargerProfilDepuisFirestore = chargerProfilDepuisFirestore;
+
+    /**
      * 4. VÉRIFICATION DE SESSION AU CHARGEMENT
      */
     if (auth) {
@@ -5816,16 +5883,29 @@
                 }
               }
               mettreAJourAffichageUtilisateur(user);
-              verifierProfilApresConnexion(user);
-              if (typeof demarrerEcouteDemandesFirestore === 'function') {
-                demarrerEcouteDemandesFirestore();
-              }
-              if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
-                var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
-                if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
-              }
-              const loading = document.getElementById('loading-screen');
-              if (loading) loading.style.display = 'none';
+
+              // Charger le profil depuis Firestore AVANT de décider quoi afficher
+              chargerProfilDepuisFirestore(function(profilFirestore) {
+                if (profilFirestore && profilFirestore.complete) {
+                  // Profil complet trouvé dans Firestore → afficher l'application
+                  localStorage.removeItem("efoot_profil_saute");
+                  cacherEcranCompleterProfil();
+                  afficherApplication();
+                } else {
+                  // Pas de profil Firestore ou incomplet → comportement normal
+                  verifierProfilApresConnexion(user);
+                }
+
+                if (typeof demarrerEcouteDemandesFirestore === 'function') {
+                  demarrerEcouteDemandesFirestore();
+                }
+                if (currentDetailAdId && typeof afficherBoutonsAnnonce === 'function') {
+                  var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
+                  if (adCur) afficherBoutonsAnnonce(adCur.id, adCur);
+                }
+                const loading = document.getElementById('loading-screen');
+                if (loading) loading.style.display = 'none';
+              });
             } else {
               if (typeof arreterEcouteDemandesFirestore === 'function') {
                 arreterEcouteDemandesFirestore();
@@ -5887,8 +5967,7 @@
       firebase.auth().signOut()
         .then(function() {
           localStorage.removeItem("efoot_nom");
-          localStorage.removeItem("efoot_profil");
-          localStorage.removeItem("efoot_profil_saute");
+          // On conserve le profil dans le localStorage même après déconnexion, il sera rechargé depuis Firestore
           afficherEcranConnexion();
           afficherNotification("Déconnexion réussie", "👋");
         })
@@ -6035,6 +6114,7 @@
       localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilData));
       localStorage.setItem("efoot_nom", `${prenom} ${nom}`.trim());
       localStorage.removeItem("efoot_profil_saute");
+      sauvegarderProfilFirestore(profilData);
 
       cacherEcranCompleterProfil();
       afficherApplication();
@@ -6630,6 +6710,7 @@
       localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilData));
       localStorage.setItem("efoot_nom", `${prenom} ${nom}`.trim());
       localStorage.removeItem("efoot_profil_saute");
+      sauvegarderProfilFirestore(profilData);
 
       if (user) {
         mettreAJourAffichageUtilisateur(user);
@@ -6696,6 +6777,7 @@
       localStorage.setItem(STORAGE_PROFIL, JSON.stringify(profilData));
       localStorage.setItem("efoot_nom", `${prenom} ${nom}`.trim());
       localStorage.removeItem("efoot_profil_saute");
+      sauvegarderProfilFirestore(profilData);
 
       fermerModaleProfil();
       if (user) {
