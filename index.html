@@ -3830,6 +3830,116 @@
       0%, 100% { opacity: 0.5; transform: scale(0.95); }
       50% { opacity: 1; transform: scale(1.05); }
     }
+
+    /* ==========================================================
+       SKELETON LOADER (Chargement des annonces)
+       ========================================================== */
+
+    .skeleton-card {
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .skeleton-media {
+      height: 180px;
+      width: 100%;
+      background: linear-gradient(
+        90deg,
+        #1a1a1a 0%,
+        #252525 50%,
+        #1a1a1a 100%
+      );
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.4s ease-in-out infinite;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(
+        90deg,
+        #252525 0%,
+        #333333 50%,
+        #252525 100%
+      );
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.4s ease-in-out infinite;
+    }
+
+    .skeleton-title {
+      width: 85%;
+      height: 16px;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-price {
+      width: 55%;
+      height: 20px;
+      background: linear-gradient(
+        90deg,
+        #1a3d24 0%,
+        #1e4a2c 50%,
+        #1a3d24 100%
+      );
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.4s ease-in-out infinite;
+      margin-bottom: 6px;
+    }
+
+    .skeleton-badge {
+      width: 40%;
+      height: 12px;
+      margin-bottom: 12px;
+    }
+
+    .skeleton-seller-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .skeleton-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(
+        90deg,
+        #252525 0%,
+        #333333 50%,
+        #252525 100%
+      );
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    .skeleton-seller {
+      width: 60%;
+      height: 12px;
+    }
+
+    @keyframes skeletonShimmer {
+      0% {
+        background-position: -200% 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    /* Animation plus rapide sur les prix (accent vert) */
+    .skeleton-price {
+      animation-duration: 1.8s;
+    }
+
+    /* Sur mobile : 1 colonne, cartes moins hautes */
+    @media (max-width: 767px) {
+      .skeleton-media {
+        height: 160px;
+      }
+    }
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -4424,11 +4534,76 @@
 
       <!-- Grille des cartes de comptes eFootball -->
       <div class="products-grid" id="products-grid-container">
-        <div class="empty-state" style="grid-column: 1 / -1;">
-          <div class="empty-icon" style="animation: pulseLogo 1.5s infinite;">⏳</div>
-          <div class="empty-title">Chargement des annonces...</div>
-          <div class="empty-desc">
-            Nous récupérons les meilleures offres eFootball du Sénégal.
+        <div class="ad-card skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="card-body">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-price"></div>
+            <div class="skeleton-line skeleton-badge"></div>
+            <div class="skeleton-seller-row">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-line skeleton-seller"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ad-card skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="card-body">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-price"></div>
+            <div class="skeleton-line skeleton-badge"></div>
+            <div class="skeleton-seller-row">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-line skeleton-seller"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ad-card skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="card-body">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-price"></div>
+            <div class="skeleton-line skeleton-badge"></div>
+            <div class="skeleton-seller-row">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-line skeleton-seller"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ad-card skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="card-body">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-price"></div>
+            <div class="skeleton-line skeleton-badge"></div>
+            <div class="skeleton-seller-row">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-line skeleton-seller"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ad-card skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="card-body">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-price"></div>
+            <div class="skeleton-line skeleton-badge"></div>
+            <div class="skeleton-seller-row">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-line skeleton-seller"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ad-card skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="card-body">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-price"></div>
+            <div class="skeleton-line skeleton-badge"></div>
+            <div class="skeleton-seller-row">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-line skeleton-seller"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -7250,25 +7425,42 @@
     }
 
     /**
+     * Affiche un skeleton loader animé pendant le chargement initial des annonces
+     */
+    function afficherSkeletonLoader() {
+      var container = document.getElementById('products-grid-container');
+      var counter = document.getElementById('ads-counter');
+      if (counter) counter.textContent = "...";
+      if (!container) return;
+
+      // Générer 6 cartes skeleton (2 rangées de 3 en desktop, 1 col en mobile)
+      var skeletonCards = '';
+      for (var i = 0; i < 6; i++) {
+        skeletonCards += `
+          <div class="ad-card skeleton-card">
+            <div class="skeleton-media"></div>
+            <div class="card-body">
+              <div class="skeleton-line skeleton-title"></div>
+              <div class="skeleton-line skeleton-price"></div>
+              <div class="skeleton-line skeleton-badge"></div>
+              <div class="skeleton-seller-row">
+                <div class="skeleton-circle"></div>
+                <div class="skeleton-line skeleton-seller"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = skeletonCards;
+    }
+
+    /**
      * Filtre et trie les annonces en fonction des critères sélectionnés
      */
     function appliquerFiltres() {
-      // Si les annonces ne sont pas encore chargées, afficher un loader
+      // Si les annonces ne sont pas encore chargées, afficher le skeleton loader
       if (!annoncesChargees) {
-        var container = document.getElementById('products-grid-container');
-        var counter = document.getElementById('ads-counter');
-        if (counter) counter.textContent = "...";
-        if (container) {
-          container.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1;">
-              <div class="empty-icon" style="animation: pulseLogo 1.5s infinite;">⏳</div>
-              <div class="empty-title">Chargement des annonces...</div>
-              <div class="empty-desc">
-                Nous récupérons les meilleures offres eFootball du Sénégal.
-              </div>
-            </div>
-          `;
-        }
+        afficherSkeletonLoader();
         return;
       }
 
