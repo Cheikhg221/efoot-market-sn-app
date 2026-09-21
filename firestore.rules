@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Utilisateurs
+    match /utilisateurs/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Annonces
+    match /annonces/{annonceId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+
+    // Demandes d'achat
+    match /demandes/{demandeId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Avis
+    match /avis/{avisId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+
+    // Ventes (tracking interne — visible uniquement dans Firebase Console)
+    match /ventes/{venteId} {
+      allow read: if false; // Pas d'accès client en lecture
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+
+    // Statistiques globales (tracking interne — visible uniquement dans Firebase Console)
+    match /statistiques/{statId} {
+      allow read: if false; // Pas d'accès client en lecture
+      allow write: if request.auth != null;
+    }
+  }
+}

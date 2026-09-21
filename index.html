@@ -6023,6 +6023,11 @@
           mettreAJourAffichageUtilisateur(user);
           verifierProfilApresConnexion(user);
           afficherNotification(`Connecté en invité`, "👤");
+
+          if (typeof gtag === 'function') {
+            gtag('event', 'connexion_invite');
+            console.log('📊 GA4 connexion_invite envoyé');
+          }
         })
         .catch(function(error) {
           if (btn) {
@@ -6085,6 +6090,11 @@
             });
           }
           afficherNotification(`Bienvenue ${nomGoogle} !`, "⚽");
+
+          if (typeof gtag === 'function') {
+            gtag('event', 'connexion_google');
+            console.log('📊 GA4 connexion_google envoyé');
+          }
         })
         .catch(function(error) {
           if (btn) {
@@ -6238,7 +6248,9 @@
               complete: false,
               dateCreation: firebase.firestore.FieldValue.serverTimestamp()
             };
-            return db.collection("utilisateurs").doc(user.uid).set(dataMinimal);
+            return db.collection("utilisateurs").doc(user.uid).set(dataMinimal).then(function() {
+              incrementerCompteurUtilisateurs();
+            });
           }
         })
         .then(function() {
@@ -6447,6 +6459,116 @@
     }
 
     /**
+     * SYSTÈME DE TRACKING DES VENTES & STATISTIQUES GLOBALES (VISIBLE UNIQUEMENT DANS FIREBASE CONSOLE)
+     */
+    function enregistrerVenteFirestore(demande) {
+      if (!db || !demande) return Promise.resolve(false);
+
+      var annonceId = demande.annonceId || "";
+      var acheteurId = demande.acheteurId || "";
+      var vendeurId = demande.vendeurId || "";
+
+      // Récupérer les informations complémentaires si nécessaire (annonce et emails)
+      var recupAnnonce = (annonceId && (!demande.plateforme || !demande.region))
+        ? db.collection("annonces").doc(annonceId).get().catch(function() { return null; })
+        : Promise.resolve(null);
+
+      var recupEmailAcheteur = (demande.acheteurEmail || !acheteurId)
+        ? Promise.resolve(demande.acheteurEmail || "")
+        : (typeof recupererEmailUtilisateur === 'function' ? recupererEmailUtilisateur(acheteurId).catch(function() { return ""; }) : Promise.resolve(""));
+
+      var recupEmailVendeur = (demande.vendeurEmail || !vendeurId)
+        ? Promise.resolve(demande.vendeurEmail || "")
+        : (typeof recupererEmailUtilisateur === 'function' ? recupererEmailUtilisateur(vendeurId).catch(function() { return ""; }) : Promise.resolve(""));
+
+      return Promise.all([recupAnnonce, recupEmailAcheteur, recupEmailVendeur]).then(function(resultats) {
+        var adDoc = resultats[0];
+        var emailAcheteur = resultats[1] || "";
+        var emailVendeur = resultats[2] || "";
+        var adData = (adDoc && adDoc.exists) ? adDoc.data() : {};
+
+        var vente = {
+          annonceId: annonceId,
+          annonceTitre: demande.annonceTitre || adData.titre || "Compte eFootball",
+          annoncePrix: Number(demande.annoncePrix || adData.prix) || 0,
+          plateforme: demande.plateforme || demande.annoncePlateforme || adData.plateforme || "Mobile",
+          region: demande.region || demande.annonceRegion || adData.region || adData.localisation || "Dakar",
+          acheteurId: acheteurId,
+          acheteurNom: demande.acheteurNom || "",
+          acheteurEmail: emailAcheteur,
+          vendeurId: vendeurId,
+          vendeurNom: demande.vendeurNom || adData.vendeur || "",
+          vendeurEmail: emailVendeur,
+          dateVente: firebase.firestore.FieldValue.serverTimestamp(),
+          dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        return db.collection("ventes").add(vente)
+          .then(function() {
+            console.log("✅ Vente enregistrée");
+            return incrementerCompteursGlobaux(vente.annoncePrix);
+          })
+          .catch(function(err) {
+            console.warn("Erreur enregistrement vente :", err);
+            return false;
+          });
+      }).catch(function(errGlob) {
+        console.warn("Erreur préparation vente Firestore :", errGlob);
+        return false;
+      });
+    }
+
+    function incrementerCompteursGlobaux(montantVente) {
+      if (!db) return Promise.resolve();
+      
+      return db.collection("statistiques").doc("global")
+        .set({
+          totalVentes: firebase.firestore.FieldValue.increment(1),
+          totalVolumeFCFA: firebase.firestore.FieldValue.increment(montantVente || 0),
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
+        .catch(function(err) {
+          console.warn("Erreur maj compteurs :", err);
+        });
+    }
+
+    function incrementerCompteurAnnonces() {
+      if (!db) return;
+      db.collection("statistiques").doc("global")
+        .set({
+          totalAnnonces: firebase.firestore.FieldValue.increment(1),
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
+        .catch(function(err) {
+          console.warn("Erreur compteur annonces :", err);
+        });
+    }
+
+    function incrementerCompteurUtilisateurs() {
+      if (!db) return;
+      db.collection("statistiques").doc("global")
+        .set({
+          totalUtilisateurs: firebase.firestore.FieldValue.increment(1),
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
+        .catch(function(err) {
+          console.warn("Erreur compteur utilisateurs :", err);
+        });
+    }
+
+    function incrementerCompteurTransactions() {
+      if (!db) return;
+      db.collection("statistiques").doc("global")
+        .set({
+          totalTransactions: firebase.firestore.FieldValue.increment(1),
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
+        .catch(function(err) {
+          console.warn("Erreur compteur transactions :", err);
+        });
+    }
+
+    /**
      * 6. VÉRIFICATION ET AFFICHAGE DU FORMULAIRE DE PROFIL LORS DE LA PREMIÈRE CONNEXION
      * Règle : S'affiche UNIQUEMENT la première connexion (sauf si complété ou passé).
      */
@@ -6605,6 +6727,13 @@
       cacherEcranCompleterProfil();
       afficherApplication();
       afficherNotification(`Profil enregistré : ${prenom} ${nom}`, "✅");
+
+      if (typeof gtag === 'function') {
+        gtag('event', 'profil_complete', {
+          'localisation': loc
+        });
+        console.log('📊 GA4 profil_complete envoyé');
+      }
     }
 
     /**
@@ -8280,6 +8409,7 @@
         })
         .then(function(docRef) {
           console.log("Annonce publiée : " + docRef.id);
+          incrementerCompteurAnnonces();
           afficherAccueil();
         })
         .catch(function(error) {
@@ -8356,6 +8486,19 @@
         })
         .then(function(docRef) {
           console.log("Annonce publiée : " + docRef.id);
+          incrementerCompteurAnnonces();
+
+          if (typeof gtag === 'function') {
+            gtag('event', 'annonce_publiee', {
+              'valeur': prix,
+              'devise': 'XOF',
+              'plateforme': plateforme,
+              'region': region,
+              'puissance': puissance
+            });
+            console.log('📊 GA4 annonce_publiee envoyé');
+          }
+
           afficherNotification("Compte eFootball publié avec succès !", "🚀");
 
           // Réinitialiser le formulaire
@@ -9798,6 +9941,8 @@
         });
       })
       .then(function(demandeDocRef) {
+        incrementerCompteurTransactions();
+
         // Récupérer l'email du vendeur et envoyer la notification
         var vendeurUid = annonce ? annonce.vendeurId : null;
         var nouvelleDemandeId = demandeDocRef ? demandeDocRef.id : null;
@@ -9841,6 +9986,16 @@
           }).catch(function(err) {
             console.warn("Erreur notification email vendeur :", err);
           });
+        }
+
+        if (typeof gtag === 'function') {
+          gtag('event', 'demande_envoyee', {
+            'valeur': annonce ? Number(annonce.prix) : 0,
+            'devise': 'XOF',
+            'plateforme': annonce ? annonce.plateforme : 'Mobile',
+            'annonce_id': annonceId
+          });
+          console.log('📊 GA4 demande_envoyee envoyé');
         }
 
         alert("✅ Demande envoyée ! Le vendeur va être notifié.");
@@ -10502,6 +10657,13 @@
             console.warn("Erreur notification email acheteur :", err);
           });
 
+          if (typeof gtag === 'function') {
+            gtag('event', 'demande_acceptee', {
+              'transaction_id': demandeId
+            });
+            console.log('📊 GA4 demande_acceptee envoyé');
+          }
+
           afficherNotification("Demande acceptée ! Transaction en cours.", "✅");
           if (typeof afficherDemandesVendeur === 'function') afficherDemandesVendeur();
           if (currentPage === 'mes-annonces') afficherMesAnnonces();
@@ -10550,9 +10712,19 @@
           nombreRefus: nombreRefus,
           dateProchaineDemande: dateProchaine,
           bloqueDefinitif: bloqueDefinitif
+        }).then(function() {
+          return nombreRefus;
         });
       })
-      .then(function() {
+      .then(function(nombreRefus) {
+        if (typeof gtag === 'function') {
+          gtag('event', 'demande_refusee', {
+            'transaction_id': demandeId,
+            'nombre_refus': nombreRefus || 1
+          });
+          console.log('📊 GA4 demande_refusee envoyé');
+        }
+
         alert("❌ Demande refusée");
         if (typeof afficherNotification === 'function') {
           afficherNotification("Demande refusée", "❌");
@@ -10693,6 +10865,34 @@
           afficherDemandesVendeur();
           afficherDemandesAcheteur();
           if (currentPage === 'mes-annonces') afficherMesAnnonces();
+
+          // Événement Google Analytics 4 (GA4) pour le suivi des ventes
+          if (typeof gtag === 'function') {
+            gtag('event', 'vente_effectuee', {
+              'valeur': (data && data.annoncePrix) || 0,
+              'devise': 'XOF',
+              'plateforme': (data && (data.plateforme || data.annoncePlateforme)) || 'Mobile',
+              'region': (data && (data.region || data.annonceRegion)) || 'Dakar',
+              'transaction_id': demandeId
+            });
+            console.log('📊 GA4 vente_effectuee envoyé');
+          }
+
+          // Enregistrement de la vente et mise à jour des statistiques globales
+          db.collection("demandes").doc(demandeId).get().then(function(dDoc) {
+            if (dDoc.exists) {
+              var dData = dDoc.data();
+              var dObj = { id: dDoc.id };
+              for (var k in dData) {
+                if (dData.hasOwnProperty(k)) {
+                  dObj[k] = dData[k];
+                }
+              }
+              enregistrerVenteFirestore(dObj);
+            }
+          }).catch(function(errVente) {
+            console.warn("Erreur récupération demande pour tracking vente :", errVente);
+          });
         });
       }).catch(function(err) {
         alert("Erreur lors de la clôture : " + err.message);
@@ -13435,6 +13635,13 @@
       // Notification utilisateur
       if (estAjout) {
         afficherNotification("Ajouté à vos favoris ❤️", "❤️");
+
+        if (typeof gtag === 'function' && estAjout) {
+          gtag('event', 'ajout_favori', {
+            'annonce_id': annonceId
+          });
+          console.log('📊 GA4 ajout_favori envoyé');
+        }
       } else {
         afficherNotification("Retiré de vos favoris", "🤍");
       }
