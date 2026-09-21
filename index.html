@@ -4002,6 +4002,19 @@
     }
   }
   </script>
+
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XY7D9HSC9J"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-XY7D9HSC9J', {
+      'anonymize_ip': true,
+      'send_page_view': true
+    });
+  </script>
 </head>
 <body>
 
@@ -5440,6 +5453,46 @@
         <button type="button" class="btn-secondary" onclick="fermerModalTerminerTransaction()">Annuler</button>
         <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700;" onclick="executerTerminerTransaction()">
           Oui, terminer définitivement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALE DE CONFIRMATION DE SUPPRESSION D'ANNONCE
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-suppression-annonce" style="display: none;" onclick="if(event.target===this) fermerModalSuppressionAnnonce()">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-title" style="color: #F44336; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">🗑️</span>
+        <span style="font-weight: 700; letter-spacing: 0.5px;">SUPPRIMER L'ANNONCE</span>
+      </div>
+      <p style="font-size: 14px; color: var(--text-white); font-weight: 600; margin-bottom: 12px; line-height: 1.4;">
+        Voulez-vous vraiment supprimer définitivement cette annonce ?
+      </p>
+      <div style="background: #202020; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+        <div id="modal-suppression-titre" style="font-weight: 700; font-size: 14.5px; color: var(--text-white); margin-bottom: 6px; word-break: break-word;">
+          Compte eFootball
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+          <div id="modal-suppression-prix" style="font-size: 16px; font-weight: 800; color: var(--primary);">
+            0 FCFA
+          </div>
+          <div id="modal-suppression-plateforme" style="font-size: 12px; color: var(--text-gray); background: #2a2a2a; padding: 2px 8px; border-radius: 4px; border: 1px solid #3d3d3d;">
+            Mobile
+          </div>
+        </div>
+      </div>
+      <div style="background: rgba(244, 67, 54, 0.12); border: 1px solid rgba(244, 67, 54, 0.35); border-radius: var(--radius-sm); padding: 12px; font-size: 12.5px; color: #ff8a80; margin-bottom: 20px; line-height: 1.5;">
+        ⚠️ <strong>Attention, cette action est irréversible :</strong><br>
+        L'annonce sera définitivement retirée du catalogue et toutes ses données associées seront effacées.
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" id="btn-annuler-suppression-annonce" class="btn-secondary" onclick="fermerModalSuppressionAnnonce()" style="padding: 10px 18px; font-weight: 600;">
+          Annuler
+        </button>
+        <button type="button" id="btn-confirmer-suppression-annonce" style="background: #E53935; color: #fff; font-weight: 700; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s;" onmouseover="this.style.background='#C62828'" onmouseout="this.style.background='#E53935'" onclick="executerSuppressionAnnonce()">
+          <span>🗑️</span> Oui, supprimer
         </button>
       </div>
     </div>
@@ -7381,6 +7434,18 @@
 
       mettreAJourBadgeTransactions();
       mettreAJourBadgeFavoris();
+
+      // Envoi manuel de l'événement page_view à Google Analytics 4 (GA4) pour la SPA
+      if (typeof gtag === 'function') {
+        try {
+          var urlActuelle = window.location.href.split('#')[0];
+          gtag('event', 'page_view', {
+            page_title: pageId,
+            page_location: urlActuelle + '#' + pageId,
+            page_path: '/' + pageId
+          });
+        } catch (e) {}
+      }
     }
 
     /**
@@ -14207,12 +14272,84 @@
     }
 
     /**
-     * 3. SUPPRIMER UNE ANNONCE (Firestore & Local)
-     * Supprime définitivement le document de la collection "annonces"
+     * 3. SUPPRIMER UNE ANNONCE (Modale de confirmation, Firestore & Local)
+     * Ouvre une modale de confirmation personnalisée pour éviter toute erreur accidentelle
      */
+    var currentAnnonceIdASupprimer = null;
+
     function supprimerAnnonce(id) {
-      if (!confirm("Êtes-vous sûr de vouloir supprimer définitivement cette annonce ?")) {
+      currentAnnonceIdASupprimer = id;
+
+      // Récupérer l'annonce pour afficher ses informations dans la modale
+      var annonce = null;
+      var annonces = typeof getAnnonces === 'function' ? getAnnonces() : [];
+      annonce = annonces.find(function(a) { return a.id === id; });
+      if (!annonce && typeof mesAnnoncesVenduesCache !== 'undefined' && mesAnnoncesVenduesCache) {
+        annonce = mesAnnoncesVenduesCache.find(function(a) { return a.id === id; });
+      }
+      if (!annonce && typeof annoncesFirestore !== 'undefined' && annoncesFirestore) {
+        annonce = annoncesFirestore.find(function(a) { return a.id === id; });
+      }
+
+      var modalTitre = document.getElementById('modal-suppression-titre');
+      var modalPrix = document.getElementById('modal-suppression-prix');
+      var modalPlateforme = document.getElementById('modal-suppression-plateforme');
+
+      if (modalTitre) {
+        modalTitre.textContent = (annonce && annonce.titre) ? annonce.titre : "Compte eFootball";
+      }
+      if (modalPrix) {
+        modalPrix.textContent = (annonce && annonce.prix != null) ? formaterPrix(annonce.prix) : "";
+      }
+      if (modalPlateforme) {
+        if (annonce && (annonce.plateforme || annonce.region)) {
+          var details = [annonce.plateforme, annonce.region].filter(Boolean).join(" • ");
+          modalPlateforme.textContent = details;
+          modalPlateforme.style.display = "inline-block";
+        } else {
+          modalPlateforme.style.display = "none";
+        }
+      }
+
+      var btnConfirmer = document.getElementById('btn-confirmer-suppression-annonce');
+      var btnAnnuler = document.getElementById('btn-annuler-suppression-annonce');
+      if (btnConfirmer) {
+        btnConfirmer.disabled = false;
+        btnConfirmer.innerHTML = '<span>🗑️</span> Oui, supprimer';
+      }
+      if (btnAnnuler) {
+        btnAnnuler.disabled = false;
+      }
+
+      var modal = document.getElementById('modal-suppression-annonce');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    }
+
+    function fermerModalSuppressionAnnonce() {
+      currentAnnonceIdASupprimer = null;
+      var modal = document.getElementById('modal-suppression-annonce');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    function executerSuppressionAnnonce() {
+      var id = currentAnnonceIdASupprimer;
+      if (!id) {
+        fermerModalSuppressionAnnonce();
         return;
+      }
+
+      var btnConfirmer = document.getElementById('btn-confirmer-suppression-annonce');
+      var btnAnnuler = document.getElementById('btn-annuler-suppression-annonce');
+      if (btnConfirmer) {
+        btnConfirmer.disabled = true;
+        btnConfirmer.innerHTML = '<span>⏳</span> Suppression...';
+      }
+      if (btnAnnuler) {
+        btnAnnuler.disabled = true;
       }
 
       function supprimerLocalement() {
@@ -14223,6 +14360,10 @@
           mesAnnoncesVenduesCache = mesAnnoncesVenduesCache.filter(function(a) { return a.id !== id; });
         }
         afficherNotification("Annonce supprimée avec succès", "🗑️");
+        if (btnConfirmer) btnConfirmer.disabled = false;
+        if (btnAnnuler) btnAnnuler.disabled = false;
+        fermerModalSuppressionAnnonce();
+
         if (currentPage === 'mes-annonces') {
           afficherMesAnnonces();
         }
@@ -14244,6 +14385,16 @@
         supprimerLocalement();
       }
     }
+
+    // Fermeture de la modale de suppression avec la touche Echap
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        var modal = document.getElementById('modal-suppression-annonce');
+        if (modal && modal.style.display === 'flex') {
+          fermerModalSuppressionAnnonce();
+        }
+      }
+    });
 
     /* ==========================================================
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
