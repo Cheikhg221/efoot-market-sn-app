@@ -5692,6 +5692,86 @@
   </div>
 
   <!-- ==========================================================
+       MODALE 1 : CONFIRMATION D'ACCEPTATION
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-confirmer-accepter" 
+       onclick="if(event.target===this) fermerModalConfirmerAccepter()">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      
+      <div style="font-size: 52px; margin-bottom: 12px;">✅</div>
+      
+      <h3 style="font-size: 20px; font-weight: 800; color: #FFFFFF; 
+         margin-bottom: 10px;">
+        Accepter cette demande ?
+      </h3>
+      
+      <p style="font-size: 14px; color: #AAAAAA; line-height: 1.6; 
+         margin-bottom: 22px;">
+        En acceptant, l'annonce sera <strong style="color: #00C853;">
+        réservée</strong> à cet acheteur.<br><br>
+        L'acheteur recevra une notification et pourra vous contacter 
+        sur WhatsApp pour finaliser la transaction.
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="btn-primary" 
+          style="background: #00C853; color: #000; font-weight: 700; 
+          padding: 14px 20px; font-size: 14px; width: 100%; 
+          cursor: pointer;"
+          onclick="confirmerAccepterDemande()">
+          ✅ Oui, accepter la demande
+        </button>
+        <button type="button" class="btn-secondary" 
+          style="padding: 12px 20px; font-size: 13.5px; width: 100%; 
+          cursor: pointer;"
+          onclick="fermerModalConfirmerAccepter()">
+          ❌ Non, annuler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALE 2 : CONFIRMATION DE REFUS
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-confirmer-refuser" 
+       onclick="if(event.target===this) fermerModalConfirmerRefuser()">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      
+      <div style="font-size: 52px; margin-bottom: 12px;">⚠️</div>
+      
+      <h3 style="font-size: 20px; font-weight: 800; color: #FFFFFF; 
+         margin-bottom: 10px;">
+        Refuser cette demande ?
+      </h3>
+      
+      <p style="font-size: 14px; color: #AAAAAA; line-height: 1.6; 
+         margin-bottom: 22px;">
+        L'acheteur sera notifié du refus.<br><br>
+        <strong style="color: #FFC107;">Attention :</strong> après 3 
+        refus, cet acheteur ne pourra plus faire de demande sur cette 
+        annonce.
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="btn-danger" 
+          style="background: #F44336; color: #FFF; font-weight: 700; 
+          padding: 14px 20px; font-size: 14px; width: 100%; 
+          border: none; border-radius: 8px; cursor: pointer;"
+          onclick="confirmerRefuserDemande()">
+          ❌ Oui, refuser la demande
+        </button>
+        <button type="button" class="btn-secondary" 
+          style="padding: 12px 20px; font-size: 13.5px; width: 100%; 
+          cursor: pointer;"
+          onclick="fermerModalConfirmerRefuser()">
+          ↩️ Non, garder la demande
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
        NOTIFICATION TOAST GLOBALE
        ========================================================== -->
   <div class="toast-box" id="global-toast">
@@ -5742,6 +5822,10 @@
     var activeConversationId = null;
     var uploadedImageBase64 = null;
     var pendingActionCallback = null;
+
+    // Variables pour la confirmation d'acceptation / refus de demande d'achat
+    var demandeEnAttenteConfirmation = null;
+    var boutonEnAttenteConfirmation = null;
 
     // État spécifique aux transactions & avis
     var currentReviewTransactionId = null;
@@ -10111,8 +10195,8 @@
           
           if (d.statut === "en_attente") {
             html += '<p style="color:#FFC107;">🟡 En attente de votre réponse</p>';
-            html += '<button id="btn-accepter-' + d.id + '" onclick="event.stopPropagation(); accepterDemandeAvecProtection(\'' + d.id + '\', this)" class="btn-accepter" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
-            html += '<button id="btn-refuser-' + d.id + '" onclick="event.stopPropagation(); refuserDemandeAvecProtection(\'' + d.id + '\', this)" class="btn-refuser" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
+            html += '<button id="btn-accepter-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerAccepter(\'' + d.id + '\', this)" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
+            html += '<button id="btn-refuser-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerRefuser(\'' + d.id + '\', this)" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée</p>';
           } else if (d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
@@ -10224,8 +10308,54 @@
     }
 
     /**
-     * 5. ACTIONS DU VENDEUR
+     * 5. ACTIONS DU VENDEUR & GESTION DES CONFIRMATIONS
      */
+    function ouvrirModalConfirmerAccepter(demandeId, btn) {
+      demandeEnAttenteConfirmation = demandeId;
+      boutonEnAttenteConfirmation = btn;
+      var modal = document.getElementById('modal-confirmer-accepter');
+      if (modal) modal.classList.add('active');
+    }
+
+    function fermerModalConfirmerAccepter() {
+      demandeEnAttenteConfirmation = null;
+      boutonEnAttenteConfirmation = null;
+      var modal = document.getElementById('modal-confirmer-accepter');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function ouvrirModalConfirmerRefuser(demandeId, btn) {
+      demandeEnAttenteConfirmation = demandeId;
+      boutonEnAttenteConfirmation = btn;
+      var modal = document.getElementById('modal-confirmer-refuser');
+      if (modal) modal.classList.add('active');
+    }
+
+    function fermerModalConfirmerRefuser() {
+      demandeEnAttenteConfirmation = null;
+      boutonEnAttenteConfirmation = null;
+      var modal = document.getElementById('modal-confirmer-refuser');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function confirmerAccepterDemande() {
+      var demandeId = demandeEnAttenteConfirmation;
+      var btn = boutonEnAttenteConfirmation;
+      fermerModalConfirmerAccepter();
+      if (demandeId) {
+        accepterDemandeAvecProtection(demandeId, btn);
+      }
+    }
+
+    function confirmerRefuserDemande() {
+      var demandeId = demandeEnAttenteConfirmation;
+      var btn = boutonEnAttenteConfirmation;
+      fermerModalConfirmerRefuser();
+      if (demandeId) {
+        refuserDemandeAvecProtection(demandeId, btn);
+      }
+    }
+
     function accepterDemandeAvecProtection(demandeId, btn) {
       if (btn && btn.disabled) return; // Déjà en cours
       
@@ -10391,8 +10521,11 @@
      * - 3ème refus : blocage définitif sur cette annonce
      */
     function refuserDemande(demandeId) {
-      if (!confirm("Refuser cette demande ?")) return;
-      
+      if (!db) {
+        afficherNotification("Demande refusée", "❌");
+        return;
+      }
+
       db.collection("demandes").doc(demandeId).get()
       .then(function(doc) {
         var demande = doc.data();
@@ -10665,12 +10798,12 @@
     }
 
     // Fonctions de compatibilité avec les boutons existants
-    function demanderRefusDemandeVendeur(txId) {
-      repondreDemande(txId, 'refusee');
+    function demanderRefusDemandeVendeur(txId, btn) {
+      ouvrirModalConfirmerRefuser(txId, btn || document.getElementById('btn-refuser-' + txId));
     }
 
-    function demanderAcceptationVendeur(txId) {
-      repondreDemande(txId, 'acceptee');
+    function demanderAcceptationVendeur(txId, btn) {
+      ouvrirModalConfirmerAccepter(txId, btn || document.getElementById('btn-accepter-' + txId));
     }
 
     function demanderConfirmationLivraison(txId) {
@@ -10883,10 +11016,10 @@
                 Cet acheteur souhaite acquérir votre compte pour <strong>${formaterPrix(txActive.prixAnnonce)}</strong>. Acceptez-vous la vente ?
               </div>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="button" class="btn-danger" style="padding: 8px 14px; font-size: 12.5px;" onclick="demanderRefusDemandeVendeur('${txActive.id}')">
+                <button id="btn-refuser-${txActive.id}" type="button" class="btn-danger" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;" onclick="event.stopPropagation(); ouvrirModalConfirmerRefuser('${txActive.id}', this)">
                   ❌ Refuser
                 </button>
-                <button type="button" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; padding: 8px 18px; font-size: 12.5px;" onclick="demanderAcceptationVendeur('${txActive.id}')">
+                <button id="btn-accepter-${txActive.id}" type="button" class="btn-primary" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;" onclick="event.stopPropagation(); ouvrirModalConfirmerAccepter('${txActive.id}', this)">
                   ✅ Accepter la vente
                 </button>
               </div>
@@ -12971,10 +13104,10 @@
               </div>
               <div class="tx-banner-actions">
                 ${maTx ? `
-                  <button class="btn-danger" style="font-size: 11.5px; padding: 6px 12px;" onclick="demanderRefusDemandeVendeur('${maTx.id}')">
+                  <button id="btn-refuser-${maTx.id}" class="btn-danger" style="font-size: 11.5px; padding: 6px 12px; cursor: pointer;" onclick="event.stopPropagation(); ouvrirModalConfirmerRefuser('${maTx.id}', this)">
                     ❌ Refuser
                   </button>
-                  <button class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; font-size: 11.5px; padding: 6px 14px;" onclick="demanderAcceptationVendeur('${maTx.id}')">
+                  <button id="btn-accepter-${maTx.id}" class="btn-primary" style="background: #00C853; color: #000; font-weight: 700; font-size: 11.5px; padding: 6px 14px; cursor: pointer;" onclick="event.stopPropagation(); ouvrirModalConfirmerAccepter('${maTx.id}', this)">
                     ✅ Accepter la vente
                   </button>
                 ` : `
