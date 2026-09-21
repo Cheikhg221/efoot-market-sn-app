@@ -9709,32 +9709,53 @@
           dateRefus: null,
           dateProchaineDemande: null,
           bloqueDefinitif: false,
+          emailEnvoyeVendeur: false, // ← Protection anti-doublon
           dateCreation: firebase.firestore.FieldValue.serverTimestamp()
         });
       })
-      .then(function() {
+      .then(function(demandeDocRef) {
         // Récupérer l'email du vendeur et envoyer la notification
         var vendeurUid = annonce ? annonce.vendeurId : null;
+        var nouvelleDemandeId = demandeDocRef ? demandeDocRef.id : null;
         console.log("📧 [DEBUG] vendeurUid:", vendeurUid);
         console.log("📧 [DEBUG] annonce complète:", annonce);
-        if (vendeurUid) {
-          recupererEmailUtilisateur(vendeurUid).then(function(emailVendeur) {
-            if (emailVendeur) {
-              var messageVendeur =
-                "Bonjour,\n\n" +
-                "Bonne nouvelle ! Tu viens de recevoir une nouvelle demande " +
-                "d'achat sur EFoot Market SN.\n\n" +
-                "📦 Compte : " + (annonce.titre || 'Compte eFootball') + "\n" +
-                "💰 Prix : " + (annonce.prix ? Number(annonce.prix).toLocaleString('fr-FR') + ' FCFA' : '—') + "\n" +
-                "👤 Acheteur : " + nomPrenom.trim() + "\n\n" +
-                "Connecte-toi sur efootmarketsn.store pour accepter ou " +
-                "refuser cette demande.";
-              envoyerEmail(
-                emailVendeur, 
-                "📩 Nouvelle demande d'achat sur EFoot Market SN", 
-                messageVendeur
-              );
+        if (vendeurUid && nouvelleDemandeId) {
+          db.collection("demandes").doc(nouvelleDemandeId).get().then(function(dDoc) {
+            if (!dDoc.exists) return;
+            var dData = dDoc.data();
+            // ✅ PROTECTION : si l'email a déjà été envoyé, ne pas renvoyer
+            if (dData.emailEnvoyeVendeur === true) {
+              console.log("⚠️ Email déjà envoyé pour cette demande au vendeur, ignoré");
+              return;
             }
+            recupererEmailUtilisateur(vendeurUid).then(function(emailVendeur) {
+              if (emailVendeur) {
+                var messageVendeur =
+                  "Bonjour,\n\n" +
+                  "Bonne nouvelle ! Tu viens de recevoir une nouvelle demande " +
+                  "d'achat sur EFoot Market SN.\n\n" +
+                  "📦 Compte : " + (annonce.titre || 'Compte eFootball') + "\n" +
+                  "💰 Prix : " + (annonce.prix ? Number(annonce.prix).toLocaleString('fr-FR') + ' FCFA' : '—') + "\n" +
+                  "👤 Acheteur : " + nomPrenom.trim() + "\n\n" +
+                  "Connecte-toi sur efootmarketsn.store pour accepter ou " +
+                  "refuser cette demande.";
+                envoyerEmail(
+                  emailVendeur, 
+                  "📩 Nouvelle demande d'achat sur EFoot Market SN", 
+                  messageVendeur
+                ).then(function(succes) {
+                  if (succes) {
+                    // ✅ Marquer l'email vendeur comme envoyé
+                    db.collection("demandes").doc(nouvelleDemandeId).update({
+                      emailEnvoyeVendeur: true,
+                      dateEmailEnvoyeVendeur: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                  }
+                });
+              }
+            });
+          }).catch(function(err) {
+            console.warn("Erreur notification email vendeur :", err);
           });
         }
 
@@ -10090,8 +10111,8 @@
           
           if (d.statut === "en_attente") {
             html += '<p style="color:#FFC107;">🟡 En attente de votre réponse</p>';
-            html += '<button onclick="event.stopPropagation(); accepterDemande(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
-            html += '<button onclick="event.stopPropagation(); refuserDemande(\'' + d.id + '\')" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
+            html += '<button id="btn-accepter-' + d.id + '" onclick="event.stopPropagation(); accepterDemandeAvecProtection(\'' + d.id + '\', this)" class="btn-accepter" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
+            html += '<button id="btn-refuser-' + d.id + '" onclick="event.stopPropagation(); refuserDemandeAvecProtection(\'' + d.id + '\', this)" class="btn-refuser" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
           } else if (d.statut === "acceptee") {
             html += '<p style="color:#00C853;">✅ Acceptée</p>';
           } else if (d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
@@ -10205,18 +10226,88 @@
     /**
      * 5. ACTIONS DU VENDEUR
      */
+    function accepterDemandeAvecProtection(demandeId, btn) {
+      if (btn && btn.disabled) return; // Déjà en cours
+      
+      if (btn) {
+        // Désactiver immédiatement
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+        var texteOriginal = btn.innerHTML;
+        btn.innerHTML = '⏳ Traitement...';
+        
+        accepterDemande(demandeId);
+        
+        // Réactiver après 3 secondes (sécurité)
+        setTimeout(function() {
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.innerHTML = texteOriginal;
+          }
+        }, 3000);
+      } else {
+        accepterDemande(demandeId);
+      }
+    }
+
+    function refuserDemandeAvecProtection(demandeId, btn) {
+      if (btn && btn.disabled) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+        var texteOriginal = btn.innerHTML;
+        btn.innerHTML = '⏳ Traitement...';
+        
+        refuserDemande(demandeId);
+        
+        setTimeout(function() {
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.innerHTML = texteOriginal;
+          }
+        }, 3000);
+      } else {
+        refuserDemande(demandeId);
+      }
+    }
+
     function accepterDemande(demandeId) {
       if (!db) {
         afficherNotification("Demande acceptée", "✅");
         return;
       }
+      
       db.collection("demandes").doc(demandeId).get().then(function(doc) {
-        var data = doc.exists ? doc.data() : null;
+        if (!doc.exists) {
+          afficherNotification("Demande introuvable", "⚠️");
+          return;
+        }
+        
+        var data = doc.data();
+        
+        // ✅ PROTECTION : si déjà acceptée, ne rien faire
+        if (data.statut === "acceptee" || 
+            data.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR" ||
+            data.statut === "LIVRAISON_CONFIRMEE" ||
+            data.statut === "terminee") {
+          console.log("⚠️ Demande déjà traitée, action ignorée");
+          afficherNotification("Cette demande a déjà été traitée", "ℹ️");
+          return;
+        }
+        
         var annonceId = data ? data.annonceId : null;
 
+        // ✅ PROTECTION : marquer immédiatement la demande en cours de traitement pour éviter les doublons
         return db.collection("demandes").doc(demandeId).update({
           statut: "acceptee",
-          dateAcceptation: firebase.firestore.FieldValue.serverTimestamp()
+          dateAcceptation: firebase.firestore.FieldValue.serverTimestamp(),
+          emailEnvoye: false  // ← Nouveau champ de sécurité
         }).then(function() {
           if (annonceId) {
             db.collection("annonces").doc(annonceId).update({
@@ -10237,6 +10328,13 @@
           db.collection("demandes").doc(demandeId).get().then(function(doc) {
             if (!doc.exists) return;
             var demande = doc.data();
+            
+            // ✅ PROTECTION : si l'email a déjà été envoyé, ne pas renvoyer
+            if (demande.emailEnvoye === true) {
+              console.log("⚠️ Email déjà envoyé pour cette demande, ignoré");
+              return;
+            }
+
             var acheteurUid = demande.acheteurId;
             console.log("📧 [DEBUG] Tentative envoi email acheteur");
             console.log("📧 [DEBUG] acheteurUid:", acheteurUid);
@@ -10258,7 +10356,15 @@
                     emailAcheteur, 
                     "✅ Ta demande a été acceptée sur EFoot Market SN", 
                     messageAcheteur
-                  );
+                  ).then(function(succes) {
+                    if (succes) {
+                      // ✅ Marquer l'email comme envoyé
+                      db.collection("demandes").doc(demandeId).update({
+                        emailEnvoye: true,
+                        dateEmailEnvoye: firebase.firestore.FieldValue.serverTimestamp()
+                      });
+                    }
+                  });
                 }
               });
             }
