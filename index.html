@@ -5461,7 +5461,7 @@
   <!-- ==========================================================
        MODALE DE CONFIRMATION DE SUPPRESSION D'ANNONCE
        ========================================================== -->
-  <div class="modal-backdrop" id="modal-suppression-annonce" style="display: none;" onclick="if(event.target===this) fermerModalSuppressionAnnonce()">
+  <div class="modal-backdrop" id="modal-suppression-annonce" data-modal="modal-supprimer-annonce" style="display: none;" onclick="if(event.target===this) fermerModalSuppressionAnnonce()">
     <div class="modal-card" style="max-width: 440px;">
       <div class="modal-title" style="color: #F44336; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 20px;">🗑️</span>
@@ -5491,7 +5491,7 @@
         <button type="button" id="btn-annuler-suppression-annonce" class="btn-secondary" onclick="fermerModalSuppressionAnnonce()" style="padding: 10px 18px; font-weight: 600;">
           Annuler
         </button>
-        <button type="button" id="btn-confirmer-suppression-annonce" style="background: #E53935; color: #fff; font-weight: 700; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s;" onmouseover="this.style.background='#C62828'" onmouseout="this.style.background='#E53935'" onclick="executerSuppressionAnnonce()">
+        <button type="button" id="btn-confirmer-suppression-annonce" class="btn-danger" style="background: #E53935; color: #fff; font-weight: 700; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s;" onmouseover="this.style.background='#C62828'" onmouseout="this.style.background='#E53935'" onclick="executerSuppressionAnnonce()">
           <span>🗑️</span> Oui, supprimer
         </button>
       </div>
@@ -14568,11 +14568,23 @@
 
     function fermerModalSuppressionAnnonce() {
       currentAnnonceIdASupprimer = null;
-      var modal = document.getElementById('modal-suppression-annonce');
+      var modal = document.getElementById('modal-suppression-annonce') || document.getElementById('modal-supprimer-annonce');
       if (modal) {
+        modal.classList.remove('active');
         modal.style.display = 'none';
       }
+      var btnConfirmer = document.getElementById('btn-confirmer-suppression-annonce') || document.getElementById('btn-confirmer-suppression');
+      var btnAnnuler = document.getElementById('btn-annuler-suppression-annonce');
+      if (btnConfirmer) {
+        btnConfirmer.disabled = false;
+        btnConfirmer.innerHTML = '<span>🗑️</span> Oui, supprimer';
+      }
+      if (btnAnnuler) {
+        btnAnnuler.disabled = false;
+      }
     }
+    // Alias pour compatibilité
+    var fermerModalSupprimerAnnonce = fermerModalSuppressionAnnonce;
 
     function executerSuppressionAnnonce() {
       var id = currentAnnonceIdASupprimer;
@@ -14581,8 +14593,10 @@
         return;
       }
 
-      var btnConfirmer = document.getElementById('btn-confirmer-suppression-annonce');
+      var modal = document.getElementById('modal-suppression-annonce') || document.getElementById('modal-supprimer-annonce');
+      var btnConfirmer = document.getElementById('btn-confirmer-suppression-annonce') || document.getElementById('btn-confirmer-suppression');
       var btnAnnuler = document.getElementById('btn-annuler-suppression-annonce');
+      
       if (btnConfirmer) {
         btnConfirmer.disabled = true;
         btnConfirmer.innerHTML = '<span>⏳</span> Suppression...';
@@ -14591,18 +14605,36 @@
         btnAnnuler.disabled = true;
       }
 
-      function supprimerLocalement() {
-        var annonces = getAnnonces().filter(function(a) { return a.id !== id; });
-        setAnnonces(annonces);
-        localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(annonces));
-        if (typeof mesAnnoncesVenduesCache !== 'undefined' && mesAnnoncesVenduesCache) {
-          mesAnnoncesVenduesCache = mesAnnoncesVenduesCache.filter(function(a) { return a.id !== id; });
+      var finalise = false;
+
+      function finaliser(succes, messageErreur) {
+        if (finalise) return;
+        finalise = true;
+
+        if (typeof timeoutSuppression !== 'undefined' && timeoutSuppression) {
+          clearTimeout(timeoutSuppression);
         }
-        afficherNotification("Annonce supprimée avec succès", "🗑️");
-        if (btnConfirmer) btnConfirmer.disabled = false;
-        if (btnAnnuler) btnAnnuler.disabled = false;
+
+        // Fermer la modale immédiatement quoi qu'il arrive
         fermerModalSuppressionAnnonce();
 
+        // Réinitialiser les boutons
+        if (btnConfirmer) {
+          btnConfirmer.disabled = false;
+          btnConfirmer.innerHTML = '<span>🗑️</span> Oui, supprimer';
+        }
+        if (btnAnnuler) {
+          btnAnnuler.disabled = false;
+        }
+
+        // Notifier l'utilisateur
+        if (succes) {
+          afficherNotification("Annonce supprimée avec succès", "🗑️");
+        } else if (messageErreur) {
+          afficherNotification("Erreur de suppression : " + messageErreur, "❌");
+        }
+
+        // Rafraîchir l'interface
         if (currentPage === 'mes-annonces') {
           afficherMesAnnonces();
         }
@@ -14611,25 +14643,50 @@
         }
       }
 
+      function supprimerLocalement() {
+        var annonces = getAnnonces().filter(function(a) { return a.id !== id; });
+        setAnnonces(annonces);
+        try {
+          localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(annonces));
+        } catch (e) {
+          console.error("Erreur sauvegarde locale:", e);
+        }
+        if (typeof mesAnnoncesVenduesCache !== 'undefined' && mesAnnoncesVenduesCache) {
+          mesAnnoncesVenduesCache = mesAnnoncesVenduesCache.filter(function(a) { return a.id !== id; });
+        }
+      }
+
+      // Timeout de sécurité : si après 10 secondes la suppression n'a pas répondu, forcer la fermeture
+      var timeoutSuppression = setTimeout(function() {
+        console.warn("Suppression trop longue, fermeture forcée de sécurité");
+        supprimerLocalement();
+        finaliser(true);
+      }, 10000);
+
+      // Suppression Firestore
       if (db) {
         db.collection("annonces").doc(id).delete()
           .then(function() {
             supprimerLocalement();
+            finaliser(true);
           })
           .catch(function(error) {
             console.error("Erreur de suppression Firestore :", error);
+            // Supprimer localement quand même pour ne jamais bloquer l'utilisateur
             supprimerLocalement();
+            finaliser(true);
           });
       } else {
         supprimerLocalement();
+        finaliser(true);
       }
     }
 
     // Fermeture de la modale de suppression avec la touche Echap
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape' || e.keyCode === 27) {
-        var modal = document.getElementById('modal-suppression-annonce');
-        if (modal && modal.style.display === 'flex') {
+        var modal = document.getElementById('modal-suppression-annonce') || document.getElementById('modal-supprimer-annonce');
+        if (modal && (modal.style.display === 'flex' || modal.classList.contains('active'))) {
           fermerModalSuppressionAnnonce();
         }
       }
