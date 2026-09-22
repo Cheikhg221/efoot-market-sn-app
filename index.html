@@ -3860,6 +3860,78 @@
     }
 
     /* ==========================================================
+       PAGE FAQ & ACCORDÉONS DÉROULANTS
+       ========================================================== */
+    .faq-item {
+      background: #1a1a1a;
+      border: 1px solid #2e2e2e;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .faq-item:hover {
+      border-color: rgba(0,200,83,0.3);
+    }
+
+    .faq-item[open] {
+      border-color: #00C853;
+      background: #1f1f1f;
+    }
+
+    .faq-item summary {
+      padding: 14px 18px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-item summary::after {
+      content: "+";
+      font-size: 20px;
+      color: #00C853;
+      font-weight: 700;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .faq-item[open] summary::after {
+      content: "−";
+    }
+
+    .faq-item .faq-answer {
+      padding: 0 18px 16px 18px;
+      font-size: 13.5px;
+      color: #ccc;
+      line-height: 1.6;
+      border-top: 1px solid #2a2a2a;
+      padding-top: 14px;
+    }
+
+    #btn-flottant-faq:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0,200,83,0.7);
+    }
+
+    @media (min-width: 768px) {
+      #btn-flottant-faq {
+        bottom: 24px;
+        right: 24px;
+      }
+    }
+
+    /* ==========================================================
        SKELETON LOADER (Chargement des annonces)
        ========================================================== */
 
@@ -5502,6 +5574,211 @@
               <button type="button" class="btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; font-size: 15px; font-weight: 700; border-radius: 10px; cursor: pointer;" onclick="changerPage('accueil')">
                 🚀 Commencer maintenant
               </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
+         PAGE 11 : QUESTIONS FRÉQUENTES (FAQ)
+         -------------------------------------------------------- -->
+    <section id="page-faq" class="page-view">
+      <div class="legal-page-container">
+        <button type="button" class="legal-back-btn" onclick="retournerPagePrecedente()">
+          <span>←</span> <span>Retour</span>
+        </button>
+
+        <div class="legal-card">
+          <h1 class="legal-title">QUESTIONS FRÉQUENTES</h1>
+          <p style="font-size: 14.5px; color: #aaa; margin: 4px 0 24px 0; line-height: 1.5;">Tout ce que vous devez savoir sur EFoot Market SN</p>
+
+          <div class="legal-body">
+
+            <!-- ═══ CATÉGORIE 1 : GÉNÉRAL ═══ -->
+            <h2 style="font-size: 18px; color: #00C853; margin-top: 28px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,200,83,0.2);">
+              💡 Général
+            </h2>
+
+            <details class="faq-item">
+              <summary>Q1. Qu'est-ce que EFoot Market SN ?</summary>
+              <div class="faq-answer">
+                EFoot Market SN est la première marketplace sénégalaise dédiée à l'achat et la vente de comptes eFootball. Nous mettons en relation acheteurs et vendeurs de manière sécurisée, avec un système d'avis vérifiés.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q2. Est-ce que le service est gratuit ?</summary>
+              <div class="faq-answer">
+                Oui, l'utilisation de la plateforme est 100% gratuite pour les acheteurs et les vendeurs. Nous ne prenons aucune commission sur les transactions.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q3. Dans quelles régions êtes-vous actifs ?</summary>
+              <div class="faq-answer">
+                Nous couvrons les 14 régions du Sénégal : Dakar, Thiès, Saint-Louis, Diourbel, Fatick, Kaffrine, Kaolack, Kédougou, Kolda, Louga, Matam, Sédhiou, Tambacounda et Ziguinchor.
+              </div>
+            </details>
+
+            <!-- ═══ CATÉGORIE 2 : ACHETER UN COMPTE ═══ -->
+            <h2 style="font-size: 18px; color: #00C853; margin-top: 28px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,200,83,0.2);">
+              🛒 Acheter un compte
+            </h2>
+
+            <details class="faq-item">
+              <summary>Q4. Comment acheter un compte eFootball ?</summary>
+              <div class="faq-answer">
+                Créez votre compte, recherchez le compte idéal via nos filtres, envoyez une demande d'achat, attendez l'acceptation du vendeur, payez via Wave ou Orange Money, testez le compte et confirmez la réception.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q5. Que faire si le compte ne correspond pas à la description ?</summary>
+              <div class="faq-answer">
+                Ne confirmez PAS la réception. Cliquez sur "🚨 Signaler un problème" et décrivez le litige. La transaction sera suspendue et le vendeur recontacté.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q6. Puis-je annuler ma demande d'achat ?</summary>
+              <div class="faq-answer">
+                Oui, tant que le vendeur n'a pas encore accepté votre demande. Une fois acceptée, vous ne pouvez plus annuler. Vous devez contacter le vendeur.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q7. Combien de temps prend une transaction ?</summary>
+              <div class="faq-answer">
+                En moyenne 15 à 30 minutes si le vendeur est réactif. Le délai dépend de la communication entre acheteur et vendeur sur WhatsApp.
+              </div>
+            </details>
+
+            <!-- ═══ CATÉGORIE 3 : VENDRE UN COMPTE ═══ -->
+            <h2 style="font-size: 18px; color: #00C853; margin-top: 28px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,200,83,0.2);">
+              💰 Vendre un compte
+            </h2>
+
+            <details class="faq-item">
+              <summary>Q8. Comment vendre mon compte eFootball ?</summary>
+              <div class="faq-answer">
+                Complétez votre profil, publiez une annonce avec description et capture d'écran, recevez des demandes d'achat, acceptez la meilleure, transmettez les identifiants et recevez votre paiement.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q9. Combien d'annonces puis-je publier ?</summary>
+              <div class="faq-answer">
+                Vous pouvez publier autant d'annonces que vous voulez. Nous recommandons 3 à 5 annonces actives à la fois pour une meilleure visibilité.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q10. Puis-je refuser une demande d'achat ?</summary>
+              <div class="faq-answer">
+                Oui, sans justification. Attention : après 3 refus sur la même annonce, l'acheteur ne pourra plus faire de demande. Le premier refus bloque 48h, le second 7 jours.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q11. Que se passe-t-il si je vends mon compte mais que l'acheteur ne confirme pas ?</summary>
+              <div class="faq-answer">
+                Le système envoie des relances automatiques à l'acheteur. Si l'acheteur reste silencieux, la transaction reste en attente. Contactez le support via email.
+              </div>
+            </details>
+
+            <!-- ═══ CATÉGORIE 4 : PAIEMENTS ET SÉCURITÉ ═══ -->
+            <h2 style="font-size: 18px; color: #00C853; margin-top: 28px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,200,83,0.2);">
+              🔒 Paiements et sécurité
+            </h2>
+
+            <details class="faq-item">
+              <summary>Q12. Quels moyens de paiement sont acceptés ?</summary>
+              <div class="faq-answer">
+                Wave et Orange Money sont les moyens recommandés. Nous déconseillons fortement les paiements en espèces, crypto-monnaies ou tout autre canal.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q13. EFoot Market SN touche-t-il une commission ?</summary>
+              <div class="faq-answer">
+                Non, la plateforme est gratuite. La transaction se fait directement entre acheteur et vendeur via Wave ou Orange Money.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q14. Comment éviter les arnaques ?</summary>
+              <div class="faq-answer">
+                Suivez ces règles : testez le compte avant de payer, demandez une capture du Konami ID, liez le compte à votre email immédiatement, changez le mot de passe après achat, vérifiez les avis du vendeur avant d'acheter.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q15. Mes données personnelles sont-elles protégées ?</summary>
+              <div class="faq-answer">
+                Oui. Nous utilisons Firebase (Google) pour le stockage sécurisé. Votre numéro de téléphone n'apparaît que dans vos annonces. Aucune donnée bancaire n'est stockée sur nos serveurs.
+              </div>
+            </details>
+
+            <!-- ═══ CATÉGORIE 5 : COMPTE ET PROFIL ═══ -->
+            <h2 style="font-size: 18px; color: #00C853; margin-top: 28px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,200,83,0.2);">
+              👤 Compte et profil
+            </h2>
+
+            <details class="faq-item">
+              <summary>Q16. Dois-je obligatoirement créer un compte ?</summary>
+              <div class="faq-answer">
+                Oui pour publier ou acheter. Vous pouvez vous connecter en 1 clic avec Google ou en invité. Nous vous recommandons Google pour conserver vos données si vous changez d'appareil.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q17. Que se passe-t-il si je me connecte en invité ?</summary>
+              <div class="faq-answer">
+                Vos données peuvent être perdues si vous videz votre cache ou changez d'appareil. Vous pouvez à tout moment lier votre compte à Google depuis votre profil.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q18. Comment modifier mon profil ?</summary>
+              <div class="faq-answer">
+                Cliquez sur votre nom en haut à droite, puis "✏️ Modifier mon profil". Vous pouvez changer prénom, nom, téléphone et région.
+              </div>
+            </details>
+
+            <!-- ═══ CATÉGORIE 6 : SIGNALEMENT ET LITIGES ═══ -->
+            <h2 style="font-size: 18px; color: #00C853; margin-top: 28px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,200,83,0.2);">
+              🚨 Signalement et litiges
+            </h2>
+
+            <details class="faq-item">
+              <summary>Q19. Comment signaler un vendeur problématique ?</summary>
+              <div class="faq-answer">
+                Sur la page d'une annonce, cliquez sur "🚨 Signaler" ou contactez-nous via email (efootmarketcontact@gmail.com). Nous examinons chaque signalement sous 48h.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Q20. Que faire en cas de litige ?</summary>
+              <div class="faq-answer">
+                Contactez directement le vendeur via WhatsApp. Si aucun accord, envoyez un email à efootmarketcontact@gmail.com avec les preuves (captures, messages). Nous tenterons une médiation.
+              </div>
+            </details>
+
+            <!-- ═══ FIN DE LA FAQ : ENCADRÉ FINAL ═══ -->
+            <div style="background: rgba(0,200,83,0.08); border: 1px solid rgba(0,200,83,0.3); border-radius: 10px; padding: 20px; margin-top: 32px; text-align: center;">
+              <div style="font-size: 32px; margin-bottom: 8px;">💬</div>
+              <h3 style="font-size: 16px; color: #fff; margin: 0 0 6px 0;">
+                Vous n'avez pas trouvé votre réponse ?
+              </h3>
+              <p style="font-size: 13.5px; color: #ccc; margin: 0 0 16px 0;">
+                Contactez-nous directement par email, nous répondons sous 24h.
+              </p>
+              <a href="mailto:efootmarketcontact@gmail.com" 
+                style="display: inline-block; background: #00C853; color: #000; padding: 10px 20px; border-radius: 8px; font-weight: 700; text-decoration: none;">
+                ✉️ Nous contacter
+              </a>
             </div>
 
           </div>
@@ -7802,7 +8079,7 @@
      */
     function changerPage(pageId, params = {}) {
       // Sauvegarder la page précédente pour le bouton retour des pages légales
-      if (typeof currentPage !== 'undefined' && currentPage && currentPage !== 'mentions-legales' && currentPage !== 'politique-confidentialite' && currentPage !== 'comment-ca-marche') {
+      if (typeof currentPage !== 'undefined' && currentPage && currentPage !== 'mentions-legales' && currentPage !== 'politique-confidentialite' && currentPage !== 'comment-ca-marche' && currentPage !== 'faq') {
         dernierePagePrecedente = currentPage;
       }
 
@@ -7816,6 +8093,12 @@
       if (targetView) {
         targetView.classList.add('active');
         currentPage = pageId;
+      }
+
+      // Masquer le bouton flottant quand on est sur la page FAQ
+      var btnFaq = document.getElementById('btn-flottant-faq');
+      if (btnFaq) {
+        btnFaq.style.display = (pageId === 'faq') ? 'none' : 'flex';
       }
 
       // Mettre à jour les boutons de navigation Desktop
@@ -7894,7 +8177,7 @@
       } else if (pageId === 'favoris') {
         nettoyerHashAnnonce();
         afficherFavoris();
-      } else if (pageId === 'mentions-legales' || pageId === 'politique-confidentialite' || pageId === 'comment-ca-marche') {
+      } else if (pageId === 'mentions-legales' || pageId === 'politique-confidentialite' || pageId === 'comment-ca-marche' || pageId === 'faq') {
         nettoyerHashAnnonce();
       }
 
@@ -15292,5 +15575,22 @@
       initialiserApplication();
     }
   </script>
+
+  <!-- ==========================================================
+       BOUTON FLOTTANT QUESTIONS FRÉQUENTES (FAQ)
+       ========================================================== -->
+  <button 
+    type="button" 
+    id="btn-flottant-faq" 
+    onclick="changerPage('faq')" 
+    title="Questions fréquentes"
+    style="position: fixed; bottom: 90px; right: 16px; width: 48px; 
+      height: 48px; border-radius: 50%; background: #00C853; 
+      color: #000; border: none; font-size: 22px; font-weight: 700; 
+      cursor: pointer; z-index: 999; box-shadow: 0 4px 16px 
+      rgba(0,200,83,0.5); display: flex; align-items: center; 
+      justify-content: center; transition: all 0.2s ease;">
+    ❓
+  </button>
 </body>
 </html>
