@@ -8134,11 +8134,8 @@
 
       if (!db) {
         clearTimeout(securiteFirestore);
-        console.warn("Firestore non disponible, utilisation du stockage local");
-        var locales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
-        if (locales.length > 0) {
-          annoncesFirestore = locales;
-        }
+        console.warn("Firestore non disponible");
+        var annoncesLocales = []; // Plus utilisé, Firestore est la source
         annoncesChargees = true;
         if (currentPage === 'accueil') appliquerFiltres();
         return;
@@ -13727,17 +13724,11 @@
         return;
       }
 
-      // Récupérer toutes les annonces disponibles (Firestore + Locales)
+      // Récupérer toutes les annonces disponibles depuis Firestore uniquement
       var toutesAnnonces = [];
       if (Array.isArray(annoncesFirestore) && annoncesFirestore.length > 0) {
         toutesAnnonces = toutesAnnonces.concat(annoncesFirestore);
       }
-      try {
-        var locales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
-        if (Array.isArray(locales) && locales.length > 0) {
-          toutesAnnonces = toutesAnnonces.concat(locales);
-        }
-      } catch (e) {}
 
       // Dédupliquer par ID
       var mapUniq = new Map();
@@ -13917,7 +13908,7 @@
 
       // Intégrer les annonces depuis le stockage local (dont vendues ou en attente) si nécessaire
       try {
-        var annoncesLocales = JSON.parse(localStorage.getItem(STORAGE_ANNONCES) || '[]');
+        var annoncesLocales = []; // Plus utilisé, Firestore est la source
         annoncesLocales.forEach(function(al) {
           if (!mesAnnonces.some(a => a.id === al.id)) {
             if ((user && al.vendeurId === user.uid) || (profil && al.vendeurId && al.vendeurId === profil.id) || al.vendeur === monNomComplet || al.vendeur === monNomFormate) {
@@ -14848,11 +14839,6 @@
       function supprimerLocalement() {
         var annonces = getAnnonces().filter(function(a) { return a.id !== id; });
         setAnnonces(annonces);
-        try {
-          localStorage.setItem(STORAGE_ANNONCES, JSON.stringify(annonces));
-        } catch (e) {
-          console.error("Erreur sauvegarde locale:", e);
-        }
         if (typeof mesAnnoncesVenduesCache !== 'undefined' && mesAnnoncesVenduesCache) {
           mesAnnoncesVenduesCache = mesAnnoncesVenduesCache.filter(function(a) { return a.id !== id; });
         }
@@ -14898,6 +14884,11 @@
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
     function initialiserApplication() {
+      // Libérer immédiatement le quota localStorage si d'anciennes annonces en base64 y étaient stockées
+      try {
+        localStorage.removeItem(STORAGE_ANNONCES);
+      } catch (e) {}
+
       // Sécurité anti-blocage : masquer l'écran de chargement après 3 secondes max même si Firebase tarde
       setTimeout(function() {
         const loading = document.getElementById('loading-screen');
