@@ -13725,6 +13725,7 @@
       }
 
       // Récupérer toutes les annonces disponibles depuis Firestore uniquement
+      var annoncesLocales = []; // Plus utilisé, Firestore est la source
       var toutesAnnonces = [];
       if (Array.isArray(annoncesFirestore) && annoncesFirestore.length > 0) {
         toutesAnnonces = toutesAnnonces.concat(annoncesFirestore);
@@ -14884,10 +14885,13 @@
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
     function initialiserApplication() {
-      // Libérer immédiatement le quota localStorage si d'anciennes annonces en base64 y étaient stockées
+      // Nettoyage de sécurité au démarrage : supprimer les vieilles données d'annonces qui saturent le localStorage
       try {
         localStorage.removeItem(STORAGE_ANNONCES);
-      } catch (e) {}
+        console.log("🧹 [CLEANUP] Ancien cache annonces supprimé");
+      } catch (e) {
+        console.warn("Erreur nettoyage localStorage :", e);
+      }
 
       // Sécurité anti-blocage : masquer l'écran de chargement après 3 secondes max même si Firebase tarde
       setTimeout(function() {
