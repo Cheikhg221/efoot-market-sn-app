@@ -3968,6 +3968,17 @@
         height: 160px;
       }
     }
+
+    /* Masquer la publicité Monetag sur les pages non-accueil */
+    body:not(.page-accueil-active) [id*="monetag"],
+    body:not(.page-accueil-active) [class*="monetag"],
+    body:not(.page-accueil-active) iframe[src*="monetag"],
+    body:not(.page-accueil-active) iframe[src*="push"],
+    body:not(.page-accueil-active) [id*="push"],
+    body:not(.page-accueil-active) [class*="push"] {
+      display: none !important;
+      visibility: hidden !important;
+    }
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -4018,6 +4029,9 @@
 
   <!-- Vérification de propriété Monetag -->
   <meta name="monetag" content="e1cf7382f2e490e7b4547066afbf0f77">
+
+  <!-- Monetag In-Page Push (Zone 11862065) -->
+  <script>(function(s){s.dataset.zone='11862065',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </head>
 <body>
 
@@ -7552,6 +7566,11 @@
      * Change la page active et met à jour les indicateurs visuels des menus
      */
     function changerPage(pageId, params = {}) {
+      // Gestion de l'affichage Monetag selon la page active
+      if (document.body) {
+        document.body.classList.toggle('page-accueil-active', pageId === 'accueil');
+      }
+
       // Sauvegarder la page précédente pour le bouton retour des pages légales
       if (typeof currentPage !== 'undefined' && currentPage && currentPage !== 'mentions-legales' && currentPage !== 'politique-confidentialite') {
         dernierePagePrecedente = currentPage;
@@ -15034,6 +15053,11 @@
       } catch (e) {
         console.warn("Erreur affichage initial :", e);
         try { changerPage('accueil'); } catch (e2) {}
+      }
+
+      // Première mise à jour de la classe Monetag après l'affichage initial
+      if (document.body) {
+        document.body.classList.toggle('page-accueil-active', (typeof currentPage !== 'undefined' ? currentPage : 'accueil') === 'accueil');
       }
     }
 
