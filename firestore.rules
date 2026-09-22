@@ -27,6 +27,13 @@ service cloud.firestore {
       allow update, delete: if request.auth != null;
     }
 
+    // Publicités
+    match /publicites/{pubId} {
+      allow read: if true;
+      allow update: if true;
+      allow create, delete: if request.auth != null;
+    }
+
     // Ventes (tracking interne)
     match /ventes/{venteId} {
       allow read, write: if true;

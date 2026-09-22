@@ -769,6 +769,30 @@
       transform: translateY(-2px);
     }
 
+    .pub-card {
+      border: 2px solid #7C3AED !important;
+      background: linear-gradient(135deg, #1E1E1E 0%, #1A1520 100%);
+      position: relative;
+    }
+
+    .pub-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.25);
+    }
+
+    .pub-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #7C3AED;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      z-index: 5;
+    }
+
     .card-media {
       height: 180px;
       background: #151b24;
@@ -6397,6 +6421,10 @@
     var avisFirestoreCache = [];
     var unsubscribeAvisFirestore = null;
 
+    // Cache et abonnement temps réel Firestore pour les publicités sponsorisées
+    var publicitesCache = [];
+    var unsubscribePublicites = null;
+
     // Variables de suivi d'état pour les notifications d'événements de transactions (par ID)
     var etatPrecedentDemandesVendeur = {};
     var etatPrecedentDemandesAcheteur = {};
@@ -8514,6 +8542,89 @@
     }
 
     /**
+     * Écoute en temps réel la collection Firestore "publicites"
+     * et stocke les publicités actives (actif === true) dans publicitesCache
+     */
+    function chargerPublicitesFirestore() {
+      if (!db) return;
+      if (unsubscribePublicites) return;
+
+      unsubscribePublicites = db.collection("publicites")
+        .onSnapshot(function(snapshot) {
+          publicitesCache = [];
+          snapshot.forEach(function(doc) {
+            var data = doc.data() || {};
+            if (data.actif === true) {
+              publicitesCache.push({ id: doc.id, ...data });
+            }
+          });
+          console.log("📢 Publicités actives Firestore :", publicitesCache.length);
+
+          // Si on est sur l'accueil et que les annonces sont déjà chargées, actualiser
+          if (typeof currentPage !== 'undefined' && currentPage === 'accueil' && annoncesChargees) {
+            if (typeof appliquerFiltres === 'function') {
+              appliquerFiltres();
+            }
+          }
+        }, function(error) {
+          console.warn("Erreur chargement publicites Firestore :", error);
+        });
+    }
+
+    /**
+     * Incrémente le compteur de clics et redirige vers WhatsApp pour une publicité
+     */
+    function contacterWhatsAppPub(numero, pubId) {
+      if (db && pubId) {
+        db.collection("publicites").doc(pubId).update({
+          clics: firebase.firestore.FieldValue.increment(1)
+        }).catch(function() {});
+      }
+      var message = "Bonjour, je vous contacte via EFoot Market SN";
+      var numeroClean = (numero || "").replace(/[^0-9]/g, "");
+      if (numeroClean) {
+        window.open("https://wa.me/" + numeroClean + "?text=" + 
+          encodeURIComponent(message), "_blank");
+      }
+    }
+
+    /**
+     * Génère le HTML d'une carte publicitaire sponsorisée
+     */
+    function genererHtmlCartePub(pub) {
+      if (!pub) return '';
+      var imageSrc = pub.image || pub.imageUrl || 'logo.png';
+      var titre = escapeHtml(pub.titre || pub.title || 'Publicité');
+      var nomPartenaire = escapeHtml(pub.nomPartenaire || pub.partenaire || pub.nom || 'Partenaire');
+      var region = escapeHtml(pub.region || pub.localisation || 'Sénégal');
+      var numero = (pub.whatsapp || pub.numero || pub.telephone || '').toString().replace(/'/g, "\\'");
+      var pubId = (pub.id || '').toString().replace(/'/g, "\\'");
+
+      return `
+        <article class="ad-card pub-card">
+          <div class="card-media">
+            <img src="${imageSrc}" alt="${titre}" loading="lazy">
+            <div class="pub-badge">📢 PUBLICITÉ</div>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">${titre}</h3>
+            <div style="color: #7C3AED; font-size: 13px; font-weight: 700; margin-top: 4px;">⭐ Partenaire officiel</div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(124,58,237,0.2);">
+              <span>🤝 ${nomPartenaire}</span>
+              <span>📍 ${region}</span>
+            </div>
+            <button 
+              type="button"
+              onclick="event.stopPropagation(); contacterWhatsAppPub('${numero}', '${pubId}')"
+              style="background: #25D366; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              💬 Contacter sur WhatsApp
+            </button>
+          </div>
+        </article>
+      `;
+    }
+
+    /**
      * Génère le rendu HTML des cartes dans la grille d'accueil
      */
     function afficherCartes(liste) {
@@ -8538,8 +8649,11 @@
         return;
       }
 
+      // Première publicité active du cache pour insertion après la 6ème annonce
+      const premierePub = (typeof publicitesCache !== 'undefined' && publicitesCache && publicitesCache.length > 0) ? publicitesCache[0] : null;
+
       // Rendu des cartes de compte
-      container.innerHTML = liste.map(ad => {
+      container.innerHTML = liste.map((ad, index) => {
         const mediaHtml = ad.image ? 
           `<img src="${ad.image}" alt="${ad.titre}" loading="lazy">` : 
           `<div class="card-placeholder">
@@ -8552,7 +8666,7 @@
         const noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
         const isFav = estFavori(ad.id);
 
-        return `
+        const carteAnnonceHtml = `
           <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
             <div class="card-media">
               ${mediaHtml}
@@ -8601,6 +8715,12 @@
             </div>
           </article>
         `;
+
+        // Après la 6ème annonce (index 5) : insérer la première pub active
+        if (index === 5 && premierePub) {
+          return carteAnnonceHtml + genererHtmlCartePub(premierePub);
+        }
+        return carteAnnonceHtml;
       }).join('');
     }
 
@@ -15494,6 +15614,13 @@
         chargerTousLesAvisFirestore();
       } catch (e) {
         console.warn("Erreur chargerTousLesAvisFirestore init :", e);
+      }
+
+      try {
+        // Démarrer l'écoute temps réel de la collection Firestore "publicites"
+        chargerPublicitesFirestore();
+      } catch (e) {
+        console.warn("Erreur chargerPublicitesFirestore init :", e);
       }
 
       try {
