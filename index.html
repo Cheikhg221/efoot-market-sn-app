@@ -6249,6 +6249,7 @@
               dateCreation: firebase.firestore.FieldValue.serverTimestamp()
             };
             return db.collection("utilisateurs").doc(user.uid).set(dataMinimal).then(function() {
+              console.log("🔍 [TRACKING] Appel incrementerCompteurUtilisateurs");
               incrementerCompteurUtilisateurs();
             });
           }
@@ -8409,6 +8410,7 @@
         })
         .then(function(docRef) {
           console.log("Annonce publiée : " + docRef.id);
+          console.log("🔍 [TRACKING] Appel incrementerCompteurAnnonces");
           incrementerCompteurAnnonces();
           afficherAccueil();
         })
@@ -8486,6 +8488,7 @@
         })
         .then(function(docRef) {
           console.log("Annonce publiée : " + docRef.id);
+          console.log("🔍 [TRACKING] Appel incrementerCompteurAnnonces");
           incrementerCompteurAnnonces();
 
           if (typeof gtag === 'function') {
@@ -9941,6 +9944,7 @@
         });
       })
       .then(function(demandeDocRef) {
+        console.log("🔍 [TRACKING] Appel incrementerCompteurTransactions");
         incrementerCompteurTransactions();
 
         // Récupérer l'email du vendeur et envoyer la notification
@@ -10719,8 +10723,7 @@
       .then(function(nombreRefus) {
         if (typeof gtag === 'function') {
           gtag('event', 'demande_refusee', {
-            'transaction_id': demandeId,
-            'nombre_refus': nombreRefus || 1
+            'transaction_id': demandeId
           });
           console.log('📊 GA4 demande_refusee envoyé');
         }
@@ -10871,8 +10874,6 @@
             gtag('event', 'vente_effectuee', {
               'valeur': (data && data.annoncePrix) || 0,
               'devise': 'XOF',
-              'plateforme': (data && (data.plateforme || data.annoncePlateforme)) || 'Mobile',
-              'region': (data && (data.region || data.annonceRegion)) || 'Dakar',
               'transaction_id': demandeId
             });
             console.log('📊 GA4 vente_effectuee envoyé');
@@ -10881,14 +10882,8 @@
           // Enregistrement de la vente et mise à jour des statistiques globales
           db.collection("demandes").doc(demandeId).get().then(function(dDoc) {
             if (dDoc.exists) {
-              var dData = dDoc.data();
-              var dObj = { id: dDoc.id };
-              for (var k in dData) {
-                if (dData.hasOwnProperty(k)) {
-                  dObj[k] = dData[k];
-                }
-              }
-              enregistrerVenteFirestore(dObj);
+              console.log("🔍 [TRACKING] Appel enregistrerVenteFirestore");
+              enregistrerVenteFirestore(Object.assign({ id: dDoc.id }, dDoc.data()));
             }
           }).catch(function(errVente) {
             console.warn("Erreur récupération demande pour tracking vente :", errVente);
@@ -14908,6 +14903,32 @@
         const loading = document.getElementById('loading-screen');
         if (loading) loading.style.display = 'none';
       }, 3000);
+
+      // Création automatique du document statistiques/global si absent
+      setTimeout(function() {
+        if (db) {
+          db.collection("statistiques").doc("global").get()
+            .then(function(doc) {
+              if (!doc.exists) {
+                console.log("🔍 [TRACKING] Création doc statistiques/global");
+                return db.collection("statistiques").doc("global").set({
+                  totalUtilisateurs: 0,
+                  totalAnnonces: 0,
+                  totalTransactions: 0,
+                  totalVentes: 0,
+                  totalVolumeFCFA: 0,
+                  dateCreation: firebase.firestore.FieldValue.serverTimestamp(),
+                  dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+                });
+              } else {
+                console.log("✅ [TRACKING] Doc statistiques/global existe déjà");
+              }
+            })
+            .catch(function(err) {
+              console.warn("Erreur création doc global:", err);
+            });
+        }
+      }, 2000);
 
       // Délai de sécurité : si après 15 secondes Firestore n'a pas répondu, afficher l'erreur
       setTimeout(function() {
