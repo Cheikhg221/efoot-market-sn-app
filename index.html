@@ -8700,11 +8700,14 @@
         return;
       }
 
-      // Première publicité active du cache pour insertion après la 6ème annonce
+      // Première publicité active du cache pour insertion en toute première position
       const premierePub = (typeof publicitesCache !== 'undefined' && publicitesCache && publicitesCache.length > 0) ? publicitesCache[0] : null;
 
+      // Carte publicitaire insérée en première position (avant la 1ère annonce)
+      const pubHtml = premierePub ? genererHtmlCartePub(premierePub) : '';
+
       // Rendu des cartes de compte
-      container.innerHTML = liste.map((ad, index) => {
+      const annoncesHtml = liste.map(ad => {
         const mediaHtml = ad.image ? 
           `<img src="${ad.image}" alt="${ad.titre}" loading="lazy">` : 
           `<div class="card-placeholder">
@@ -8717,7 +8720,7 @@
         const noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
         const isFav = estFavori(ad.id);
 
-        const carteAnnonceHtml = `
+        return `
           <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
             <div class="card-media">
               ${mediaHtml}
@@ -8766,13 +8769,9 @@
             </div>
           </article>
         `;
-
-        // Après la 6ème annonce (index 5) : insérer la première pub active
-        if (index === 5 && premierePub) {
-          return carteAnnonceHtml + genererHtmlCartePub(premierePub);
-        }
-        return carteAnnonceHtml;
       }).join('');
+
+      container.innerHTML = pubHtml + annoncesHtml;
     }
 
     /**
