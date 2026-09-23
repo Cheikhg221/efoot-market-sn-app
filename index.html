@@ -793,6 +793,30 @@
       z-index: 5;
     }
 
+    .pub-card .card-media {
+      height: 180px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .pub-card .card-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .pub-img-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+      background: linear-gradient(135deg, #1A1520 0%, #252030 100%);
+      color: #7C3AED;
+    }
+
     .card-media {
       height: 180px;
       background: #151b24;
@@ -8583,17 +8607,31 @@
       var message = "Bonjour, je vous contacte via EFoot Market SN";
       var numeroClean = (numero || "").replace(/[^0-9]/g, "");
       if (numeroClean) {
-        window.open("https://wa.me/" + numeroClean + "?text=" + 
-          encodeURIComponent(message), "_blank");
+        var url = "https://wa.me/" + numeroClean + "?text=" + encodeURIComponent(message);
+        try {
+          var win = window.open(url, "_blank");
+          if (!win) {
+            window.location.href = url;
+          }
+        } catch (e) {
+          window.location.href = url;
+        }
       }
     }
+    // Export explicite sur window pour garantir l'accessibilité globale
+    window.contacterWhatsAppPub = contacterWhatsAppPub;
 
     /**
      * Génère le HTML d'une carte publicitaire sponsorisée
      */
     function genererHtmlCartePub(pub) {
       if (!pub) return '';
-      var imageSrc = pub.image || pub.imageUrl || 'logo.png';
+      var rawImage = (pub.image || pub.imageUrl || '').trim();
+      // Forcer le protocole sécurisé HTTPS pour éviter le blocage sur mobile (mixed content)
+      if (rawImage.startsWith('http://')) {
+        rawImage = rawImage.replace(/^http:\/\//i, 'https://');
+      }
+      var imageSrc = rawImage || 'logo.png';
       var titre = escapeHtml(pub.titre || pub.title || 'Publicité');
       var nomPartenaire = escapeHtml(pub.nomPartenaire || pub.partenaire || pub.nom || 'Partenaire');
       var region = escapeHtml(pub.region || pub.localisation || 'Sénégal');
@@ -8603,7 +8641,8 @@
       return `
         <article class="ad-card pub-card">
           <div class="card-media">
-            <img src="${imageSrc}" alt="${titre}" loading="lazy">
+            <img src="${imageSrc}" alt="${titre}" loading="lazy"
+              onerror="this.onerror=null; this.style.display='none'; if(!this.parentElement.querySelector('.pub-img-fallback')){ this.parentElement.innerHTML += '<div class=\\'pub-img-fallback\\'>🎮</div>'; }">
             <div class="pub-badge">📢 PUBLICITÉ</div>
           </div>
           <div class="card-body">
@@ -8615,7 +8654,7 @@
             </div>
             <button 
               type="button"
-              onclick="event.stopPropagation(); contacterWhatsAppPub('${numero}', '${pubId}')"
+              onclick="event.stopPropagation(); event.preventDefault(); contacterWhatsAppPub('${numero}', '${pubId}')"
               style="background: #25D366; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
               💬 Contacter sur WhatsApp
             </button>
