@@ -8648,6 +8648,8 @@
       var region = escapeHtml(pub.region || pub.localisation || 'Sénégal');
       var numero = (pub.whatsapp || pub.numero || pub.telephone || '').toString().replace(/'/g, "\\'");
       var pubId = (pub.id || '').toString().replace(/'/g, "\\'");
+      // Prix de la publicité (en FCFA) : affiché uniquement si présent et supérieur à 0
+      var prix = (pub.prix !== undefined && pub.prix !== null && !isNaN(Number(pub.prix)) && Number(pub.prix) > 0) ? Number(pub.prix) : 0;
 
       return `
         <article class="ad-card pub-card">
@@ -8659,6 +8661,7 @@
           </div>
           <div class="card-body">
             <h3 class="card-title">${titre}</h3>
+            ${prix ? '<div class="card-price">' + formaterPrix(prix) + '</div>' : ''}
             <div style="color: #7C3AED; font-size: 13px; font-weight: 700; margin-top: 4px;">⭐ Partenaire officiel</div>
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(124,58,237,0.2);">
               <span>🤝 ${nomPartenaire}</span>
