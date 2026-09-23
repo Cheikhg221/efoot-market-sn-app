@@ -11061,19 +11061,32 @@
           }
           html += '<p>📞 ' + escapeHtml(d.acheteurTelephone || "Non renseigné") + '</p>';
           
-          if (d.statut === "en_attente") {
+          var statutNorm = (d.statut || '').toUpperCase();
+
+          if (statutNorm === "EN_ATTENTE" || statutNorm === "DEMANDE_ENVOYEE") {
             html += '<p style="color:#FFC107;">🟡 En attente de votre réponse</p>';
             html += '<button id="btn-accepter-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerAccepter(\'' + d.id + '\', this)" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
             html += '<button id="btn-refuser-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerRefuser(\'' + d.id + '\', this)" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
-          } else if (d.statut === "acceptee") {
+          } else if (statutNorm === "ACCEPTEE") {
             html += '<p style="color:#00C853;">✅ Acceptée</p>';
-          } else if (d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
-            html += '<p style="color:#FFC107; font-weight:600;">⏳ En attente de confirmation de l\'acheteur</p>';
-            html += '<p style="color:#aaa; font-size:12px;">Vous avez marqué le compte comme vendu. L\'acheteur doit confirmer la réception.</p>';
-          } else if (d.statut === "LIVRAISON_CONFIRMEE") {
+          } else if (statutNorm === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+            html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:10px; margin:6px 0;">';
+            html += '<p style="color:#FFC107; font-weight:700; margin:0 0 4px 0;">⏳ Vente en attente de confirmation</p>';
+            html += '<p style="color:#ccc; font-size:12px; margin:0;">Vous avez marqué ce compte comme VENDU. L\'acheteur doit confirmer la réception pour finaliser.</p>';
+            html += '</div>';
+          } else if (statutNorm === "LIVRAISON_CONFIRMEE") {
             html += '<p style="color:#00C853; font-weight:600;">✅ Réception confirmée par l\'acheteur !</p>';
-          } else if (d.statut === "refusee") {
-            html += '<p style="color:#F44336;">❌ Refusée</p>';
+          } else if (statutNorm === "REFUSEE") {
+            var motif = d.motifRefus || "";
+            if (motif.indexOf("vendu") !== -1) {
+              html += '<p style="color:#F44336;">❌ Refusée — <span style="color:#888; font-size:12px;">Compte vendu à un autre acheteur</span></p>';
+            } else {
+              html += '<p style="color:#F44336;">❌ Refusée par vous</p>';
+            }
+          } else if (statutNorm === "TERMINEE") {
+            html += '<p style="color:#34d399; font-weight:700;">🎉 Vente terminée</p>';
+          } else if (statutNorm === "ANNULEE") {
+            html += '<p style="color:#f87171; font-weight:600;">❌ Transaction annulée</p>';
           }
           
           html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
@@ -14902,6 +14915,27 @@
           ad.dateVente = new Date().toISOString();
           setAnnonces(annonces);
         }
+
+        // Rafraîchir le cache des demandes vendeur
+        if (typeof demandesVendeurCache !== 'undefined' && 
+            Array.isArray(demandesVendeurCache)) {
+          demandesVendeurCache = demandesVendeurCache.map(function(d) {
+            if (d.id === demandeId) {
+              return Object.assign({}, d, { 
+                statut: "EN_ATTENTE_CONFIRMATION_ACHETEUR" 
+              });
+            } else if (d.annonceId === annonceId) {
+              var st = (d.statut || '').toLowerCase();
+              if (st === 'acceptee' || st === 'en_attente') {
+                return Object.assign({}, d, { 
+                  statut: "refusee",
+                  motifRefus: "Le compte a été vendu à un autre acheteur"
+                });
+              }
+            }
+            return d;
+          });
+        }
         
         var messageNotif = "Annonce semi-fermée. En attente de confirmation de l'acheteur.";
         
@@ -14912,6 +14946,9 @@
           afficherDetailAnnonce(annonceId);
         }
         if (currentPage === 'transactions') afficherMesTransactions();
+        if (typeof afficherSectionDemandesRecues === 'function') {
+          afficherSectionDemandesRecues(demandesVendeurCache);
+        }
       }
       
       if (!db) {
@@ -14966,6 +15003,32 @@
       .then(function() {
         appliquerLocalement();
         
+        // Rafraîchir le cache des demandes vendeur
+        if (typeof demandesVendeurCache !== 'undefined' && 
+            Array.isArray(demandesVendeurCache)) {
+          demandesVendeurCache = demandesVendeurCache.map(function(d) {
+            if (d.id === demandeId) {
+              return Object.assign({}, d, { 
+                statut: "EN_ATTENTE_CONFIRMATION_ACHETEUR" 
+              });
+            } else if (d.annonceId === annonceId) {
+              var st = (d.statut || '').toLowerCase();
+              if (st === 'acceptee' || st === 'en_attente') {
+                return Object.assign({}, d, { 
+                  statut: "refusee",
+                  motifRefus: "Le compte a été vendu à un autre acheteur"
+                });
+              }
+            }
+            return d;
+          });
+        }
+
+        // Rafraîchir l'affichage du vendeur
+        if (typeof afficherSectionDemandesRecues === 'function') {
+          afficherSectionDemandesRecues(demandesVendeurCache);
+        }
+
         // 4. Notification à l'acheteur
         if (demandeId) {
           db.collection("demandes").doc(demandeId).get().then(function(doc) {
