@@ -9811,40 +9811,20 @@
       }
 
       // CAS 1 : VISITEUR NON CONNECTÉ
-      var escrowHtml = '';
-      if (escrowDeveloppement === true) {
-        escrowHtml = 
-          '<div class="section-achat-escrow" style="margin-bottom: 16px;">' +
-            '<div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px; color: #fbbf24; font-size: 12.5px; line-height: 1.5; text-align: center; font-weight: 500;">' +
-              '⚠️ Cette fonctionnalité est en cours de développement. Merci de ne pas l\'utiliser pour l\'instant. Utilisez le bouton classique ci-dessous.' +
-            '</div>' +
-            '<button type="button" disabled style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
-              '🔒 Acheter avec protection admin (bientôt)' +
-            '</button>' +
-          '</div>';
-      } else {
-        escrowHtml = 
-          '<div class="section-achat-escrow" style="margin-bottom: 16px;">' +
-            '<button type="button" onclick="ouvrirModalChoixAdminEscrow(\'' + annonceId + '\')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
-              '🔒 Acheter avec protection admin' +
-            '</button>' +
-          '</div>';
-      }
-
       if (!user) {
-        conteneur.innerHTML = escrowHtml + '<p style="color:#FFC107; text-align:center; padding:15px; background:#1E1E1E; border-radius:10px; border:1px solid #333; margin:0;">🔒 Connectez-vous pour contacter le vendeur</p>';
+        conteneur.innerHTML = '<p style="color:#FFC107; text-align:center; padding:15px; background:#1E1E1E; border-radius:10px; border:1px solid #333; margin:0;">🔒 Connectez-vous pour contacter le vendeur</p>';
         return;
       }
 
       // CAS 2 : VENDEUR
       if (annonce && user.uid === annonce.vendeurId) {
-        conteneur.innerHTML = escrowHtml + '<button onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:15px;">📤 Partager mon annonce</button>';
+        conteneur.innerHTML = '<button onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:15px;">📤 Partager mon annonce</button>';
         return;
       }
 
       // CAS 3 : ACHETEUR - Vérifier d'abord sa demande
       if (!db) {
-        conteneur.innerHTML = escrowHtml + '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
+        conteneur.innerHTML = '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
         return;
       }
 
@@ -9858,10 +9838,10 @@
           // CAS 3a : Aucune demande
           if (snapshot.empty) {
             if (annonce && annonce.statut === "en_cours" && annonce.accepteAutresOffres === false) {
-              conteneur.innerHTML = escrowHtml + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#FFC107; font-weight:bold; margin:0 0 6px 0;">🟡 Transaction en cours</p><p style="color:#888; margin:0;">Fermé aux nouvelles offres</p></div>';
+              conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#FFC107; font-weight:bold; margin:0 0 6px 0;">🟡 Transaction en cours</p><p style="color:#888; margin:0;">Fermé aux nouvelles offres</p></div>';
               return;
             }
-            conteneur.innerHTML = escrowHtml + '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
+            conteneur.innerHTML = '<p style="color:#888; font-size:12px; text-align:center; margin-top:10px;">🔒 WhatsApp débloqué après acceptation</p>';
             return;
           }
 
@@ -9893,26 +9873,45 @@
 
           // CAS 3b : Demande EN ATTENTE
           if (demande.statut === "en_attente") {
-            conteneur.innerHTML = escrowHtml + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
+            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
             return;
           }
 
           // CAS 3c : Demande ACCEPTÉE (PRIORITÉ ABSOLUE)
           if (demande.statut === "acceptee") {
+            var escrowHtmlAcceptee = '';
+            if (escrowDeveloppement === true) {
+              escrowHtmlAcceptee = 
+                '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                  '<div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px; color: #fbbf24; font-size: 12.5px; line-height: 1.5; text-align: center; font-weight: 500;">' +
+                    '⚠️ Cette fonctionnalité est en cours de développement. Merci de ne pas l\'utiliser pour l\'instant.' +
+                  '</div>' +
+                  '<button type="button" disabled style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                    '🔒 Acheter avec protection admin (bientôt)' +
+                  '</button>' +
+                '</div>';
+            } else {
+              escrowHtmlAcceptee = 
+                '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                  '<button type="button" onclick="ouvrirModalChoixAdminEscrow(\'' + annonceId + '\')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                    '🔒 Acheter avec protection admin' +
+                  '</button>' +
+                '</div>';
+            }
+
             conteneur.innerHTML = 
-              escrowHtml +
               '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);">' +
                 '<p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p>' +
                 '<p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p>' +
               '</div>' +
-              '<button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>';
+              '<button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>' +
+              escrowHtmlAcceptee;
             return;
           }
 
           // CAS 3c-ter : Acheteur a DÉJÀ confirmé la réception (attente du vendeur)
           if (demande.statut === "LIVRAISON_CONFIRMEE" && demande.confirmationAcheteur === true) {
             conteneur.innerHTML = 
-              escrowHtml +
               '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid rgba(251,146,60,0.3);">' +
                 '<p style="color:#fb923c; font-size:16px; font-weight:bold; margin:0 0 8px 0;">📦 Réception confirmée !</p>' +
                 '<p style="color:#ccc; font-size:13px; margin:0;">Vous avez confirmé avoir reçu le compte. En attente de la clôture définitive par le vendeur.</p>' +
@@ -9926,7 +9925,6 @@
               (annonce.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR" || annonce.statut === "vendue") && 
               demande.confirmationAcheteur !== true) {
             conteneur.innerHTML = 
-              escrowHtml +
               '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:2px solid #FFC107; margin-bottom:15px;">' +
                 '<p style="color:#FFC107; font-size:18px; font-weight:bold; margin:0 0 10px 0;">⏳ CONFIRMATION REQUISE</p>' +
                 '<p style="color:#fff; font-size:15px; margin:0 0 8px 0; font-weight:600;">Le vendeur a marqué le compte comme VENDU</p>' +
@@ -9941,7 +9939,7 @@
           // CAS 3d : Demande REFUSÉE
           if (demande.statut === "refusee") {
             if (demande.bloqueDefinitif === true) {
-              conteneur.innerHTML = escrowHtml + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p><p style="color:#888; font-size:13px; margin-top:10px;">Vous ne pouvez plus faire de demande sur cette annonce</p></div>';
+              conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p><p style="color:#888; font-size:13px; margin-top:10px;">Vous ne pouvez plus faire de demande sur cette annonce</p></div>';
               return;
             }
 
@@ -9970,12 +9968,11 @@
                 affichageTemps = minutes + " minute(s)";
               }
 
-              conteneur.innerHTML = escrowHtml + '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p><p style="color:#FFC107; margin-top:15px;">Vous pourrez refaire une demande dans :</p><p style="color:#FFC107; font-size:20px; font-weight:bold;">' + affichageTemps + '</p><p style="color:#888; font-size:12px; margin-top:10px;">Nombre de refus : ' + (demande.nombreRefus || 1) + ' / 3</p></div>';
+              conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p><p style="color:#FFC107; margin-top:15px;">Vous pourrez refaire une demande dans :</p><p style="color:#FFC107; font-size:20px; font-weight:bold;">' + affichageTemps + '</p><p style="color:#888; font-size:12px; margin-top:10px;">Nombre de refus : ' + (demande.nombreRefus || 1) + ' / 3</p></div>';
               return;
             }
 
             conteneur.innerHTML = 
-              escrowHtml +
               '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; margin-bottom:15px;">' +
                 '<p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p>' +
                 '<p style="color:#ccc; font-size:14px; margin-top:10px;">Vous pouvez refaire une demande</p>' +
