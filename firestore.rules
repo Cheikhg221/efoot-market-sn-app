@@ -50,5 +50,12 @@ service cloud.firestore {
                   && request.auth.uid == 'RMCWJVkSNGX6K5T1XintJKtA2Ay1';
       allow create: if request.auth != null;
     }
+
+    // Administrateurs (rôles et permissions spéciales comme Escrow)
+    match /admins/{adminId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null 
+                  && request.auth.uid == 'RMCWJVkSNGX6K5T1XintJKtA2Ay1';
+    }
   }
 }

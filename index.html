@@ -5894,6 +5894,62 @@
       </div>
     </section>
 
+    <!-- --------------------------------------------------------
+         PAGE ADMIN : ESCROW (RÉSERVÉ AUX ADMINISTRATEURS ACTIFS)
+         -------------------------------------------------------- -->
+    <section id="page-admin-escrow" class="page-view">
+      <div style="max-width: 960px; margin: 0 auto; padding: 24px 16px 80px 16px;">
+        
+        <!-- En-tête de la page Admin Escrow -->
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(20, 20, 20, 0.98) 100%); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 14px; padding: 22px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700; margin-bottom: 8px;">
+              <span>🛡️</span> ESPACE SÉCURISÉ ADMIN
+            </div>
+            <h1 style="font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
+              💰 Espace Admin Escrow
+            </h1>
+            <p style="font-size: 13px; color: #aaa; margin: 0; line-height: 1.5;">
+              Supervision des transactions sécurisées et séquestre des paiements.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="retournerPagePrecedente()">
+              ← Retour
+            </button>
+          </div>
+        </div>
+
+        <!-- 3 compteurs : En attente / Argent reçu / À transférer (tous à 0) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px; text-align: center;">
+            <div style="font-size: 13px; color: #a1a1aa; margin-bottom: 8px; font-weight: 600;">⏳ En attente</div>
+            <div id="escrow-stat-attente" style="font-size: 28px; font-weight: 800; color: #f59e0b;">0</div>
+          </div>
+          <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px; text-align: center;">
+            <div style="font-size: 13px; color: #a1a1aa; margin-bottom: 8px; font-weight: 600;">💵 Argent reçu</div>
+            <div id="escrow-stat-recu" style="font-size: 28px; font-weight: 800; color: #10b981;">0</div>
+          </div>
+          <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px; text-align: center;">
+            <div style="font-size: 13px; color: #a1a1aa; margin-bottom: 8px; font-weight: 600;">🔄 À transférer</div>
+            <div id="escrow-stat-transferer" style="font-size: 28px; font-weight: 800; color: #60a5fa;">0</div>
+          </div>
+        </div>
+
+        <!-- Message aucune transaction -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 48px 20px; text-align: center;">
+          <div style="font-size: 40px; margin-bottom: 12px;">📭</div>
+          <h3 style="font-size: 16px; font-weight: 700; color: #e4e4e7; margin: 0 0 6px 0;">
+            Aucune transaction escrow pour le moment
+          </h3>
+          <p style="font-size: 13px; color: #71717a; margin: 0;">
+            Les transactions avec paiement sécurisé escrow apparaîtront ici.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- ==========================================================
@@ -5918,6 +5974,14 @@
             style="color: #ef4444;" 
             onclick="changerPage('admin-signalements')">
             🚨 Admin Signalements
+          </button>
+        </span>
+        <span id="admin-link-escrow" style="display: none;">
+          <span class="app-footer-sep">•</span>
+          <button type="button" class="app-footer-link" 
+            style="color: #10b981;" 
+            onclick="changerPage('admin-escrow')">
+            💰 Admin Escrow
           </button>
         </span>
       </div>
@@ -7045,6 +7109,13 @@
               if (adminLink) {
                 adminLink.style.display = 'none';
               }
+              var adminEscrowLink = document.getElementById('admin-link-escrow');
+              if (adminEscrowLink) {
+                adminEscrowLink.style.display = 'none';
+              }
+              if (typeof estAdminEscrowCache !== 'undefined') {
+                estAdminEscrowCache = false;
+              }
               afficherEcranConnexion();
               const loading = document.getElementById('loading-screen');
               if (loading) loading.style.display = 'none';
@@ -7462,6 +7533,11 @@
       var adminLink = document.getElementById('admin-link-signalements');
       if (adminLink) {
         adminLink.style.display = verifierAdmin() ? 'inline' : 'none';
+      }
+
+      // Affichage du lien admin escrow réservé aux administrateurs Escrow
+      if (typeof verifierAdminEscrow === 'function') {
+        verifierAdminEscrow();
       }
     }
 
@@ -8313,6 +8389,11 @@
         nettoyerHashAnnonce();
         if (typeof afficherPageAdminSignalements === 'function') {
           afficherPageAdminSignalements();
+        }
+      } else if (pageId === 'admin-escrow') {
+        nettoyerHashAnnonce();
+        if (typeof afficherPageAdminEscrow === 'function') {
+          afficherPageAdminEscrow();
         }
       }
 
@@ -14277,6 +14358,96 @@
     window.supprimerSignalement = supprimerSignalement;
     window.ouvrirZoomSignalement = ouvrirZoomSignalement;
     window.fermerZoomSignalement = fermerZoomSignalement;
+
+    /* ==========================================================
+       FONCTIONS DU PANNEAU D'ADMINISTRATION ESCROW
+       Réservé aux administrateurs présents dans la collection Firestore "admins" (actif: true)
+       ========================================================== */
+
+    var estAdminEscrowCache = false;
+
+    /**
+     * Vérifie si l'UID de l'utilisateur connecté existe dans la collection "admins" avec actif: true
+     */
+    function verifierAdminEscrow() {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      var adminEscrowLink = document.getElementById('admin-link-escrow');
+
+      if (!user || !user.uid) {
+        estAdminEscrowCache = false;
+        if (adminEscrowLink) {
+          adminEscrowLink.style.display = 'none';
+        }
+        return false;
+      }
+
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) {
+        if (adminEscrowLink) {
+          adminEscrowLink.style.display = estAdminEscrowCache ? 'inline' : 'none';
+        }
+        return estAdminEscrowCache;
+      }
+
+      firestoreDb.collection('admins').doc(user.uid).get()
+        .then(function(docSnap) {
+          if (docSnap.exists && docSnap.data() && docSnap.data().actif === true) {
+            estAdminEscrowCache = true;
+            if (adminEscrowLink) {
+              adminEscrowLink.style.display = 'inline';
+            }
+          } else {
+            estAdminEscrowCache = false;
+            if (adminEscrowLink) {
+              adminEscrowLink.style.display = 'none';
+            }
+          }
+        })
+        .catch(function(err) {
+          console.warn("Erreur vérification admin escrow :", err);
+          estAdminEscrowCache = false;
+          if (adminEscrowLink) {
+            adminEscrowLink.style.display = 'none';
+          }
+        });
+
+      return estAdminEscrowCache;
+    }
+
+    /**
+     * Charge et affiche la page d'administration Escrow
+     */
+    function afficherPageAdminEscrow() {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user) {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Accès refusé : espace réservé aux administrateurs Escrow", "🚫");
+        } else {
+          alert("Accès refusé : espace réservé aux administrateurs Escrow.");
+        }
+        changerPage('accueil');
+        return;
+      }
+
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (firestoreDb) {
+        firestoreDb.collection('admins').doc(user.uid).get().then(function(docSnap) {
+          if (!docSnap.exists || !docSnap.data() || docSnap.data().actif !== true) {
+            if (typeof afficherNotification === 'function') {
+              afficherNotification("Accès refusé : vous n'êtes pas administrateur Escrow actif", "🚫");
+            } else {
+              alert("Accès refusé : vous n'êtes pas administrateur Escrow actif.");
+            }
+            changerPage('accueil');
+          }
+        }).catch(function(err) {
+          console.warn("Erreur vérification accès admin escrow :", err);
+        });
+      }
+    }
+
+    window.verifierAdminEscrow = verifierAdminEscrow;
+    window.afficherPageAdminEscrow = afficherPageAdminEscrow;
 
     /**
      * Charge les avis reçus par le vendeur connecté (source unifiée via getNoteEtAvisVendeur)
