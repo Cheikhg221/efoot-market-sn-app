@@ -13933,7 +13933,7 @@
 
     /* ==========================================================
        FONCTIONS DU PANNEAU D'ADMINISTRATION DES SIGNALEMENTS
-       Réservé exclusivement à l'administrateur (UID: RMCWJVkSN6X6K5T1XintJKtA2ay1)
+       Réservé exclusivement à l'administrateur (UID: RMCWJVkSNGX6K5T1XintJKtA2ay1)
        ========================================================== */
 
     /**
@@ -13941,7 +13941,7 @@
      */
     function verifierAdmin() {
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      return Boolean(user && user.uid === 'RMCWJVkSN6X6K5T1XintJKtA2ay1');
+      return Boolean(user && user.uid === 'RMCWJVkSNGX6K5T1XintJKtA2ay1');
     }
 
     /**
