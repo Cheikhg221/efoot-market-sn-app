@@ -47,7 +47,7 @@ service cloud.firestore {
     // Signalements de vendeur
     match /signalements/{signalementId} {
       allow read, update, delete: if request.auth != null 
-                  && request.auth.uid == 'RMCWJVkSNGX6K5T1XintJKtA2ay1';
+                  && request.auth.uid == 'RMCWJVkSNGX6K5T1XintJKta2ay1';
       allow create: if request.auth != null;
     }
   }
