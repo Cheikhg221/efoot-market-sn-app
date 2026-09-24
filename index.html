@@ -13859,13 +13859,32 @@
       var profil = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
       var signaleurNom = profil ? (profil.prenom + ' ' + (profil.nom || '')).trim() : 'Utilisateur';
       
+      // Récupération du numéro du vendeur via l'annonce dans getAnnonces()
+      var vendeurTelephone = "Non renseigné";
+      if (typeof getAnnonces === 'function' && signalementAnnonceId) {
+        var annoncesListe = getAnnonces();
+        if (Array.isArray(annoncesListe)) {
+          for (var i = 0; i < annoncesListe.length; i++) {
+            if (annoncesListe[i] && (annoncesListe[i].id === signalementAnnonceId || annoncesListe[i]._id === signalementAnnonceId)) {
+              vendeurTelephone = annoncesListe[i].whatsapp || annoncesListe[i].telephoneWhatsApp || "Non renseigné";
+              break;
+            }
+          }
+        }
+      }
+
+      // Récupération du numéro du signaleur via profil.telephone
+      var signaleurTelephone = (profil && profil.telephone) ? profil.telephone : "Non renseigné";
+      
       var signalement = {
         vendeurId: signalementVendeurId || "",
         vendeurNom: signalementVendeurNom || "Vendeur",
+        vendeurTelephone: vendeurTelephone,
         annonceId: signalementAnnonceId || "",
         annonceTitre: signalementAnnonceTitre || "Compte eFootball",
         signaleurId: user.uid,
         signaleurNom: signaleurNom,
+        signaleurTelephone: signaleurTelephone,
         signaleurEmail: user.email || (profil ? profil.email : null) || "Non renseigné",
         motif: motif,
         description: description,
@@ -14089,6 +14108,7 @@
                     <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 2px;">
                       👤 ${escapeHtml(sig.vendeurNom || 'Inconnu')}
                     </div>
+                    <div style="font-size: 12px; color: #bbb;">📞 ${escapeHtml(sig.vendeurTelephone || 'Non renseigné')}</div>
                     ${sig.vendeurId ? `<div style="font-size: 11px; color: #666; font-family: monospace;">UID : ${escapeHtml(sig.vendeurId)}</div>` : ''}
                   </div>
 
@@ -14099,6 +14119,7 @@
                     <div style="font-size: 14px; font-weight: 600; color: #ddd; margin-bottom: 2px;">
                       🗣️ ${escapeHtml(sig.signaleurNom || 'Utilisateur')}
                     </div>
+                    <div style="font-size: 12px; color: #bbb;">📞 ${escapeHtml(sig.signaleurTelephone || 'Non renseigné')}</div>
                     <div style="font-size: 12px; color: #bbb;">
                       ✉️ ${escapeHtml(sig.signaleurEmail || 'Email non renseigné')}
                     </div>
