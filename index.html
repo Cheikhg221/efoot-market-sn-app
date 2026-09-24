@@ -9855,7 +9855,140 @@
 
       // CAS 2 : VENDEUR
       if (annonce && user.uid === annonce.vendeurId) {
-        conteneur.innerHTML = '<button onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:15px;">📤 Partager mon annonce</button>';
+        function rendreContenuVendeur(escrowActif, demandeEnAttente) {
+          var html = '';
+
+          // 1. Bandeau de statut de sa transaction escrow (si elle existe) :
+          if (escrowActif) {
+            var stEscrow = (escrowActif.statut || '').toLowerCase();
+            if (stEscrow === 'attente_paiement') {
+              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid rgba(255,193,7,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px;">⏳ En attente du paiement acheteur</div>';
+            } else if (stEscrow === 'paiement_envoye') {
+              html += '<div style="background:rgba(255,152,0,0.15); border:1.5px solid rgba(255,152,0,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#FF9800; font-weight:700; font-size:14px;">📤 Paiement envoyé, admin en vérification</div>';
+            } else if (stEscrow === 'paiement_recu') {
+              html += '<div style="background:rgba(0,200,83,0.2); border:2px solid #00C853; border-radius:8px; padding:14px 16px; text-align:center; color:#00E676; font-weight:800; font-size:15px; box-shadow:0 0 12px rgba(0,200,83,0.35); text-transform:uppercase;">💰 Argent sécurisé chez l\'admin - À TOI DE LIVRER</div>';
+            } else if (stEscrow === 'identifiants_transferes') {
+              html += '<div style="background:rgba(156,39,176,0.15); border:1.5px solid rgba(156,39,176,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#CE93D8; font-weight:700; font-size:14px;">⏳ En attente de l\'acheteur</div>';
+            } else if (stEscrow === 'compte_recu') {
+              html += '<div style="background:rgba(76,175,80,0.15); border:1.5px solid rgba(76,175,80,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#81C784; font-weight:700; font-size:14px;">🎉 Compte reçu, admin va te payer</div>';
+            } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
+              html += '<div style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:12px 14px; text-align:center; color:#E0E0E0; font-weight:700; font-size:14px;">✅ Terminé</div>';
+            } else {
+              html += '<div style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:12px 14px; text-align:center; color:#E0E0E0; font-weight:700; font-size:14px;">' + escapeHtml(escrowActif.statut || 'En cours') + '</div>';
+            }
+          }
+
+          // 2. Les boutons d'action selon le statut :
+          // Si escrow.statut === "paiement_recu" :
+          if (escrowActif && (escrowActif.statut || '').toLowerCase() === 'paiement_recu') {
+            html += '<button type="button" onclick="marquerIdentifiantsTransferes(\'' + escrowActif.id + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:15px; box-shadow:0 4px 12px rgba(0,200,83,0.35);">✅ J\'ai transféré les identifiants</button>';
+          }
+
+          // Si aucune transaction escrow mais une demande d'achat en attente :
+          if (!escrowActif && demandeEnAttente) {
+            html += '<div style="display:flex; gap:10px; width:100%;">';
+            html += '<button type="button" onclick="accepterDemandeAvecProtection(\'' + demandeEnAttente.id + '\', this)" style="background:#00C853; color:white; flex:1; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">✅ Accepter la demande</button>';
+            html += '<button type="button" onclick="refuserDemandeAvecProtection(\'' + demandeEnAttente.id + '\', this)" style="background:#D32F2F; color:white; flex:1; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Refuser la demande</button>';
+            html += '</div>';
+          }
+
+          // Si annonce.statut === "en_cours" :
+          var stAnnonce = (annonce.statut || '').toLowerCase();
+          if (stAnnonce === 'en_cours') {
+            if (annonce.accepteAutresOffres !== false) {
+              html += '<button type="button" onclick="fermerAuxOffres(\'' + annonce.id + '\')" style="background:#FFC107; color:#111; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔒 Fermer aux nouvelles offres</button>';
+            } else {
+              html += '<button type="button" onclick="laisserOuverte(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔓 Ouvrir aux offres</button>';
+            }
+
+            html += '<button type="button" onclick="marquerVendue(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🎉 Marquer comme VENDU</button>';
+
+            var dAssociee = (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
+              var s = (d.statut || '').toLowerCase();
+              return d.annonceId === annonce.id && (s === 'acceptee' || s === 'en_cours' || s === 'en_attente_confirmation_acheteur');
+            }) || (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
+              return d.annonceId === annonce.id;
+            }) || {};
+            var demandeId = dAssociee.id || (escrowActif ? (escrowActif.demandeId || '') : '') || '';
+
+            html += '<button type="button" onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Annuler la transaction</button>';
+          }
+
+          // Toujours affiché :
+          html += '<button type="button" onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:14px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:14px;">📤 Partager mon annonce</button>';
+
+          // 3. Grouper tous ces boutons dans un conteneur visuel (background #1E1E1E, border-radius 12px, padding 16px)
+          conteneur.innerHTML = '<div style="background:#1E1E1E; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; border:1px solid #2a2a2a;">' + html + '</div>';
+        }
+
+        // Récupérer la transaction escrow liée à cette annonceId depuis escrowVendeurCache ou depuis Firestore
+        var escrowCache = (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) ? escrowVendeurCache : [];
+        var escrowTrouve = escrowCache.find(function(e) {
+          return e.annonceId === annonceId;
+        }) || null;
+
+        var demandesCache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+        var demandeEnAttente = demandesCache.find(function(d) {
+          var s = (d.statut || '').toLowerCase();
+          return d.annonceId === annonceId && (s === 'en_attente' || s === 'attente');
+        }) || null;
+
+        rendreContenuVendeur(escrowTrouve, demandeEnAttente);
+
+        // Si non trouvé dans le cache et Firestore disponible, interroger Firestore
+        if (db && (!escrowTrouve || !demandeEnAttente)) {
+          var requetes = [];
+          if (!escrowTrouve) {
+            requetes.push(
+              db.collection("escrow")
+                .where("vendeurId", "==", user.uid)
+                .where("annonceId", "==", annonceId)
+                .get()
+                .then(function(snapshot) {
+                  if (!snapshot.empty) {
+                    var docs = snapshot.docs.map(function(d) {
+                      var data = d.data() || {};
+                      data.id = d.id;
+                      return data;
+                    });
+                    docs.sort(function(a, b) {
+                      var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
+                      var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
+                      return dateB - dateA;
+                    });
+                    escrowTrouve = docs[0];
+                  }
+                }).catch(function(err) {
+                  console.warn("Recherche Firestore escrow vendeur :", err);
+                })
+            );
+          }
+          if (!demandeEnAttente) {
+            requetes.push(
+              db.collection("demandes")
+                .where("vendeurId", "==", user.uid)
+                .where("annonceId", "==", annonceId)
+                .where("statut", "==", "en_attente")
+                .get()
+                .then(function(snapshot) {
+                  if (!snapshot.empty) {
+                    var docD = snapshot.docs[0];
+                    demandeEnAttente = docD.data() || {};
+                    demandeEnAttente.id = docD.id;
+                  }
+                }).catch(function(err) {
+                  console.warn("Recherche Firestore demande en attente :", err);
+                })
+            );
+          }
+          if (requetes.length > 0) {
+            Promise.all(requetes).then(function() {
+              if (document.getElementById("boutonsAnnonce") === conteneur) {
+                rendreContenuVendeur(escrowTrouve, demandeEnAttente);
+              }
+            });
+          }
+        }
         return;
       }
 
@@ -15466,6 +15599,12 @@
             window.escrowVendeurCache = escrowVendeurCache;
 
             afficherEscrowVendeur();
+            if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+              if (typeof afficherBoutonsAnnonce === 'function') {
+                var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(a) { return a.id === currentDetailAdId; }) : null;
+                if (adCur) afficherBoutonsAnnonce(currentDetailAdId, adCur);
+              }
+            }
           }, function(error) {
             console.warn("Écoute transactions escrow vendeur :", error ? (error.message || error.code || error) : "");
           });
@@ -15505,7 +15644,18 @@
         if (typeof afficherNotification === 'function') {
           afficherNotification("Identifiants transférés ! En attente de confirmation de l'acheteur.", "📦");
         }
+        if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+          var item = escrowVendeurCache.find(function(e) { return e.id === escrowId; });
+          if (item) {
+            item.statut = "identifiants_transferes";
+          }
+        }
         afficherEscrowVendeur();
+        if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+          if (typeof afficherDetailAnnonce === 'function') {
+            afficherDetailAnnonce(currentDetailAdId);
+          }
+        }
       }).catch(function(err) {
         console.error("Erreur marquerIdentifiantsTransferes :", err);
         alert("Erreur lors de la mise à jour : " + (err.message || err));
