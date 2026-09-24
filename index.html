@@ -5849,6 +5849,51 @@
       </div>
     </section>
 
+    <!-- --------------------------------------------------------
+         PAGE ADMIN : SIGNALEMENTS DE VENDEURS (RÉSERVÉ ADMIN)
+         -------------------------------------------------------- -->
+    <section id="page-admin-signalements" class="page-view">
+      <div style="max-width: 960px; margin: 0 auto; padding: 24px 16px 80px 16px;">
+        
+        <!-- En-tête de la page Admin -->
+        <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(20, 20, 20, 0.98) 100%); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 14px; padding: 22px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700; margin-bottom: 8px;">
+              <span>🛡️</span> ESPACE SÉCURISÉ ADMIN
+            </div>
+            <h1 style="font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
+              🚨 Signalements des Vendeurs
+            </h1>
+            <p style="font-size: 13px; color: #aaa; margin: 0; line-height: 1.5;">
+              Modération et suivi des comportements signalés par la communauté eFoot Market.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="afficherPageAdminSignalements()">
+              🔄 Actualiser
+            </button>
+            <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer;" onclick="changerPage('accueil')">
+              ← Accueil
+            </button>
+          </div>
+        </div>
+
+        <!-- Badges Statistiques / Filtres rapides -->
+        <div id="admin-signalements-stats" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+          <!-- Injecté dynamiquement -->
+        </div>
+
+        <!-- Conteneur de la liste des signalements -->
+        <div id="admin-signalements-container">
+          <div style="text-align: center; padding: 50px 20px; color: #888;">
+            <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
+            <div>Chargement des signalements depuis Firestore...</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- ==========================================================
@@ -5867,6 +5912,14 @@
         <button type="button" class="app-footer-link" onclick="changerPage('comment-ca-marche')">Comment ça marche</button>
         <span class="app-footer-sep">•</span>
         <a href="mailto:efootmarketcontact@gmail.com" class="app-footer-link">Contact</a>
+        <span id="admin-link-signalements" style="display: none;">
+          <span class="app-footer-sep">•</span>
+          <button type="button" class="app-footer-link" 
+            style="color: #ef4444;" 
+            onclick="changerPage('admin-signalements')">
+            🚨 Admin Signalements
+          </button>
+        </span>
       </div>
     </div>
   </footer>
@@ -6988,6 +7041,10 @@
                 var adCurLogout = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
                 if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
               }
+              var adminLink = document.getElementById('admin-link-signalements');
+              if (adminLink) {
+                adminLink.style.display = 'none';
+              }
               afficherEcranConnexion();
               const loading = document.getElementById('loading-screen');
               if (loading) loading.style.display = 'none';
@@ -7399,6 +7456,12 @@
           userPill.title = "Cliquez pour compléter votre profil";
         }
         userElem.innerHTML = `👤 Compléter mon profil`;
+      }
+
+      // Affichage du lien admin réservé au compte administrateur
+      var adminLink = document.getElementById('admin-link-signalements');
+      if (adminLink) {
+        adminLink.style.display = verifierAdmin() ? 'inline' : 'none';
       }
     }
 
@@ -8246,6 +8309,11 @@
         afficherFavoris();
       } else if (pageId === 'mentions-legales' || pageId === 'politique-confidentialite' || pageId === 'comment-ca-marche' || pageId === 'faq') {
         nettoyerHashAnnonce();
+      } else if (pageId === 'admin-signalements') {
+        nettoyerHashAnnonce();
+        if (typeof afficherPageAdminSignalements === 'function') {
+          afficherPageAdminSignalements();
+        }
       }
 
       mettreAJourBadgeTransactions();
@@ -13863,6 +13931,332 @@
     window.supprimerCaptureSignalement = supprimerCaptureSignalement;
     window.envoyerSignalement = envoyerSignalement;
 
+    /* ==========================================================
+       FONCTIONS DU PANNEAU D'ADMINISTRATION DES SIGNALEMENTS
+       Réservé exclusivement à l'administrateur (UID: SQjdom6623c3aVy6JJOKAwqws4M2)
+       ========================================================== */
+
+    /**
+     * Vérifie si l'utilisateur actuellement connecté est l'administrateur
+     */
+    function verifierAdmin() {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      return Boolean(user && user.uid === 'SQjdom6623c3aVy6JJOKAwqws4M2');
+    }
+
+    /**
+     * Charge et affiche la page des signalements pour l'administrateur
+     */
+    function afficherPageAdminSignalements() {
+      // 1. Vérification stricte des permissions admin
+      if (!verifierAdmin()) {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Accès refusé : espace réservé à l'administrateur", "🚫");
+        } else {
+          alert("Accès refusé : espace réservé à l'administrateur.");
+        }
+        changerPage('accueil');
+        return;
+      }
+
+      var container = document.getElementById('admin-signalements-container');
+      var statsContainer = document.getElementById('admin-signalements-stats');
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 48px 20px; color: #888;">
+            <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
+            <div>Chargement des signalements depuis Firestore...</div>
+          </div>
+        `;
+      }
+
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) {
+        if (container) {
+          container.innerHTML = '<div style="color: #ef4444; padding: 24px; text-align: center;">Base de données Firestore indisponible.</div>';
+        }
+        return;
+      }
+
+      // 2. Requête Firestore ordonnée par dateCreation desc (limit 50)
+      firestoreDb.collection("signalements")
+        .orderBy("dateCreation", "desc")
+        .limit(50)
+        .get()
+        .then(function(snapshot) {
+          if (!snapshot || snapshot.empty) {
+            if (container) {
+              container.innerHTML = `
+                <div style="background: #181818; border: 1px solid #2e2e2e; border-radius: 12px; padding: 48px 20px; text-align: center;">
+                  <div style="font-size: 44px; margin-bottom: 12px;">🎉</div>
+                  <h3 style="color: #fff; font-size: 17px; margin-bottom: 6px;">Aucun signalement</h3>
+                  <p style="color: #888; font-size: 13px; margin: 0;">Aucun vendeur n'a été signalé pour le moment.</p>
+                </div>
+              `;
+            }
+            if (statsContainer) {
+              statsContainer.innerHTML = `
+                <div style="background: #181818; border: 1px solid #2e2e2e; border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #aaa;">
+                  Total : <strong style="color: #fff;">0 signalement</strong>
+                </div>
+              `;
+            }
+            return;
+          }
+
+          var signalements = [];
+          snapshot.forEach(function(doc) {
+            var data = doc.data();
+            data.id = doc.id;
+            signalements.push(data);
+          });
+
+          var totalNouveaux = signalements.filter(function(s) { return s.statut !== 'resolu'; }).length;
+          var totalResolus = signalements.filter(function(s) { return s.statut === 'resolu'; }).length;
+
+          if (statsContainer) {
+            statsContainer.innerHTML = `
+              <div style="background: #181818; border: 1px solid #2e2e2e; border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #aaa;">
+                Total signalements : <strong style="color: #fff;">${signalements.length}</strong>
+              </div>
+              <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #fca5a5;">
+                Nouveaux / À traiter : <strong style="color: #ef4444;">${totalNouveaux}</strong>
+              </div>
+              <div style="background: rgba(0, 200, 83, 0.1); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #86efac;">
+                Résolus : <strong style="color: #00C853;">${totalResolus}</strong>
+              </div>
+            `;
+          }
+
+          // 3. Construction des cartes
+          var html = '<div style="display: flex; flex-direction: column; gap: 16px;">';
+          signalements.forEach(function(sig) {
+            var dateStr = 'Date inconnue';
+            if (sig.dateCreation) {
+              try {
+                if (typeof sig.dateCreation.toDate === 'function') {
+                  dateStr = sig.dateCreation.toDate().toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                } else {
+                  dateStr = new Date(sig.dateCreation).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
+              } catch(e) {
+                dateStr = String(sig.dateCreation);
+              }
+            }
+
+            var estResolu = (sig.statut === 'resolu');
+            var statutBadge = estResolu 
+              ? '<span style="background: rgba(0,200,83,0.15); color: #00C853; border: 1px solid rgba(0,200,83,0.3); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">✅ Résolu</span>'
+              : '<span style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🚨 Nouveau</span>';
+
+            var captureHtml = '';
+            if (sig.captureBase64) {
+              captureHtml = `
+                <div style="margin: 14px 0;">
+                  <div style="font-size: 12px; color: #aaa; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span>📸</span> <strong>Capture d'écran fournie :</strong> (cliquez pour agrandir en plein écran)
+                  </div>
+                  <div style="background: #0d0d0d; border: 1px solid #333; border-radius: 8px; overflow: hidden; max-height: 280px; display: flex; align-items: center; justify-content: center; cursor: zoom-in;"
+                       onclick="ouvrirZoomSignalement('${escapeHtml(sig.captureBase64)}')">
+                    <img src="${sig.captureBase64}" alt="Preuve capture d'écran" style="width: 100%; max-height: 280px; object-fit: contain; display: block;">
+                  </div>
+                </div>
+              `;
+            }
+
+            html += `
+              <div class="admin-signalement-card" style="background: #181818; border: 1px solid ${estResolu ? '#2e2e2e' : 'rgba(239, 68, 68, 0.4)'}; border-radius: 12px; padding: 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.35);">
+                
+                <!-- En-tête de carte : Motif (en rouge) et Date -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div style="font-size: 16px; font-weight: 800; color: #ef4444;">
+                      🚨 Motif : ${escapeHtml(sig.motif || 'Non précisé')}
+                    </div>
+                    ${statutBadge}
+                  </div>
+                  <div style="font-size: 12px; color: #888;">
+                    📅 ${dateStr}
+                  </div>
+                </div>
+
+                <!-- Informations Vendeur et Signaleur -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; background: #121212; border: 1px solid #282828; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                  <div>
+                    <div style="font-size: 11px; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 3px;">
+                      Vendeur signalé
+                    </div>
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 2px;">
+                      👤 ${escapeHtml(sig.vendeurNom || 'Inconnu')}
+                    </div>
+                    ${sig.vendeurId ? `<div style="font-size: 11px; color: #666; font-family: monospace;">UID : ${escapeHtml(sig.vendeurId)}</div>` : ''}
+                  </div>
+
+                  <div>
+                    <div style="font-size: 11px; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 3px;">
+                      Signalé par
+                    </div>
+                    <div style="font-size: 14px; font-weight: 600; color: #ddd; margin-bottom: 2px;">
+                      🗣️ ${escapeHtml(sig.signaleurNom || 'Utilisateur')}
+                    </div>
+                    <div style="font-size: 12px; color: #bbb;">
+                      ✉️ ${escapeHtml(sig.signaleurEmail || 'Email non renseigné')}
+                    </div>
+                    ${sig.signaleurId ? `<div style="font-size: 11px; color: #666; font-family: monospace;">UID : ${escapeHtml(sig.signaleurId)}</div>` : ''}
+                  </div>
+                </div>
+
+                <!-- Annonce liée (cliquable vers la page détail) -->
+                <div style="margin-bottom: 14px; font-size: 13.5px; background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid #262626;">
+                  <span style="color: #aaa;">Titre de l'annonce : </span>
+                  ${sig.annonceId ? `
+                    <button type="button" 
+                            onclick="changerPage('detail', { annonceId: '${escapeHtml(sig.annonceId)}' })" 
+                            style="background: none; border: none; color: #60a5fa; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">
+                      🏷️ ${escapeHtml(sig.annonceTitre || 'Compte eFootball')} ↗
+                    </button>
+                  ` : `
+                    <strong style="color: #fff;">${escapeHtml(sig.annonceTitre || 'Non renseigné')}</strong>
+                  `}
+                </div>
+
+                <!-- Description du problème -->
+                <div style="background: rgba(239, 68, 68, 0.05); border-left: 3px solid #ef4444; border-radius: 0 8px 8px 0; padding: 12px 14px; margin-bottom: 14px;">
+                  <div style="font-size: 12px; color: #fca5a5; margin-bottom: 6px; font-weight: 700;">
+                    Description du problème :
+                  </div>
+                  <div style="font-size: 13.5px; color: #eee; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(sig.description || '')}</div>
+                </div>
+
+                <!-- Capture d'écran (affichée en grand si présente) -->
+                ${captureHtml}
+
+                <!-- 3 boutons d'action : ✅ Marquer résolu, 👤 Voir le vendeur, 🗑️ Supprimer -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid #262626; align-items: center;">
+                  <button type="button" 
+                    onclick="marquerSignalementResolu('${sig.id}')"
+                    style="background: ${estResolu ? 'rgba(0,200,83,0.1)' : '#00C853'}; color: ${estResolu ? '#00C853' : '#000'}; border: 1px solid ${estResolu ? 'rgba(0,200,83,0.4)' : 'transparent'}; font-weight: 700; padding: 9px 15px; border-radius: 6px; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    ✅ ${estResolu ? 'Résolu (cliquer pour réouvrir)' : 'Marquer résolu'}
+                  </button>
+
+                  <button type="button" 
+                    onclick="ouvrirProfilVendeur('${escapeHtml(sig.vendeurNom || 'Vendeur')}', '${escapeHtml(sig.vendeurId || '')}')"
+                    class="btn-secondary"
+                    style="font-weight: 600; padding: 9px 15px; border-radius: 6px; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    👤 Voir le vendeur
+                  </button>
+
+                  <button type="button" 
+                    onclick="supprimerSignalement('${sig.id}')"
+                    style="background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-weight: 600; padding: 9px 15px; border-radius: 6px; font-size: 12.5px; cursor: pointer; margin-left: auto; display: inline-flex; align-items: center; gap: 6px;">
+                    🗑️ Supprimer
+                  </button>
+                </div>
+
+              </div>
+            `;
+          });
+          html += '</div>';
+
+          if (container) container.innerHTML = html;
+        })
+        .catch(function(err) {
+          console.error("Erreur chargement signalements admin :", err);
+          if (container) {
+            container.innerHTML = `
+              <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px; text-align: center; color: #fca5a5;">
+                ❌ Erreur lors du chargement des signalements : ${escapeHtml(err.message)}
+              </div>
+            `;
+          }
+        });
+    }
+
+    /**
+     * Marquer un signalement comme résolu (ou le réouvrir)
+     */
+    function marquerSignalementResolu(id) {
+      if (!verifierAdmin()) {
+        alert("Action réservée à l'administrateur.");
+        return;
+      }
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) return;
+
+      firestoreDb.collection("signalements").doc(id).get().then(function(docSnap) {
+        var actuel = docSnap.exists ? docSnap.data().statut : 'nouveau';
+        var nouveauStatut = (actuel === 'resolu') ? 'en_cours' : 'resolu';
+        
+        return firestoreDb.collection("signalements").doc(id).update({
+          statut: nouveauStatut,
+          dateResolution: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+        }).then(function() {
+          if (typeof afficherNotification === 'function') {
+            afficherNotification(nouveauStatut === 'resolu' ? "Signalement marqué comme résolu ✅" : "Signalement réouvert 🔄", "✅");
+          }
+          afficherPageAdminSignalements();
+        });
+      }).catch(function(err) {
+        console.error("Erreur mise à jour signalement :", err);
+        alert("Erreur lors de la mise à jour : " + err.message);
+      });
+    }
+
+    /**
+     * Supprimer définitivement un signalement dans Firestore
+     */
+    function supprimerSignalement(id) {
+      if (!verifierAdmin()) {
+        alert("Action réservée à l'administrateur.");
+        return;
+      }
+      if (!confirm("Voulez-vous vraiment supprimer définitivement ce signalement ?")) {
+        return;
+      }
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) return;
+
+      firestoreDb.collection("signalements").doc(id).delete()
+        .then(function() {
+          if (typeof afficherNotification === 'function') {
+            afficherNotification("Signalement supprimé avec succès", "🗑️");
+          }
+          afficherPageAdminSignalements();
+        })
+        .catch(function(err) {
+          console.error("Erreur suppression signalement :", err);
+          alert("Erreur lors de la suppression : " + err.message);
+        });
+    }
+
+    /**
+     * Agrandit la capture en plein écran dans la modale zoom
+     */
+    function ouvrirZoomSignalement(src) {
+      var modal = document.getElementById('modal-zoom-signalement');
+      var img = document.getElementById('zoom-signalement-img');
+      if (img) img.src = src;
+      if (modal) modal.style.display = 'flex';
+    }
+
+    /**
+     * Ferme la modale zoom de capture
+     */
+    function fermerZoomSignalement() {
+      var modal = document.getElementById('modal-zoom-signalement');
+      if (modal) modal.style.display = 'none';
+      var img = document.getElementById('zoom-signalement-img');
+      if (img) img.src = '';
+    }
+
+    // Exposer sur window pour les appels globaux et inline
+    window.verifierAdmin = verifierAdmin;
+    window.afficherPageAdminSignalements = afficherPageAdminSignalements;
+    window.marquerSignalementResolu = marquerSignalementResolu;
+    window.supprimerSignalement = supprimerSignalement;
+    window.ouvrirZoomSignalement = ouvrirZoomSignalement;
+    window.fermerZoomSignalement = fermerZoomSignalement;
+
     /**
      * Charge les avis reçus par le vendeur connecté (source unifiée via getNoteEtAvisVendeur)
      */
@@ -16173,6 +16567,14 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modale plein écran pour voir la capture d'écran du signalement -->
+  <div class="modal-backdrop" id="modal-zoom-signalement" style="display: none; z-index: 3000000; background: rgba(0,0,0,0.92);" onclick="fermerZoomSignalement()">
+    <div style="position: relative; max-width: 95vw; max-height: 95vh; display: flex; justify-content: center; align-items: center;" onclick="event.stopPropagation()">
+      <button type="button" onclick="fermerZoomSignalement()" style="position: absolute; top: -14px; right: -14px; background: #ef4444; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 16px;">✕</button>
+      <img id="zoom-signalement-img" src="" alt="Preuve capture d'écran" style="max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: 8px; border: 1px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
     </div>
   </div>
 </body>
