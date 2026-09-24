@@ -11003,16 +11003,24 @@
     function mettreAJourCompteursOngletsTransactions() {
       const demandesVendeur = (typeof demandesVendeurCache !== 'undefined' && demandesVendeurCache) || [];
       const demandesAcheteur = (typeof demandesAcheteurCache !== 'undefined' && demandesAcheteurCache) || [];
+      const escrowsVendeur = (typeof escrowVendeurCache !== 'undefined' && escrowVendeurCache) || [];
+      const escrowsAcheteur = (typeof escrowAcheteurCache !== 'undefined' && escrowAcheteurCache) || [];
       
       // Compter les demandes en attente
       const enAttenteRecues = demandesVendeur.filter(function(d) {
         const s = (d.statut || '').toLowerCase();
         return s === 'en_attente' || s === 'demande_envoyee';
+      }).length + escrowsVendeur.filter(function(e) {
+        const s = (e.statut || '').toLowerCase();
+        return s === 'paiement_recu';
       }).length;
       
       const enAttenteEnvoyees = demandesAcheteur.filter(function(d) {
         const s = (d.statut || '').toLowerCase();
         return s === 'en_attente' || s === 'demande_envoyee';
+      }).length + escrowsAcheteur.filter(function(e) {
+        const s = (e.statut || '').toLowerCase();
+        return s === 'attente_paiement';
       }).length;
       
       // Mettre à jour les badges des onglets
@@ -11238,6 +11246,9 @@
       if (typeof afficherEscrowAcheteur === 'function') {
         afficherEscrowAcheteur();
       }
+      if (typeof chargerEscrowVendeur === 'function') {
+        chargerEscrowVendeur();
+      }
     }
 
     function arreterEcouteDemandesFirestore() {
@@ -11263,6 +11274,13 @@
       }
       if (typeof escrowAcheteurCache !== 'undefined') {
         escrowAcheteurCache = [];
+      }
+      if (typeof unsubscribeEscrowVendeur !== 'undefined' && unsubscribeEscrowVendeur) {
+        unsubscribeEscrowVendeur();
+        unsubscribeEscrowVendeur = null;
+      }
+      if (typeof escrowVendeurCache !== 'undefined') {
+        escrowVendeurCache = [];
       }
       demandesVendeurCache = [];
       demandesAcheteurCache = [];
@@ -11294,14 +11312,82 @@
     }
 
     /**
-     * 3. AFFICHAGE DES DEMANDES REÇUES (VENDEUR)
+     * 3. AFFICHAGE DES DEMANDES REÇUES (VENDEUR) - FUSION ESCROW + DEMANDES
      */
     function afficherSectionDemandesRecues(demandes) {
+      demandes = demandes || (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []) || [];
+      var escrows = (typeof escrowVendeurCache !== 'undefined' && escrowVendeurCache) ? escrowVendeurCache : [];
       var html = '';
       
-      if (!demandes || demandes.length === 0) {
+      var totalElements = demandes.length + escrows.length;
+      if (totalElements === 0) {
         html += '<p style="color:#888;">Aucune demande reçue</p>';
       } else {
+        // 1. Transactions Escrow côté vendeur (avec badge spécial "🔒 ESCROW")
+        if (escrows.length > 0) {
+          escrows.forEach(function(e) {
+            var stEscrow = (e.statut || '').toLowerCase().trim();
+            var stInfo = (typeof getStatutInfoAdminEscrow === 'function') ? getStatutInfoAdminEscrow(stEscrow) : null;
+            var libelleStatut = stInfo ? stInfo.libelle : ((typeof getLibelleStatutEscrow === 'function') ? getLibelleStatutEscrow(stEscrow) : stEscrow);
+            var couleurStatut = stInfo ? stInfo.couleur : ((typeof getCouleurStatutEscrow === 'function') ? getCouleurStatutEscrow(stEscrow) : '#fff');
+            var dateAffichee = (typeof formaterDateEscrow === 'function') ? formaterDateEscrow(e.dateCreation) : '';
+            var prixEscrow = (e.montant != null) ? Number(e.montant) : ((e.annoncePrix != null) ? Number(e.annoncePrix) : 0);
+
+            html += '<div class="carte-demande" style="border:1px solid rgba(0,200,83,0.45); padding:16px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" ' + (e.annonceId ? 'onclick="changerPage(\'detail\', { annonceId: \'' + e.annonceId + '\' })" ' : '') + 'onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'rgba(0,200,83,0.45)\'">';
+            
+            // En-tête : badge ESCROW + statut + date
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">';
+            html += '  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">';
+            html += '    <span style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">🔒 ESCROW</span>';
+            html += '    <span style="color:' + couleurStatut + '; font-weight:700; font-size:13px;">' + escapeHtml(libelleStatut) + '</span>';
+            html += '  </div>';
+            if (dateAffichee) {
+              html += '  <span style="font-size:12px; color:#888;">📅 ' + escapeHtml(dateAffichee) + '</span>';
+            }
+            html += '</div>';
+
+            // Titre de l'annonce + prix
+            html += '<h4 style="margin:4px 0;">📦 ' + escapeHtml(e.annonceTitre || "Compte eFootball") + '</h4>';
+            html += '<p style="margin:4px 0; font-size:15px; font-weight:700; color:#00C853;">💰 ' + prixEscrow.toLocaleString('fr-FR') + ' FCFA</p>';
+
+            // Ligne acheteur : nom
+            html += '<p style="margin:4px 0; font-size:13px; color:#ccc;">👤 <strong>Acheteur :</strong> ' + escapeHtml(e.acheteurNom || "Acheteur") + '</p>';
+
+            // Ligne admin : nom + téléphone
+            html += '<p style="margin:4px 0; font-size:13px; color:#ccc;">🛡️ <strong>Admin :</strong> ' + escapeHtml(e.adminNom || "Non assigné") + (e.adminTelephone ? (' • 📞 <a href="tel:' + escapeHtml(e.adminTelephone) + '" style="color:#34d399; text-decoration:none;">' + escapeHtml(e.adminTelephone) + '</a>') : '') + '</p>';
+
+            // Selon le statut, un bloc d'action
+            if (stEscrow === 'paiement_recu') {
+              html += '<div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; border-radius:8px; padding:12px; margin:10px 0;">';
+              html += '  <div style="color:#10b981; font-weight:700; font-size:13.5px; margin-bottom:4px;">💰 L\'argent est sécurisé chez l\'admin</div>';
+              html += '  <p style="color:#e4e4e7; font-size:12.5px; line-height:1.5; margin:0 0 10px 0;">Tu peux maintenant transférer les identifiants Konami à l\'acheteur en toute sécurité. Une fois fait, clique ci-dessous.</p>';
+              html += '  <button type="button" class="btn-primary" style="background:#00C853; color:white; border:none; padding:9px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px;" onclick="event.stopPropagation(); marquerIdentifiantsTransferes(\'' + e.id + '\')">✅ J\'ai transféré les identifiants</button>';
+              html += '</div>';
+            } else if (stEscrow === 'identifiants_transferes') {
+              html += '<div style="background:rgba(245,158,11,0.15); border:1px solid #f59e0b; border-radius:8px; padding:10px 14px; margin:10px 0; color:#fbbf24; font-size:13px; font-weight:600;">';
+              html += '  ⏳ En attente que l\'acheteur confirme la réception';
+              html += '</div>';
+            } else if (stEscrow === 'compte_recu') {
+              html += '<div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin:10px 0; color:#34d399; font-size:13px; font-weight:600;">';
+              html += '  🎉 L\'acheteur a confirmé la réception. L\'admin va te payer.';
+              html += '</div>';
+            } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
+              html += '<div style="background:rgba(156,163,175,0.15); border:1px solid #6b7280; border-radius:8px; padding:10px 14px; margin:10px 0; color:#d1d5db; font-size:13px; font-weight:600;">';
+              html += '  ✅ Transaction terminée';
+              html += '</div>';
+            } else {
+              var libelleAutre = (stEscrow === 'attente_paiement') ? "En attente du paiement de l'acheteur à l'admin" : (stEscrow === 'paiement_envoye' ? "Paiement envoyé par l'acheteur, vérification par l'admin en cours" : "Transaction en cours de traitement");
+              html += '<div style="background:#242427; border:1px solid #333; border-radius:8px; padding:10px 14px; margin:10px 0; color:#a1a1aa; font-size:12.5px; font-style:italic;">';
+              html += '  ⏳ ' + escapeHtml(libelleAutre);
+              html += '</div>';
+            }
+
+            html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
+            html += '</div>';
+          });
+        }
+
+        // 2. Demandes normales
         demandes.forEach(function(d) {
           html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
           html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
@@ -14599,8 +14685,10 @@
     var escrowDeveloppement = false;
     var adminsEscrowCache = [];
     var escrowAcheteurCache = [];
+    var escrowVendeurCache = [];
     var escrowAdminCache = [];
     var unsubscribeEscrowAcheteur = null;
+    var unsubscribeEscrowVendeur = null;
     var unsubscribeEscrowAdmin = null;
     var currentEscrowAnnonceId = null;
 
@@ -15340,11 +15428,99 @@
       });
     }
 
+    /**
+     * 1. Écoute en temps réel les documents Firestore de la collection "escrow" où
+     * vendeurId === currentUser.uid, et stocke le résultat dans escrowVendeurCache.
+     */
+    function chargerEscrowVendeur() {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user || !user.uid) return;
+
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) return;
+
+      if (unsubscribeEscrowVendeur) {
+        unsubscribeEscrowVendeur();
+        unsubscribeEscrowVendeur = null;
+      }
+
+      try {
+        unsubscribeEscrowVendeur = firestoreDb.collection("escrow")
+          .where("vendeurId", "==", user.uid)
+          .onSnapshot(function(snapshot) {
+            var items = [];
+            if (snapshot && !snapshot.empty) {
+              snapshot.forEach(function(doc) {
+                var data = doc.data() || {};
+                data.id = doc.id;
+                items.push(data);
+              });
+            }
+            items.sort(function(a, b) {
+              var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
+              var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
+              return dateB - dateA;
+            });
+
+            escrowVendeurCache = items;
+            window.escrowVendeurCache = escrowVendeurCache;
+
+            afficherEscrowVendeur();
+          }, function(error) {
+            console.warn("Écoute transactions escrow vendeur :", error ? (error.message || error.code || error) : "");
+          });
+      } catch (err) {
+        console.warn("Erreur chargerEscrowVendeur :", err);
+      }
+    }
+
+    /**
+     * 3. Affiche les transactions escrow côté vendeur dans la section "Demandes reçues"
+     * de la page transactions, avec le badge spécial "🔒 ESCROW"
+     */
+    function afficherEscrowVendeur() {
+      if (typeof afficherSectionDemandesRecues === 'function') {
+        afficherSectionDemandesRecues(demandesVendeurCache);
+      }
+    }
+
+    /**
+     * 5. Met à jour le document escrow : statut: "identifiants_transferes",
+     * dateTransfertIdentifiants: serverTimestamp, notification et rafraîchissement
+     */
+    function marquerIdentifiantsTransferes(escrowId) {
+      if (!escrowId) return;
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) return;
+
+      var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : new Date();
+
+      firestoreDb.collection("escrow").doc(escrowId).update({
+        statut: "identifiants_transferes",
+        dateTransfertIdentifiants: serverTimestamp,
+        dateMiseAJour: serverTimestamp
+      }).then(function() {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Identifiants transférés ! En attente de confirmation de l'acheteur.", "📦");
+        }
+        afficherEscrowVendeur();
+      }).catch(function(err) {
+        console.error("Erreur marquerIdentifiantsTransferes :", err);
+        alert("Erreur lors de la mise à jour : " + (err.message || err));
+      });
+    }
+
     window.escrowDeveloppement = escrowDeveloppement;
     window.adminsEscrowCache = adminsEscrowCache;
     window.escrowAcheteurCache = escrowAcheteurCache;
+    window.escrowVendeurCache = escrowVendeurCache;
     window.escrowAdminCache = escrowAdminCache;
     window.chargerEscrowAdmin = chargerEscrowAdmin;
+    window.chargerEscrowVendeur = chargerEscrowVendeur;
+    window.afficherEscrowVendeur = afficherEscrowVendeur;
+    window.marquerIdentifiantsTransferes = marquerIdentifiantsTransferes;
     window.actualiserRenduPageAdminEscrow = actualiserRenduPageAdminEscrow;
     window.confirmerReceptionArgent = confirmerReceptionArgent;
     window.confirmerTransfertVendeur = confirmerTransfertVendeur;
