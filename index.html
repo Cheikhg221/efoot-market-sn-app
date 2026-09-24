@@ -5920,15 +5920,7 @@
           </div>
         </div>
 
-        <!-- Compteur d'actions requises (exigence 8) -->
-        <div id="escrow-admin-action-banner" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 22px;">⚡</span>
-          <span id="escrow-admin-action-texte" style="color: #fbbf24; font-weight: 700; font-size: 15px;">
-            0 transaction nécessitant ton action
-          </span>
-        </div>
-
-        <!-- 3 compteurs : En attente / Argent reçu / À transférer -->
+        <!-- 3 compteurs : En attente / Argent reçu / À transférer (tous à 0) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
           <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px; text-align: center;">
             <div style="font-size: 13px; color: #a1a1aa; margin-bottom: 8px; font-weight: 600;">⏳ En attente</div>
@@ -5944,17 +5936,15 @@
           </div>
         </div>
 
-        <!-- Liste des transactions escrow dynamiques -->
-        <div id="liste-transactions-escrow-admin" style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 48px 20px; text-align: center;">
-            <div style="font-size: 40px; margin-bottom: 12px;">📭</div>
-            <h3 style="font-size: 16px; font-weight: 700; color: #e4e4e7; margin: 0 0 6px 0;">
-              Aucune transaction escrow pour le moment
-            </h3>
-            <p style="font-size: 13px; color: #71717a; margin: 0;">
-              Les transactions avec paiement sécurisé escrow apparaîtront ici.
-            </p>
-          </div>
+        <!-- Message aucune transaction -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 48px 20px; text-align: center;">
+          <div style="font-size: 40px; margin-bottom: 12px;">📭</div>
+          <h3 style="font-size: 16px; font-weight: 700; color: #e4e4e7; margin: 0 0 6px 0;">
+            Aucune transaction escrow pour le moment
+          </h3>
+          <p style="font-size: 13px; color: #71717a; margin: 0;">
+            Les transactions avec paiement sécurisé escrow apparaîtront ici.
+          </p>
         </div>
 
       </div>
@@ -6125,33 +6115,6 @@
 
       <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
         <button type="button" class="btn-secondary" onclick="fermerModalChoixAdminEscrow()">Annuler</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================================
-       MODALE : CONFIRMATION D'ENVOI DU PAIEMENT ESCROW
-       ========================================================== -->
-  <div class="modal-backdrop" id="modal-confirmation-envoi" style="display: none;" onclick="if(event.target===this) fermerModalConfirmationEnvoi()">
-    <div class="modal-card" style="max-width: 480px;">
-      <div class="modal-title" style="color: #00E676; margin-bottom: 16px; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-        <span>📤 Envoie ton paiement à l'admin</span>
-      </div>
-
-      <div style="background: #202020; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 14px; font-size: 13.5px; line-height: 1.8;">
-        <div>Montant à envoyer : <strong id="modal-conf-montant" style="color: #00C853; font-weight: 700; font-size: 15px;">0 FCFA</strong></div>
-        <div>Admin : <span id="modal-conf-admin" style="font-weight: 600; color: #fff;"></span></div>
-        <div>Moyen : <span id="modal-conf-moyen" style="font-weight: 600; color: #fff;"></span></div>
-        <div>Téléphone : <span id="modal-conf-telephone" style="font-weight: 600; color: #fff;"></span></div>
-      </div>
-
-      <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 18px; color: #fbbf24; font-size: 12.5px; line-height: 1.5; font-weight: 500;">
-        ⚠️ Envoie EXACTEMENT le montant indiqué. Une fois envoyé, reviens sur cette page et clique sur 'J'ai envoyé l'argent'.
-      </div>
-
-      <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button type="button" class="btn-secondary" style="background: #333; color: white; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13.5px;" onclick="fermerModalConfirmationEnvoi()">Annuler</button>
-        <button type="button" id="btn-confirmer-argent-envoye" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13.5px;">J'ai envoyé l'argent</button>
       </div>
     </div>
   </div>
@@ -9855,140 +9818,7 @@
 
       // CAS 2 : VENDEUR
       if (annonce && user.uid === annonce.vendeurId) {
-        function rendreContenuVendeur(escrowActif, demandeEnAttente) {
-          var html = '';
-
-          // 1. Bandeau de statut de sa transaction escrow (si elle existe) :
-          if (escrowActif) {
-            var stEscrow = (escrowActif.statut || '').toLowerCase();
-            if (stEscrow === 'attente_paiement') {
-              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid rgba(255,193,7,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px;">⏳ En attente du paiement acheteur</div>';
-            } else if (stEscrow === 'paiement_envoye') {
-              html += '<div style="background:rgba(255,152,0,0.15); border:1.5px solid rgba(255,152,0,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#FF9800; font-weight:700; font-size:14px;">📤 Paiement envoyé, admin en vérification</div>';
-            } else if (stEscrow === 'paiement_recu') {
-              html += '<div style="background:rgba(0,200,83,0.2); border:2px solid #00C853; border-radius:8px; padding:14px 16px; text-align:center; color:#00E676; font-weight:800; font-size:15px; box-shadow:0 0 12px rgba(0,200,83,0.35); text-transform:uppercase;">💰 Argent sécurisé chez l\'admin - À TOI DE LIVRER</div>';
-            } else if (stEscrow === 'identifiants_transferes') {
-              html += '<div style="background:rgba(156,39,176,0.15); border:1.5px solid rgba(156,39,176,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#CE93D8; font-weight:700; font-size:14px;">⏳ En attente de l\'acheteur</div>';
-            } else if (stEscrow === 'compte_recu') {
-              html += '<div style="background:rgba(76,175,80,0.15); border:1.5px solid rgba(76,175,80,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#81C784; font-weight:700; font-size:14px;">🎉 Compte reçu, admin va te payer</div>';
-            } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
-              html += '<div style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:12px 14px; text-align:center; color:#E0E0E0; font-weight:700; font-size:14px;">✅ Terminé</div>';
-            } else {
-              html += '<div style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:12px 14px; text-align:center; color:#E0E0E0; font-weight:700; font-size:14px;">' + escapeHtml(escrowActif.statut || 'En cours') + '</div>';
-            }
-          }
-
-          // 2. Les boutons d'action selon le statut :
-          // Si escrow.statut === "paiement_recu" :
-          if (escrowActif && (escrowActif.statut || '').toLowerCase() === 'paiement_recu') {
-            html += '<button type="button" onclick="marquerIdentifiantsTransferes(\'' + escrowActif.id + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:15px; box-shadow:0 4px 12px rgba(0,200,83,0.35);">✅ J\'ai transféré les identifiants</button>';
-          }
-
-          // Si aucune transaction escrow mais une demande d'achat en attente :
-          if (!escrowActif && demandeEnAttente) {
-            html += '<div style="display:flex; gap:10px; width:100%;">';
-            html += '<button type="button" onclick="accepterDemandeAvecProtection(\'' + demandeEnAttente.id + '\', this)" style="background:#00C853; color:white; flex:1; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">✅ Accepter la demande</button>';
-            html += '<button type="button" onclick="refuserDemandeAvecProtection(\'' + demandeEnAttente.id + '\', this)" style="background:#D32F2F; color:white; flex:1; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Refuser la demande</button>';
-            html += '</div>';
-          }
-
-          // Si annonce.statut === "en_cours" :
-          var stAnnonce = (annonce.statut || '').toLowerCase();
-          if (stAnnonce === 'en_cours') {
-            if (annonce.accepteAutresOffres !== false) {
-              html += '<button type="button" onclick="fermerAuxOffres(\'' + annonce.id + '\')" style="background:#FFC107; color:#111; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔒 Fermer aux nouvelles offres</button>';
-            } else {
-              html += '<button type="button" onclick="laisserOuverte(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔓 Ouvrir aux offres</button>';
-            }
-
-            html += '<button type="button" onclick="marquerVendue(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🎉 Marquer comme VENDU</button>';
-
-            var dAssociee = (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
-              var s = (d.statut || '').toLowerCase();
-              return d.annonceId === annonce.id && (s === 'acceptee' || s === 'en_cours' || s === 'en_attente_confirmation_acheteur');
-            }) || (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
-              return d.annonceId === annonce.id;
-            }) || {};
-            var demandeId = dAssociee.id || (escrowActif ? (escrowActif.demandeId || '') : '') || '';
-
-            html += '<button type="button" onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Annuler la transaction</button>';
-          }
-
-          // Toujours affiché :
-          html += '<button type="button" onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:14px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:14px;">📤 Partager mon annonce</button>';
-
-          // 3. Grouper tous ces boutons dans un conteneur visuel (background #1E1E1E, border-radius 12px, padding 16px)
-          conteneur.innerHTML = '<div style="background:#1E1E1E; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; border:1px solid #2a2a2a;">' + html + '</div>';
-        }
-
-        // Récupérer la transaction escrow liée à cette annonceId depuis escrowVendeurCache ou depuis Firestore
-        var escrowCache = (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) ? escrowVendeurCache : [];
-        var escrowTrouve = escrowCache.find(function(e) {
-          return e.annonceId === annonceId;
-        }) || null;
-
-        var demandesCache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
-        var demandeEnAttente = demandesCache.find(function(d) {
-          var s = (d.statut || '').toLowerCase();
-          return d.annonceId === annonceId && (s === 'en_attente' || s === 'attente');
-        }) || null;
-
-        rendreContenuVendeur(escrowTrouve, demandeEnAttente);
-
-        // Si non trouvé dans le cache et Firestore disponible, interroger Firestore
-        if (db && (!escrowTrouve || !demandeEnAttente)) {
-          var requetes = [];
-          if (!escrowTrouve) {
-            requetes.push(
-              db.collection("escrow")
-                .where("vendeurId", "==", user.uid)
-                .where("annonceId", "==", annonceId)
-                .get()
-                .then(function(snapshot) {
-                  if (!snapshot.empty) {
-                    var docs = snapshot.docs.map(function(d) {
-                      var data = d.data() || {};
-                      data.id = d.id;
-                      return data;
-                    });
-                    docs.sort(function(a, b) {
-                      var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
-                      var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
-                      return dateB - dateA;
-                    });
-                    escrowTrouve = docs[0];
-                  }
-                }).catch(function(err) {
-                  console.warn("Recherche Firestore escrow vendeur :", err);
-                })
-            );
-          }
-          if (!demandeEnAttente) {
-            requetes.push(
-              db.collection("demandes")
-                .where("vendeurId", "==", user.uid)
-                .where("annonceId", "==", annonceId)
-                .where("statut", "==", "en_attente")
-                .get()
-                .then(function(snapshot) {
-                  if (!snapshot.empty) {
-                    var docD = snapshot.docs[0];
-                    demandeEnAttente = docD.data() || {};
-                    demandeEnAttente.id = docD.id;
-                  }
-                }).catch(function(err) {
-                  console.warn("Recherche Firestore demande en attente :", err);
-                })
-            );
-          }
-          if (requetes.length > 0) {
-            Promise.all(requetes).then(function() {
-              if (document.getElementById("boutonsAnnonce") === conteneur) {
-                rendreContenuVendeur(escrowTrouve, demandeEnAttente);
-              }
-            });
-          }
-        }
+        conteneur.innerHTML = '<button onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:15px;">📤 Partager mon annonce</button>';
         return;
       }
 
@@ -10049,167 +9879,34 @@
 
           // CAS 3c : Demande ACCEPTÉE (PRIORITÉ ABSOLUE)
           if (demande.statut === "acceptee") {
-            function rendreBoutonsAcheteur(escrow) {
-              if (escrow) {
-                var stEscrow = (escrow.statut || '').toLowerCase().trim();
-                var htmlEscrow = '';
-
-                // a) Si escrow.statut === "attente_paiement" :
-                if (stEscrow === 'attente_paiement') {
-                  htmlEscrow = 
-                    '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #ff9800; border-radius:10px; padding:14px; text-align:center; color:#ff9800; font-weight:700; font-size:15px; margin-bottom:12px;">' +
-                      '⏳ En attente de ton paiement à l\'admin' +
-                    '</div>' +
-                    '<button type="button" onclick="ouvrirModalConfirmationPaiement(\'' + escrow.id + '\')" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:white; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:700; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(245,158,11,0.3);">' +
-                      '💸 J\'ai envoyé l\'argent' +
-                    '</button>';
-                }
-                // b) Si escrow.statut === "paiement_envoye" :
-                else if (stEscrow === 'paiement_envoye') {
-                  htmlEscrow = 
-                    '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:10px; padding:14px; text-align:center; color:#FFC107; font-weight:700; font-size:15px;">' +
-                      '📤 En attente de vérification par l\'admin' +
-                    '</div>';
-                }
-                // c) Si escrow.statut === "paiement_recu" :
-                else if (stEscrow === 'paiement_recu') {
-                  htmlEscrow = 
-                    '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:10px; padding:14px; text-align:center; margin-bottom:12px;">' +
-                      '<p style="color:#00E676; font-weight:800; font-size:15px; margin:0 0 6px 0;">💰 L\'admin a sécurisé ton argent</p>' +
-                      '<p style="color:#ccc; font-size:13.5px; margin:0;">Le vendeur peut te transférer les identifiants</p>' +
-                    '</div>' +
-                    '<button type="button" onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>';
-                }
-                // d) Si escrow.statut === "identifiants_transferes" :
-                else if (stEscrow === 'identifiants_transferes') {
-                  htmlEscrow = 
-                    '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:10px; padding:14px; text-align:center; color:#FFC107; font-weight:700; font-size:15px; margin-bottom:12px;">' +
-                      '📦 Le vendeur a transféré les identifiants' +
-                    '</div>' +
-                    '<button type="button" onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:14px; border-radius:10px; font-size:15px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">💬 Contacter sur WhatsApp</button>' +
-                    '<button type="button" onclick="confirmerReceptionCompteEscrow(\'' + escrow.id + '\')" style="background:#00C853; color:white; width:100%; padding:16px; border-radius:10px; font-size:16px; font-weight:800; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(0,200,83,0.4);">✅ J\'ai reçu le compte</button>';
-                }
-                // e) Si escrow.statut === "compte_recu" :
-                else if (stEscrow === 'compte_recu') {
-                  htmlEscrow = 
-                    '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #ff9800; border-radius:10px; padding:14px; text-align:center; color:#ff9800; font-weight:700; font-size:15px;">' +
-                      '⏳ En attente du paiement au vendeur' +
-                    '</div>';
-                }
-                // f) Si escrow.statut === "termine" :
-                else if (stEscrow === 'termine' || stEscrow === 'terminee') {
-                  var tousAvis = typeof getAvis === 'function' ? getAvis() : [];
-                  var profil = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
-                  var monNom = profil ? (profil.nom ? ((profil.prenom || '') + ' ' + profil.nom).trim() : (profil.prenom || "")) : "";
-                  var txDocId = (snapshot.docs && snapshot.docs[0]) ? snapshot.docs[0].id : escrow.id;
-                  var monAvis = tousAvis.find(function(a) {
-                    return (escrow.id && a.transactionId === escrow.id) ||
-                           (txDocId && a.transactionId === txDocId) ||
-                           (a.vendeurNom === (demande.vendeurNom || (annonce ? annonce.vendeur : '')) && a.acheteurNom === monNom && a.annonceId === annonceId) ||
-                           (user && a.acheteurId === user.uid && a.annonceId === annonceId);
-                  });
-                  htmlEscrow = 
-                    '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:10px; padding:14px; text-align:center; margin-bottom:12px;">' +
-                      '<p style="color:#00E676; font-weight:800; font-size:16px; margin:0;">🎉 Transaction terminée</p>' +
-                    '</div>';
-                  if (monAvis) {
-                    htmlEscrow += '<p style="color:var(--badge-gold); font-size:13px; margin:8px 0 0 0; text-align:center;">⭐ Votre avis : ' + monAvis.note + '/5 ★</p>';
-                  } else {
-                    htmlEscrow += '<button type="button" class="btn-tx-review" style="font-size:14px; padding:14px; width:100%; cursor:pointer; background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none; border-radius:10px; font-weight:bold;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + txDocId + '\', \'' + escapeHtml(demande.vendeurNom || (annonce ? annonce.vendeur : 'Vendeur')).replace(/'/g, "\\'") + '\', \'' + annonceId + '\', \'' + escapeHtml(demande.annonceTitre || (annonce ? annonce.titre : 'Compte eFootball')).replace(/'/g, "\\'") + '\', \'' + (demande.vendeurId || (annonce ? annonce.vendeurId : '')) + '\')">⭐ Laisser un avis sur le vendeur</button>';
-                  }
-                }
-                // Autre statut :
-                else {
-                  htmlEscrow = 
-                    '<div style="background:#1E1E1E; padding:14px; border-radius:10px; text-align:center; border:1px solid #333; color:#ccc;">' +
-                      escapeHtml(escrow.statut || 'En attente') +
-                    '</div>';
-                }
-
-                conteneur.innerHTML = htmlEscrow;
-                return;
-              }
-
-              // 3. Si AUCUNE transaction escrow n'existe :
-              var escrowHtmlAcceptee = '';
-              if (escrowDeveloppement === true) {
-                escrowHtmlAcceptee = 
-                  '<div class="section-achat-escrow" style="margin-top: 14px;">' +
-                    '<div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px; color: #fbbf24; font-size: 12.5px; line-height: 1.5; text-align: center; font-weight: 500;">' +
-                      '⚠️ Cette fonctionnalité est en cours de développement. Merci de ne pas l\'utiliser pour l\'instant.' +
-                    '</div>' +
-                    '<button type="button" disabled style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
-                      '🔒 Acheter avec protection admin (bientôt)' +
-                    '</button>' +
-                  '</div>';
-              } else {
-                escrowHtmlAcceptee = 
-                  '<div class="section-achat-escrow" style="margin-top: 14px;">' +
-                    '<button type="button" onclick="ouvrirModalChoixAdminEscrow(\'' + annonceId + '\')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
-                      '🔒 Acheter avec protection admin' +
-                    '</button>' +
-                  '</div>';
-              }
-
-              conteneur.innerHTML = 
-                '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);">' +
-                  '<p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p>' +
-                  '<p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p>' +
-                '</div>' +
-                '<button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>' +
-                escrowHtmlAcceptee;
-            }
-
-            // 1. AVANT d'afficher les boutons, chercher dans escrowAcheteurCache ou Firestore
-            var cacheEscrow = (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) ? escrowAcheteurCache : [];
-            var escrowTrouve = cacheEscrow.find(function(e) {
-              return e.annonceId === annonceId;
-            }) || null;
-
-            if (escrowTrouve) {
-              rendreBoutonsAcheteur(escrowTrouve);
-              return;
-            }
-
-            if (db) {
-              db.collection("escrow")
-                .where("annonceId", "==", annonceId)
-                .where("acheteurId", "==", user.uid)
-                .get()
-                .then(function(escrowSnap) {
-                  var escrowDoc = null;
-                  if (!escrowSnap.empty) {
-                    var escrows = escrowSnap.docs.map(function(d) {
-                      var data = d.data() || {};
-                      data.id = d.id;
-                      return data;
-                    });
-                    escrows.sort(function(a, b) {
-                      var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
-                      var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
-                      return dateB - dateA;
-                    });
-                    escrowDoc = escrows[0];
-                    if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
-                      var existIdx = escrowAcheteurCache.findIndex(function(e) { return e.id === escrowDoc.id; });
-                      if (existIdx === -1) {
-                        escrowAcheteurCache.unshift(escrowDoc);
-                      } else {
-                        escrowAcheteurCache[existIdx] = escrowDoc;
-                      }
-                    }
-                  }
-                  rendreBoutonsAcheteur(escrowDoc);
-                })
-                .catch(function(err) {
-                  console.warn("Erreur recherche Firestore escrow acheteur :", err);
-                  rendreBoutonsAcheteur(null);
-                });
-              return;
+            var escrowHtmlAcceptee = '';
+            if (escrowDeveloppement === true) {
+              escrowHtmlAcceptee = 
+                '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                  '<div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px; color: #fbbf24; font-size: 12.5px; line-height: 1.5; text-align: center; font-weight: 500;">' +
+                    '⚠️ Cette fonctionnalité est en cours de développement. Merci de ne pas l\'utiliser pour l\'instant.' +
+                  '</div>' +
+                  '<button type="button" disabled style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                    '🔒 Acheter avec protection admin (bientôt)' +
+                  '</button>' +
+                '</div>';
             } else {
-              rendreBoutonsAcheteur(null);
-              return;
+              escrowHtmlAcceptee = 
+                '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                  '<button type="button" onclick="ouvrirModalChoixAdminEscrow(\'' + annonceId + '\')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                    '🔒 Acheter avec protection admin' +
+                  '</button>' +
+                '</div>';
             }
+
+            conteneur.innerHTML = 
+              '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);">' +
+                '<p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p>' +
+                '<p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p>' +
+              '</div>' +
+              '<button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>' +
+              escrowHtmlAcceptee;
+            return;
           }
 
           // CAS 3c-ter : Acheteur a DÉJÀ confirmé la réception (attente du vendeur)
@@ -11269,24 +10966,16 @@
     function mettreAJourCompteursOngletsTransactions() {
       const demandesVendeur = (typeof demandesVendeurCache !== 'undefined' && demandesVendeurCache) || [];
       const demandesAcheteur = (typeof demandesAcheteurCache !== 'undefined' && demandesAcheteurCache) || [];
-      const escrowsVendeur = (typeof escrowVendeurCache !== 'undefined' && escrowVendeurCache) || [];
-      const escrowsAcheteur = (typeof escrowAcheteurCache !== 'undefined' && escrowAcheteurCache) || [];
       
       // Compter les demandes en attente
       const enAttenteRecues = demandesVendeur.filter(function(d) {
         const s = (d.statut || '').toLowerCase();
         return s === 'en_attente' || s === 'demande_envoyee';
-      }).length + escrowsVendeur.filter(function(e) {
-        const s = (e.statut || '').toLowerCase();
-        return s === 'paiement_recu';
       }).length;
       
       const enAttenteEnvoyees = demandesAcheteur.filter(function(d) {
         const s = (d.statut || '').toLowerCase();
         return s === 'en_attente' || s === 'demande_envoyee';
-      }).length + escrowsAcheteur.filter(function(e) {
-        const s = (e.statut || '').toLowerCase();
-        return s === 'attente_paiement';
       }).length;
       
       // Mettre à jour les badges des onglets
@@ -11509,12 +11198,6 @@
       if (typeof ecouterAnnoncesEnAttenteFirestore === 'function') {
         ecouterAnnoncesEnAttenteFirestore();
       }
-      if (typeof afficherEscrowAcheteur === 'function') {
-        afficherEscrowAcheteur();
-      }
-      if (typeof chargerEscrowVendeur === 'function') {
-        chargerEscrowVendeur();
-      }
     }
 
     function arreterEcouteDemandesFirestore() {
@@ -11533,20 +11216,6 @@
       if (unsubscribeAnnoncesEnAttente) {
         unsubscribeAnnoncesEnAttente();
         unsubscribeAnnoncesEnAttente = null;
-      }
-      if (typeof unsubscribeEscrowAcheteur !== 'undefined' && unsubscribeEscrowAcheteur) {
-        unsubscribeEscrowAcheteur();
-        unsubscribeEscrowAcheteur = null;
-      }
-      if (typeof escrowAcheteurCache !== 'undefined') {
-        escrowAcheteurCache = [];
-      }
-      if (typeof unsubscribeEscrowVendeur !== 'undefined' && unsubscribeEscrowVendeur) {
-        unsubscribeEscrowVendeur();
-        unsubscribeEscrowVendeur = null;
-      }
-      if (typeof escrowVendeurCache !== 'undefined') {
-        escrowVendeurCache = [];
       }
       demandesVendeurCache = [];
       demandesAcheteurCache = [];
@@ -11578,82 +11247,14 @@
     }
 
     /**
-     * 3. AFFICHAGE DES DEMANDES REÇUES (VENDEUR) - FUSION ESCROW + DEMANDES
+     * 3. AFFICHAGE DES DEMANDES REÇUES (VENDEUR)
      */
     function afficherSectionDemandesRecues(demandes) {
-      demandes = demandes || (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []) || [];
-      var escrows = (typeof escrowVendeurCache !== 'undefined' && escrowVendeurCache) ? escrowVendeurCache : [];
       var html = '';
       
-      var totalElements = demandes.length + escrows.length;
-      if (totalElements === 0) {
+      if (!demandes || demandes.length === 0) {
         html += '<p style="color:#888;">Aucune demande reçue</p>';
       } else {
-        // 1. Transactions Escrow côté vendeur (avec badge spécial "🔒 ESCROW")
-        if (escrows.length > 0) {
-          escrows.forEach(function(e) {
-            var stEscrow = (e.statut || '').toLowerCase().trim();
-            var stInfo = (typeof getStatutInfoAdminEscrow === 'function') ? getStatutInfoAdminEscrow(stEscrow) : null;
-            var libelleStatut = stInfo ? stInfo.libelle : ((typeof getLibelleStatutEscrow === 'function') ? getLibelleStatutEscrow(stEscrow) : stEscrow);
-            var couleurStatut = stInfo ? stInfo.couleur : ((typeof getCouleurStatutEscrow === 'function') ? getCouleurStatutEscrow(stEscrow) : '#fff');
-            var dateAffichee = (typeof formaterDateEscrow === 'function') ? formaterDateEscrow(e.dateCreation) : '';
-            var prixEscrow = (e.montant != null) ? Number(e.montant) : ((e.annoncePrix != null) ? Number(e.annoncePrix) : 0);
-
-            html += '<div class="carte-demande" style="border:1px solid rgba(0,200,83,0.45); padding:16px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" ' + (e.annonceId ? 'onclick="changerPage(\'detail\', { annonceId: \'' + e.annonceId + '\' })" ' : '') + 'onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'rgba(0,200,83,0.45)\'">';
-            
-            // En-tête : badge ESCROW + statut + date
-            html += '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">';
-            html += '  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">';
-            html += '    <span style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">🔒 ESCROW</span>';
-            html += '    <span style="color:' + couleurStatut + '; font-weight:700; font-size:13px;">' + escapeHtml(libelleStatut) + '</span>';
-            html += '  </div>';
-            if (dateAffichee) {
-              html += '  <span style="font-size:12px; color:#888;">📅 ' + escapeHtml(dateAffichee) + '</span>';
-            }
-            html += '</div>';
-
-            // Titre de l'annonce + prix
-            html += '<h4 style="margin:4px 0;">📦 ' + escapeHtml(e.annonceTitre || "Compte eFootball") + '</h4>';
-            html += '<p style="margin:4px 0; font-size:15px; font-weight:700; color:#00C853;">💰 ' + prixEscrow.toLocaleString('fr-FR') + ' FCFA</p>';
-
-            // Ligne acheteur : nom
-            html += '<p style="margin:4px 0; font-size:13px; color:#ccc;">👤 <strong>Acheteur :</strong> ' + escapeHtml(e.acheteurNom || "Acheteur") + '</p>';
-
-            // Ligne admin : nom + téléphone
-            html += '<p style="margin:4px 0; font-size:13px; color:#ccc;">🛡️ <strong>Admin :</strong> ' + escapeHtml(e.adminNom || "Non assigné") + (e.adminTelephone ? (' • 📞 <a href="tel:' + escapeHtml(e.adminTelephone) + '" style="color:#34d399; text-decoration:none;">' + escapeHtml(e.adminTelephone) + '</a>') : '') + '</p>';
-
-            // Selon le statut, un bloc d'action
-            if (stEscrow === 'paiement_recu') {
-              html += '<div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; border-radius:8px; padding:12px; margin:10px 0;">';
-              html += '  <div style="color:#10b981; font-weight:700; font-size:13.5px; margin-bottom:4px;">💰 L\'argent est sécurisé chez l\'admin</div>';
-              html += '  <p style="color:#e4e4e7; font-size:12.5px; line-height:1.5; margin:0 0 10px 0;">Tu peux maintenant transférer les identifiants Konami à l\'acheteur en toute sécurité. Une fois fait, clique ci-dessous.</p>';
-              html += '  <button type="button" class="btn-primary" style="background:#00C853; color:white; border:none; padding:9px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px;" onclick="event.stopPropagation(); marquerIdentifiantsTransferes(\'' + e.id + '\')">✅ J\'ai transféré les identifiants</button>';
-              html += '</div>';
-            } else if (stEscrow === 'identifiants_transferes') {
-              html += '<div style="background:rgba(245,158,11,0.15); border:1px solid #f59e0b; border-radius:8px; padding:10px 14px; margin:10px 0; color:#fbbf24; font-size:13px; font-weight:600;">';
-              html += '  ⏳ En attente que l\'acheteur confirme la réception';
-              html += '</div>';
-            } else if (stEscrow === 'compte_recu') {
-              html += '<div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin:10px 0; color:#34d399; font-size:13px; font-weight:600;">';
-              html += '  🎉 L\'acheteur a confirmé la réception. L\'admin va te payer.';
-              html += '</div>';
-            } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
-              html += '<div style="background:rgba(156,163,175,0.15); border:1px solid #6b7280; border-radius:8px; padding:10px 14px; margin:10px 0; color:#d1d5db; font-size:13px; font-weight:600;">';
-              html += '  ✅ Transaction terminée';
-              html += '</div>';
-            } else {
-              var libelleAutre = (stEscrow === 'attente_paiement') ? "En attente du paiement de l'acheteur à l'admin" : (stEscrow === 'paiement_envoye' ? "Paiement envoyé par l'acheteur, vérification par l'admin en cours" : "Transaction en cours de traitement");
-              html += '<div style="background:#242427; border:1px solid #333; border-radius:8px; padding:10px 14px; margin:10px 0; color:#a1a1aa; font-size:12.5px; font-style:italic;">';
-              html += '  ⏳ ' + escapeHtml(libelleAutre);
-              html += '</div>';
-            }
-
-            html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
-            html += '</div>';
-          });
-        }
-
-        // 2. Demandes normales
         demandes.forEach(function(d) {
           html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
           html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
@@ -11712,50 +11313,11 @@
      * 4. AFFICHAGE DES DEMANDES ENVOYÉES (ACHETEUR)
      */
     function afficherSectionDemandesEnvoyees(demandes) {
-      demandes = demandes || (typeof demandesAcheteurCache !== 'undefined' ? demandesAcheteurCache : []) || [];
-      var escrows = (typeof escrowAcheteurCache !== 'undefined' && escrowAcheteurCache) ? escrowAcheteurCache : [];
       var html = '';
       
-      var totalElements = demandes.length + escrows.length;
-      if (totalElements === 0) {
+      if (!demandes || demandes.length === 0) {
         html += '<p style="color:#888;">Aucune demande envoyée</p>';
       } else {
-        // 1. Transactions Escrow (avec badge spécial "🔒 ESCROW")
-        if (escrows.length > 0) {
-          escrows.forEach(function(e) {
-            var stEscrow = (e.statut || '').toLowerCase().trim();
-            var libelle = (typeof getLibelleStatutEscrow === 'function') ? getLibelleStatutEscrow(stEscrow) : (stEscrow || 'En attente');
-            var couleur = (typeof getCouleurStatutEscrow === 'function') ? getCouleurStatutEscrow(stEscrow) : '#fff';
-            var prixEscrow = (e.montant != null) ? Number(e.montant) : ((e.annoncePrix != null) ? Number(e.annoncePrix) : 0);
-
-            html += '<div class="carte-demande" style="border:1px solid rgba(0,200,83,0.45); padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" ' + (e.annonceId ? 'onclick="changerPage(\'detail\', { annonceId: \'' + e.annonceId + '\' })" ' : '') + 'onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'rgba(0,200,83,0.45)\'">';
-            html += '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">';
-            html += '<h4 style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0;">';
-            html += '<span>📦 ' + escapeHtml(e.annonceTitre || "Compte eFootball") + '</span>';
-            html += '<span style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">🔒 ESCROW</span>';
-            html += '</h4>';
-            html += '<span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span>';
-            html += '</div>';
-
-            html += '<p>💰 ' + prixEscrow.toLocaleString('fr-FR') + ' FCFA</p>';
-            html += '<p>🛡️ Admin : <strong>' + escapeHtml(e.adminNom || "Non assigné") + '</strong>' + (e.adminTelephone ? (' <span style="color:#aaa; font-size:12px;">(' + escapeHtml(e.adminTelephone) + ')</span>') : '') + '</p>';
-            if (e.vendeurNom) {
-              html += '<p>👤 Vendeur : ' + escapeHtml(e.vendeurNom) + '</p>';
-            }
-            html += '<p style="color:' + couleur + '; font-weight:700; margin:8px 0 4px 0;">' + escapeHtml(libelle) + '</p>';
-
-            if (stEscrow === 'attente_paiement') {
-              html += '<div style="margin-top: 10px;">';
-              html += '<button type="button" class="btn-primary" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;" onclick="event.stopPropagation(); ouvrirModalConfirmationEnvoi(\'' + e.id + '\', ' + prixEscrow + ', \'' + escapeHtml(e.adminNom || '').replace(/'/g, "\\'") + '\', \'' + escapeHtml(e.moyenPaiement || '').replace(/'/g, "\\'") + '\', \'' + escapeHtml(e.adminTelephone || '').replace(/'/g, "\\'") + '\')">📤 Envoyer le paiement / J\'ai envoyé l\'argent</button>';
-              html += '</div>';
-            }
-
-            html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
-            html += '</div>';
-          });
-        }
-
-        // 2. Demandes normales
         demandes.forEach(function(d) {
           html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
           html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
@@ -14878,9 +14440,6 @@
             if (adminEscrowLink) {
               adminEscrowLink.style.display = 'inline';
             }
-            if (typeof chargerEscrowAdmin === 'function') {
-              chargerEscrowAdmin();
-            }
           } else {
             estAdminEscrowCache = false;
             if (adminEscrowLink) {
@@ -14918,23 +14477,12 @@
       if (firestoreDb) {
         firestoreDb.collection('admins').doc(user.uid).get().then(function(docSnap) {
           if (!docSnap.exists || !docSnap.data() || docSnap.data().actif !== true) {
-            estAdminEscrowCache = false;
             if (typeof afficherNotification === 'function') {
               afficherNotification("Accès refusé : vous n'êtes pas administrateur Escrow actif", "🚫");
             } else {
               alert("Accès refusé : vous n'êtes pas administrateur Escrow actif.");
             }
             changerPage('accueil');
-            return;
-          }
-
-          estAdminEscrowCache = true;
-          // 2. Appel de chargerEscrowAdmin() et actualisation dynamique de la page
-          if (typeof chargerEscrowAdmin === 'function') {
-            chargerEscrowAdmin();
-          }
-          if (typeof actualiserRenduPageAdminEscrow === 'function') {
-            actualiserRenduPageAdminEscrow();
           }
         }).catch(function(err) {
           console.warn("Erreur vérification accès admin escrow :", err);
@@ -14948,63 +14496,9 @@
     /* ==========================================================
        SECTION ESCROW / PROTECTION ADMIN
        ========================================================== */
-    var escrowDeveloppement = false;
+    var escrowDeveloppement = true;
     var adminsEscrowCache = [];
-    var escrowAcheteurCache = [];
-    var escrowVendeurCache = [];
-    var escrowAdminCache = [];
-    var unsubscribeEscrowAcheteur = null;
-    var unsubscribeEscrowVendeur = null;
-    var unsubscribeEscrowAdmin = null;
     var currentEscrowAnnonceId = null;
-
-    /**
-     * Libellés officiels des statuts Escrow côté acheteur
-     */
-    function getLibelleStatutEscrow(statut) {
-      var s = (statut || '').toLowerCase().trim();
-      switch (s) {
-        case 'attente_paiement':
-          return '⏳ En attente de ton paiement';
-        case 'paiement_envoye':
-          return '📤 Paiement envoyé, en attente de l\'admin';
-        case 'paiement_recu':
-          return '✅ Admin a reçu ton argent, le vendeur peut livrer';
-        case 'identifiants_transferes':
-          return '📦 Vendeur a transféré les identifiants, vérifie le compte';
-        case 'compte_recu':
-          return '🎉 Compte reçu, admin va payer le vendeur';
-        case 'termine':
-        case 'terminee':
-          return '✅ Transaction terminée';
-        default:
-          return statut ? ('🔒 ' + escapeHtml(statut)) : '⏳ En attente';
-      }
-    }
-
-    /**
-     * Couleurs associées aux statuts Escrow
-     */
-    function getCouleurStatutEscrow(statut) {
-      var s = (statut || '').toLowerCase().trim();
-      switch (s) {
-        case 'attente_paiement':
-          return '#FFC107';
-        case 'paiement_envoye':
-          return '#60a5fa';
-        case 'paiement_recu':
-          return '#34d399';
-        case 'identifiants_transferes':
-          return '#fb923c';
-        case 'compte_recu':
-          return '#a78bfa';
-        case 'termine':
-        case 'terminee':
-          return '#00C853';
-        default:
-          return '#ffffff';
-      }
-    }
 
     /**
      * 1. Écoute en temps réel la collection Firestore "admins_publics" avec actif: true
@@ -15124,134 +14618,7 @@
     }
 
     /**
-     * Ouvre la modale de confirmation d'envoi du paiement à l'admin
-     */
-    function ouvrirModalConfirmationEnvoi(escrowId, montant, adminNom, moyenPaiement, adminTelephone) {
-      var modal = document.getElementById('modal-confirmation-envoi');
-      if (!modal) return;
-      var elMontant = document.getElementById('modal-conf-montant');
-      var elAdmin = document.getElementById('modal-conf-admin');
-      var elMoyen = document.getElementById('modal-conf-moyen');
-      var elTel = document.getElementById('modal-conf-telephone');
-      var btn = document.getElementById('btn-confirmer-argent-envoye');
-
-      if (elMontant) elMontant.textContent = Number(montant || 0).toLocaleString('fr-FR') + ' FCFA';
-      if (elAdmin) elAdmin.textContent = adminNom || '';
-      if (elMoyen) elMoyen.textContent = moyenPaiement || '';
-      if (elTel) elTel.textContent = adminTelephone || '';
-
-      if (btn) {
-        btn.onclick = function() {
-          marquerArgentEnvoye(escrowId);
-        };
-      }
-
-      modal.style.display = 'flex';
-      modal.classList.add('active');
-    }
-
-    /**
-     * Ferme la modale de confirmation d'envoi du paiement
-     */
-    function fermerModalConfirmationEnvoi() {
-      var modal = document.getElementById('modal-confirmation-envoi');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('active');
-      }
-    }
-
-    /**
-     * 2. Marque le document escrow avec statut: "paiement_envoye", dateEnvoiPaiement: serverTimestamp,
-     * ferme la modale, affiche notification et redirige vers transactions
-     */
-    function marquerArgentEnvoye(escrowId) {
-      if (!escrowId) return;
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) return;
-
-      var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
-        ? firebase.firestore.FieldValue.serverTimestamp()
-        : new Date();
-
-      firestoreDb.collection("escrow").doc(escrowId).update({
-        statut: "paiement_envoye",
-        dateEnvoiPaiement: serverTimestamp,
-        dateMiseAJour: serverTimestamp
-      }).then(function() {
-        fermerModalConfirmationEnvoi();
-        if (typeof afficherNotification === 'function') {
-          afficherNotification("L'admin va vérifier ton paiement", "📤");
-        }
-        if (typeof changerPage === 'function') {
-          changerPage('transactions');
-        }
-      }).catch(function(err) {
-        console.error("Erreur mise à jour statut escrow :", err);
-        fermerModalConfirmationEnvoi();
-        if (typeof afficherNotification === 'function') {
-          afficherNotification("L'admin va vérifier ton paiement", "📤");
-        }
-        if (typeof changerPage === 'function') {
-          changerPage('transactions');
-        }
-      });
-    }
-
-    /**
-     * 3. Écoute en temps réel les documents de la collection "escrow" où acheteurId === user.uid
-     * et rafraîchit l'affichage dans la section "Demandes envoyées"
-     */
-    function afficherEscrowAcheteur() {
-      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      if (!user) return;
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) return;
-
-      if (unsubscribeEscrowAcheteur) {
-        unsubscribeEscrowAcheteur();
-        unsubscribeEscrowAcheteur = null;
-      }
-
-      try {
-        unsubscribeEscrowAcheteur = firestoreDb.collection("escrow")
-          .where("acheteurId", "==", user.uid)
-          .onSnapshot(function(snapshot) {
-            var items = [];
-            if (snapshot && !snapshot.empty) {
-              snapshot.forEach(function(doc) {
-                var data = doc.data() || {};
-                data.id = doc.id;
-                items.push(data);
-              });
-            }
-            items.sort(function(a, b) {
-              var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
-              var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
-              return dateB - dateA;
-            });
-            escrowAcheteurCache = items;
-            window.escrowAcheteurCache = escrowAcheteurCache;
-
-            if (typeof afficherSectionDemandesEnvoyees === 'function') {
-              afficherSectionDemandesEnvoyees(demandesAcheteurCache);
-            }
-            if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-              if (typeof afficherBoutonsAnnonce === 'function') {
-                afficherBoutonsAnnonce(currentDetailAdId);
-              }
-            }
-          }, function(error) {
-            console.warn("Écoute transactions escrow acheteur :", error ? (error.message || error.code || error) : "");
-          });
-      } catch (err) {
-        console.warn("Erreur afficherEscrowAcheteur :", err);
-      }
-    }
-
-    /**
-     * 1. Crée un document Firestore collection "escrow" avec tous les champs + statut "attente_paiement",
-     * puis affiche la modale de confirmation d'envoi
+     * 6. Crée un document Firestore collection "escrow" avec tous les champs + statut "attente_paiement", puis redirige vers transactions
      */
     function choisirAdminEscrow(adminId, adminNom, adminTelephone, moyenPaiement, annonceId) {
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
@@ -15309,20 +14676,15 @@
           dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        return firestoreDb.collection("escrow").add(escrowDoc).then(function(docRef) {
-          return {
-            escrowId: docRef.id,
-            prix: prix,
-            adminNom: adminNom,
-            moyenPaiement: moyenPaiement,
-            adminTelephone: adminTelephone
-          };
-        });
+        return firestoreDb.collection("escrow").add(escrowDoc);
       })
-      .then(function(info) {
+      .then(function() {
         fermerModalChoixAdminEscrow();
-        if (info && info.escrowId) {
-          ouvrirModalConfirmationEnvoi(info.escrowId, info.prix, info.adminNom, info.moyenPaiement, info.adminTelephone);
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Protection admin initialisée ! En attente de paiement.", "🔒");
+        }
+        if (typeof changerPage === 'function') {
+          changerPage('transactions');
         }
       })
       .catch(function(err) {
@@ -15331,589 +14693,12 @@
       });
     }
 
-    /**
-     * Libellés, couleurs et état d'action des statuts Escrow côté Admin
-     */
-    function getStatutInfoAdminEscrow(statut) {
-      var s = (statut || '').toLowerCase().trim();
-      switch (s) {
-        case 'attente_paiement':
-          return {
-            libelle: '⏳ En attente du paiement acheteur',
-            couleur: '#f59e0b', // jaune
-            actionRequise: false
-          };
-        case 'paiement_envoye':
-          return {
-            libelle: '📤 Paiement envoyé, à vérifier',
-            couleur: '#f97316', // orange
-            actionRequise: true
-          };
-        case 'paiement_recu':
-          return {
-            libelle: '✅ Argent reçu par l\'admin',
-            couleur: '#3b82f6', // bleu
-            actionRequise: false
-          };
-        case 'identifiants_transferes':
-          return {
-            libelle: '📦 Identifiants transférés par le vendeur',
-            couleur: '#a855f7', // violet
-            actionRequise: false
-          };
-        case 'compte_recu':
-          return {
-            libelle: '🎉 Compte reçu par l\'acheteur',
-            couleur: '#10b981', // vert
-            actionRequise: true
-          };
-        case 'termine':
-        case 'terminee':
-          return {
-            libelle: '✅ Transaction terminée',
-            couleur: '#9ca3af', // gris
-            actionRequise: false
-          };
-        default:
-          return {
-            libelle: statut || 'En attente',
-            couleur: '#9ca3af',
-            actionRequise: false
-          };
-      }
-    }
-
-    /**
-     * Formate une date/timestamp Firestore pour l'affichage dans les cartes Escrow
-     */
-    function formaterDateEscrow(dateVal) {
-      if (!dateVal) return "";
-      try {
-        var d = null;
-        if (typeof dateVal.toDate === 'function') {
-          d = dateVal.toDate();
-        } else if (dateVal.seconds) {
-          d = new Date(dateVal.seconds * 1000);
-        } else if (dateVal instanceof Date) {
-          d = dateVal;
-        } else if (typeof dateVal === 'string' || typeof dateVal === 'number') {
-          d = new Date(dateVal);
-        }
-        if (!d || isNaN(d.getTime())) return "";
-        var jour = String(d.getDate()).padStart(2, '0');
-        var mois = String(d.getMonth() + 1).padStart(2, '0');
-        var annee = d.getFullYear();
-        var heures = String(d.getHours()).padStart(2, '0');
-        var minutes = String(d.getMinutes()).padStart(2, '0');
-        return jour + '/' + mois + '/' + annee + ' ' + heures + ':' + minutes;
-      } catch (e) {
-        return "";
-      }
-    }
-
-    /**
-     * 1. Écoute en temps réel les documents Firestore de la collection "escrow" où adminId === currentUser.uid,
-     * triés par dateCreation desc, et stocke le résultat dans escrowAdminCache.
-     */
-    function chargerEscrowAdmin() {
-      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      if (!user || !user.uid) return;
-
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) return;
-
-      if (unsubscribeEscrowAdmin) {
-        unsubscribeEscrowAdmin();
-        unsubscribeEscrowAdmin = null;
-      }
-
-      try {
-        unsubscribeEscrowAdmin = firestoreDb.collection("escrow")
-          .where("adminId", "==", user.uid)
-          .onSnapshot(function(snapshot) {
-            var items = [];
-            if (snapshot && !snapshot.empty) {
-              snapshot.forEach(function(doc) {
-                var data = doc.data() || {};
-                data.id = doc.id;
-                items.push(data);
-              });
-            }
-            items.sort(function(a, b) {
-              var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
-              var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
-              return dateB - dateA;
-            });
-
-            escrowAdminCache = items;
-            window.escrowAdminCache = escrowAdminCache;
-
-            if (typeof actualiserRenduPageAdminEscrow === 'function') {
-              actualiserRenduPageAdminEscrow();
-            }
-          }, function(error) {
-            console.warn("Erreur écoute escrow admin :", error ? (error.message || error.code || error) : "");
-          });
-      } catch (err) {
-        console.warn("Erreur chargerEscrowAdmin :", err);
-      }
-    }
-
-    /**
-     * 3, 4, 5 & 8. Rendu dynamique des transactions escrow et mise à jour des compteurs sur la page Admin Escrow
-     */
-    function actualiserRenduPageAdminEscrow() {
-      var container = document.getElementById('liste-transactions-escrow-admin');
-      var actionTexte = document.getElementById('escrow-admin-action-texte');
-      var actionBanner = document.getElementById('escrow-admin-action-banner');
-      var statAttente = document.getElementById('escrow-stat-attente');
-      var statRecu = document.getElementById('escrow-stat-recu');
-      var statTransferer = document.getElementById('escrow-stat-transferer');
-
-      var list = escrowAdminCache || [];
-
-      // 8. Calcul des compteurs
-      var nbActionRequise = 0;
-      var nbAttente = 0;
-      var nbRecu = 0;
-      var nbTransferer = 0;
-
-      list.forEach(function(tx) {
-        var s = (tx.statut || '').toLowerCase().trim();
-        if (s === 'paiement_envoye' || s === 'compte_recu') {
-          nbActionRequise++;
-        }
-        if (s === 'attente_paiement') {
-          nbAttente++;
-        } else if (s === 'paiement_recu') {
-          nbRecu++;
-        } else if (s === 'compte_recu' || s === 'identifiants_transferes') {
-          nbTransferer++;
-        }
-      });
-
-      if (statAttente) statAttente.textContent = nbAttente;
-      if (statRecu) statRecu.textContent = nbRecu;
-      if (statTransferer) statTransferer.textContent = nbTransferer;
-
-      if (actionTexte) {
-        actionTexte.innerHTML = nbActionRequise + ' transaction' + (nbActionRequise > 1 ? 's' : '') + ' nécessitant ton action';
-      }
-      if (actionBanner) {
-        actionBanner.style.borderColor = nbActionRequise > 0 ? '#f59e0b' : '#3f3f46';
-        actionBanner.style.background = nbActionRequise > 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(39, 39, 42, 0.5)';
-      }
-
-      if (!container) return;
-
-      if (list.length === 0) {
-        container.innerHTML = 
-          '<div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 48px 20px; text-align: center;">' +
-            '<div style="font-size: 40px; margin-bottom: 12px;">📭</div>' +
-            '<h3 style="font-size: 16px; font-weight: 700; color: #e4e4e7; margin: 0 0 6px 0;">' +
-              'Aucune transaction escrow pour le moment' +
-            '</h3>' +
-            '<p style="font-size: 13px; color: #71717a; margin: 0;">' +
-              'Les transactions avec paiement sécurisé escrow assignées à votre compte apparaîtront ici.' +
-            '</p>' +
-          '</div>';
-        return;
-      }
-
-      var html = '';
-      list.forEach(function(tx) {
-        var st = (tx.statut || '').toLowerCase().trim();
-        var stInfo = getStatutInfoAdminEscrow(st);
-        var dateAffichee = formaterDateEscrow(tx.dateCreation);
-        var prix = Number(tx.montant || tx.annoncePrix || 0);
-
-        html += '<div style="background: #18181b; border: 1px solid ' + (stInfo.actionRequise ? 'rgba(245, 158, 11, 0.65)' : '#27272a') + '; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">';
-
-        // En-tête : badge ESCROW (vert) + statut actuel coloré + badge ACTION REQUISE clignotant + date
-        html += '<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">';
-        html += '  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">';
-        html += '    <span style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">🔒 ESCROW</span>';
-        html += '    <span style="color: ' + stInfo.couleur + '; font-weight: 700; font-size: 13.5px;">' + escapeHtml(stInfo.libelle) + '</span>';
-        if (stInfo.actionRequise) {
-          html += '    <span style="background: #ef4444; color: #ffffff; padding: 2px 7px; border-radius: 4px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.5px; animation: badgePulse 1.5s infinite ease-in-out; display: inline-flex; align-items: center; gap: 4px;">⚠️ ACTION REQUISE</span>';
-        }
-        html += '  </div>';
-        if (dateAffichee) {
-          html += '  <span style="font-size: 12px; color: #71717a;">📅 ' + escapeHtml(dateAffichee) + '</span>';
-        }
-        html += '</div>';
-
-        // Titre de l'annonce + prix en FCFA (gros, vert)
-        html += '<div style="margin: 4px 0 2px 0;">';
-        html += '  <h3 style="font-size: 17px; font-weight: 700; color: #ffffff; margin: 0 0 4px 0;">📦 ' + escapeHtml(tx.annonceTitre || "Compte eFootball") + '</h3>';
-        html += '  <div style="font-size: 22px; font-weight: 800; color: #00C853;">' + prix.toLocaleString('fr-FR') + ' FCFA</div>';
-        html += '</div>';
-
-        // Ligne acheteur : nom + téléphone
-        html += '<div style="font-size: 13.5px; color: #a1a1aa; line-height: 1.7; background: #202023; padding: 12px; border-radius: 8px; border: 1px solid #2d2d30;">';
-        html += '  <div>👤 <strong>Acheteur :</strong> <span style="color: #fff;">' + escapeHtml(tx.acheteurNom || "Non renseigné") + '</span>' + (tx.acheteurTelephone ? (' • 📞 <a href="tel:' + escapeHtml(tx.acheteurTelephone) + '" style="color: #34d399; text-decoration: none; font-weight: 600;">' + escapeHtml(tx.acheteurTelephone) + '</a>') : '') + '</div>';
-        // Ligne vendeur : nom + téléphone
-        html += '  <div>👤 <strong>Vendeur :</strong> <span style="color: #fff;">' + escapeHtml(tx.vendeurNom || "Non renseigné") + '</span>' + (tx.vendeurTelephone ? (' • 📞 <a href="tel:' + escapeHtml(tx.vendeurTelephone) + '" style="color: #34d399; text-decoration: none; font-weight: 600;">' + escapeHtml(tx.vendeurTelephone) + '</a>') : '') + '</div>';
-        // Le moyen de paiement attendu (Wave/OM)
-        html += '  <div>💳 <strong>Moyen de paiement attendu :</strong> <span style="color: #34d399; font-weight: 700;">' + escapeHtml(tx.moyenPaiement || "Wave / Orange Money") + '</span></div>';
-        html += '</div>';
-
-        // 5. Les boutons d'action selon le statut
-        if (st === 'paiement_envoye') {
-          html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; padding-top: 12px; border-top: 1px solid #27272a;">';
-          html += '  <button type="button" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="confirmerReceptionArgent(\'' + escapeHtml(tx.id) + '\')">✅ J\'ai reçu l\'argent</button>';
-          html += '  <button type="button" style="background: #ef4444; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="alert(\'Contacte l\\\'acheteur pour vérifier\')">❌ Je n\'ai rien reçu</button>';
-          html += '</div>';
-        } else if (st === 'compte_recu') {
-          html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; padding-top: 12px; border-top: 1px solid #27272a;">';
-          html += '  <button type="button" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="confirmerTransfertVendeur(\'' + escapeHtml(tx.id) + '\')">💸 J\'ai transféré l\'argent au vendeur</button>';
-          html += '  <button type="button" style="background: #f59e0b; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="alert(\'Contacte le support ou les deux parties pour vérifier la situation.\')">⚠️ Signaler un problème</button>';
-          html += '</div>';
-        } else {
-          html += '<div style="margin-top: 4px; padding-top: 8px; border-top: 1px solid #27272a; font-size: 12.5px; color: #71717a; font-style: italic;">';
-          html += '  ⏳ En attente des prochaines actions des participants...';
-          html += '</div>';
-        }
-
-        html += '</div>';
-      });
-
-      container.innerHTML = html;
-    }
-
-    /**
-     * 6. Confirme la réception de l'argent par l'admin, met à jour statut "paiement_recu"
-     * et envoie une notification EmailJS au vendeur
-     */
-    function confirmerReceptionArgent(escrowId) {
-      if (!escrowId) return;
-      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      if (!user || !user.uid) {
-        alert("Veuillez vous connecter en tant qu'administrateur.");
-        return;
-      }
-
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) {
-        alert("Service indisponible.");
-        return;
-      }
-
-      var tx = (escrowAdminCache || []).find(function(t) { return t.id === escrowId; });
-      if (tx && tx.adminId && tx.adminId !== user.uid) {
-        alert("Vous n'êtes pas l'administrateur assigné à cette transaction.");
-        return;
-      }
-
-      var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
-        ? firebase.firestore.FieldValue.serverTimestamp()
-        : new Date();
-
-      firestoreDb.collection("escrow").doc(escrowId).update({
-        statut: "paiement_recu",
-        dateReceptionArgent: serverTimestamp,
-        dateMiseAJour: serverTimestamp
-      }).then(function() {
-        if (typeof afficherNotification === 'function') {
-          afficherNotification("Paiement validé ! Vendeur notifié.", "✅");
-        }
-
-        var vendeurId = tx ? (tx.vendeurId || "") : "";
-        var emailPromise = (vendeurId && typeof recupererEmailUtilisateur === 'function')
-          ? recupererEmailUtilisateur(vendeurId)
-          : Promise.resolve(null);
-
-        emailPromise.then(function(emailVendeur) {
-          if (emailVendeur && typeof envoyerEmail === 'function') {
-            var sujet = "💰 L'argent est sécurisé sur EFoot Market SN";
-            var message = "Bonjour, l'acheteur a envoyé son paiement à l'admin. Tu peux maintenant transférer les identifiants Konami à l'acheteur en toute sécurité.";
-            envoyerEmail(emailVendeur, sujet, message).catch(function(e) {
-              console.warn("Erreur notification EmailJS vendeur :", e);
-            });
-          }
-        }).catch(function(e) {
-          console.warn("Erreur recupererEmailUtilisateur vendeur :", e);
-        });
-      }).catch(function(err) {
-        console.error("Erreur confirmerReceptionArgent :", err);
-        alert("Erreur lors de la confirmation : " + (err.message || err));
-      });
-    }
-
-    /**
-     * 7. Met à jour statut "termine", dateTransfert: serverTimestamp,
-     * et envoie un email au vendeur
-     */
-    function confirmerTransfertVendeur(escrowId) {
-      if (!escrowId) return;
-      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      if (!user || !user.uid) {
-        alert("Veuillez vous connecter en tant qu'administrateur.");
-        return;
-      }
-
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) {
-        alert("Service indisponible.");
-        return;
-      }
-
-      var tx = (escrowAdminCache || []).find(function(t) { return t.id === escrowId; });
-      if (tx && tx.adminId && tx.adminId !== user.uid) {
-        alert("Vous n'êtes pas l'administrateur assigné à cette transaction.");
-        return;
-      }
-
-      var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
-        ? firebase.firestore.FieldValue.serverTimestamp()
-        : new Date();
-
-      firestoreDb.collection("escrow").doc(escrowId).update({
-        statut: "termine",
-        dateTransfert: serverTimestamp,
-        dateMiseAJour: serverTimestamp
-      }).then(function() {
-        if (typeof afficherNotification === 'function') {
-          afficherNotification("Transfert confirmé ! Transaction terminée.", "🎉");
-        }
-
-        var vendeurId = tx ? (tx.vendeurId || "") : "";
-        var emailPromise = (vendeurId && typeof recupererEmailUtilisateur === 'function')
-          ? recupererEmailUtilisateur(vendeurId)
-          : Promise.resolve(null);
-
-        emailPromise.then(function(emailVendeur) {
-          if (emailVendeur && typeof envoyerEmail === 'function') {
-            var sujet = "💸 L'admin t'a envoyé l'argent";
-            var message = "Bonjour, l'admin vous a envoyé l'argent de votre vente sur EFoot Market SN. La transaction est désormais clôturée avec succès.";
-            envoyerEmail(emailVendeur, sujet, message).catch(function(e) {
-              console.warn("Erreur notification EmailJS transfert vendeur :", e);
-            });
-          }
-        }).catch(function(e) {
-          console.warn("Erreur recupererEmailUtilisateur vendeur :", e);
-        });
-      }).catch(function(err) {
-        console.error("Erreur confirmerTransfertVendeur :", err);
-        alert("Erreur lors de la confirmation du transfert : " + (err.message || err));
-      });
-    }
-
-    /**
-     * 1. Écoute en temps réel les documents Firestore de la collection "escrow" où
-     * vendeurId === currentUser.uid, et stocke le résultat dans escrowVendeurCache.
-     */
-    function chargerEscrowVendeur() {
-      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      if (!user || !user.uid) return;
-
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) return;
-
-      if (unsubscribeEscrowVendeur) {
-        unsubscribeEscrowVendeur();
-        unsubscribeEscrowVendeur = null;
-      }
-
-      try {
-        unsubscribeEscrowVendeur = firestoreDb.collection("escrow")
-          .where("vendeurId", "==", user.uid)
-          .onSnapshot(function(snapshot) {
-            var items = [];
-            if (snapshot && !snapshot.empty) {
-              snapshot.forEach(function(doc) {
-                var data = doc.data() || {};
-                data.id = doc.id;
-                items.push(data);
-              });
-            }
-            items.sort(function(a, b) {
-              var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
-              var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
-              return dateB - dateA;
-            });
-
-            escrowVendeurCache = items;
-            window.escrowVendeurCache = escrowVendeurCache;
-
-            afficherEscrowVendeur();
-            if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-              if (typeof afficherBoutonsAnnonce === 'function') {
-                var adCur = typeof getAnnonces === 'function' ? getAnnonces().find(function(a) { return a.id === currentDetailAdId; }) : null;
-                if (adCur) afficherBoutonsAnnonce(currentDetailAdId, adCur);
-              }
-            }
-          }, function(error) {
-            console.warn("Écoute transactions escrow vendeur :", error ? (error.message || error.code || error) : "");
-          });
-      } catch (err) {
-        console.warn("Erreur chargerEscrowVendeur :", err);
-      }
-    }
-
-    /**
-     * 3. Affiche les transactions escrow côté vendeur dans la section "Demandes reçues"
-     * de la page transactions, avec le badge spécial "🔒 ESCROW"
-     */
-    function afficherEscrowVendeur() {
-      if (typeof afficherSectionDemandesRecues === 'function') {
-        afficherSectionDemandesRecues(demandesVendeurCache);
-      }
-    }
-
-    /**
-     * 5. Met à jour le document escrow : statut: "identifiants_transferes",
-     * dateTransfertIdentifiants: serverTimestamp, notification et rafraîchissement
-     */
-    function marquerIdentifiantsTransferes(escrowId) {
-      if (!escrowId) return;
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) return;
-
-      var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
-        ? firebase.firestore.FieldValue.serverTimestamp()
-        : new Date();
-
-      firestoreDb.collection("escrow").doc(escrowId).update({
-        statut: "identifiants_transferes",
-        dateTransfertIdentifiants: serverTimestamp,
-        dateMiseAJour: serverTimestamp
-      }).then(function() {
-        if (typeof afficherNotification === 'function') {
-          afficherNotification("Identifiants transférés ! En attente de confirmation de l'acheteur.", "📦");
-        }
-        if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
-          var item = escrowVendeurCache.find(function(e) { return e.id === escrowId; });
-          if (item) {
-            item.statut = "identifiants_transferes";
-          }
-        }
-        afficherEscrowVendeur();
-        if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-          if (typeof afficherDetailAnnonce === 'function') {
-            afficherDetailAnnonce(currentDetailAdId);
-          }
-        }
-      }).catch(function(err) {
-        console.error("Erreur marquerIdentifiantsTransferes :", err);
-        alert("Erreur lors de la mise à jour : " + (err.message || err));
-      });
-    }
-
-    /**
-     * Ouvre la modale de confirmation d'envoi du paiement à l'admin pour un escrow donné
-     */
-    function ouvrirModalConfirmationPaiement(escrowId) {
-      if (!escrowId) return;
-      var escrow = (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache))
-        ? escrowAcheteurCache.find(function(e) { return e.id === escrowId; })
-        : null;
-      if (escrow) {
-        ouvrirModalConfirmationEnvoi(escrow.id, escrow.prix || escrow.montant || 0, escrow.adminNom || '', escrow.moyenPaiement || '', escrow.adminTelephone || '');
-      } else {
-        var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-        if (firestoreDb) {
-          firestoreDb.collection("escrow").doc(escrowId).get().then(function(doc) {
-            if (doc.exists) {
-              var data = doc.data() || {};
-              ouvrirModalConfirmationEnvoi(doc.id, data.prix || data.montant || 0, data.adminNom || '', data.moyenPaiement || '', data.adminTelephone || '');
-            }
-          }).catch(function(err) {
-            console.warn("Erreur ouvrirModalConfirmationPaiement :", err);
-          });
-        }
-      }
-    }
-
-    /**
-     * 4. Créer confirmerReceptionCompteEscrow(escrowId) qui :
-     * - Demande confirmation via confirm()
-     * - Met à jour le doc escrow : statut "compte_recu", dateReceptionCompte: serverTimestamp
-     * - Rafraîchit l'affichage
-     */
-    function confirmerReceptionCompteEscrow(escrowId) {
-      if (!escrowId) return;
-      if (!confirm("Confirmez-vous avoir bien reçu et vérifié le compte eFootball ?")) {
-        return;
-      }
-      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
-      if (!firestoreDb) return;
-
-      var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
-        ? firebase.firestore.FieldValue.serverTimestamp()
-        : new Date();
-
-      firestoreDb.collection("escrow").doc(escrowId).update({
-        statut: "compte_recu",
-        dateReceptionCompte: serverTimestamp,
-        dateMiseAJour: serverTimestamp
-      }).then(function() {
-        if (typeof afficherNotification === 'function') {
-          afficherNotification("Réception confirmée ! L'admin va procéder au paiement du vendeur.", "success");
-        } else {
-          alert("Réception confirmée ! L'admin va procéder au paiement du vendeur.");
-        }
-        if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
-          var item = escrowAcheteurCache.find(function(e) { return e.id === escrowId; });
-          if (item) {
-            item.statut = "compte_recu";
-            item.dateReceptionCompte = new Date();
-          }
-        }
-        if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
-          var itemV = escrowVendeurCache.find(function(e) { return e.id === escrowId; });
-          if (itemV) {
-            itemV.statut = "compte_recu";
-            itemV.dateReceptionCompte = new Date();
-          }
-        }
-        // Rafraîchir l'affichage
-        if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-          if (typeof afficherDetailAnnonce === 'function') {
-            afficherDetailAnnonce(currentDetailAdId);
-          } else if (typeof afficherBoutonsAnnonce === 'function') {
-            afficherBoutonsAnnonce(currentDetailAdId);
-          }
-        } else if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-          if (typeof afficherBoutonsAnnonce === 'function') {
-            afficherBoutonsAnnonce(currentDetailAdId);
-          }
-        }
-        if (typeof afficherSectionDemandesEnvoyees === 'function') {
-          afficherSectionDemandesEnvoyees(demandesAcheteurCache);
-        }
-      }).catch(function(err) {
-        console.error("Erreur confirmerReceptionCompteEscrow :", err);
-        alert("Erreur lors de la confirmation : " + (err.message || err));
-      });
-    }
-
     window.escrowDeveloppement = escrowDeveloppement;
     window.adminsEscrowCache = adminsEscrowCache;
-    window.escrowAcheteurCache = escrowAcheteurCache;
-    window.escrowVendeurCache = escrowVendeurCache;
-    window.escrowAdminCache = escrowAdminCache;
-    window.chargerEscrowAdmin = chargerEscrowAdmin;
-    window.chargerEscrowVendeur = chargerEscrowVendeur;
-    window.afficherEscrowVendeur = afficherEscrowVendeur;
-    window.marquerIdentifiantsTransferes = marquerIdentifiantsTransferes;
-    window.ouvrirModalConfirmationPaiement = ouvrirModalConfirmationPaiement;
-    window.confirmerReceptionCompteEscrow = confirmerReceptionCompteEscrow;
-    window.actualiserRenduPageAdminEscrow = actualiserRenduPageAdminEscrow;
-    window.confirmerReceptionArgent = confirmerReceptionArgent;
-    window.confirmerTransfertVendeur = confirmerTransfertVendeur;
-    window.getStatutInfoAdminEscrow = getStatutInfoAdminEscrow;
-    window.formaterDateEscrow = formaterDateEscrow;
     window.chargerAdminsEscrowPublics = chargerAdminsEscrowPublics;
     window.actualiserListeAdminsEscrowModal = actualiserListeAdminsEscrowModal;
     window.ouvrirModalChoixAdminEscrow = ouvrirModalChoixAdminEscrow;
     window.fermerModalChoixAdminEscrow = fermerModalChoixAdminEscrow;
-    window.ouvrirModalConfirmationEnvoi = ouvrirModalConfirmationEnvoi;
-    window.fermerModalConfirmationEnvoi = fermerModalConfirmationEnvoi;
-    window.marquerArgentEnvoye = marquerArgentEnvoye;
-    window.afficherEscrowAcheteur = afficherEscrowAcheteur;
-    window.getLibelleStatutEscrow = getLibelleStatutEscrow;
-    window.getCouleurStatutEscrow = getCouleurStatutEscrow;
     window.choisirAdminEscrow = choisirAdminEscrow;
 
     /**
@@ -18018,19 +16803,6 @@
         chargerAdminsEscrowPublics();
       } catch (e) {
         console.warn("Erreur chargerAdminsEscrowPublics init :", e);
-      }
-
-      try {
-        // Vérification et chargement de l'admin escrow si l'utilisateur est admin
-        if (typeof verifierAdminEscrow === 'function') {
-          verifierAdminEscrow();
-        }
-        var userCourant = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-        if (userCourant && typeof estAdminEscrowCache !== 'undefined' && estAdminEscrowCache && typeof chargerEscrowAdmin === 'function') {
-          chargerEscrowAdmin();
-        }
-      } catch (e) {
-        console.warn("Erreur initialisation admin escrow :", e);
       }
 
       try {
