@@ -43,5 +43,13 @@ service cloud.firestore {
     match /statistiques/{statId} {
       allow read, write: if true;
     }
+
+    // Signalements de vendeur
+    match /signalements/{signalementId} {
+      allow read: if request.auth != null 
+                  && request.auth.uid == 'SQjdom6623c3aVy6JJOKAwqws4M2';
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
   }
 }

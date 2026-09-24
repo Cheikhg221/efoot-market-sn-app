@@ -9492,10 +9492,21 @@
                 </div>
               </div>
             </div>
-            <div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
               <button class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px;" onclick="event.stopPropagation(); ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}', '${ad.vendeurId || ''}')">
                 Voir profil & avis (${totalAvis}) →
               </button>
+              ${!estMonAnnonce ? `
+                <button 
+                  type="button"
+                  onclick="event.stopPropagation(); ouvrirModalSignaler('${escapeHtml(nomVendeurAffiche)}', '${ad.vendeurId || ''}', '${ad.id}', '${escapeHtml(ad.titre || '')}')"
+                  style="background: rgba(239,68,68,0.1); color: #ef4444; 
+                    border: 1px solid rgba(239,68,68,0.3); padding: 6px 12px; 
+                    border-radius: 6px; font-size: 11.5px; font-weight: 600; 
+                    cursor: pointer; margin-left: 6px;">
+                  🚨 Signaler
+                </button>
+              ` : ''}
             </div>
           </div>
 
@@ -13552,6 +13563,19 @@
         }
       }
 
+      const currentUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      const profilConnecte = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
+      const monNom = profilConnecte ? (profilConnecte.nom ? `${profilConnecte.prenom} ${profilConnecte.nom}`.trim() : (profilConnecte.prenom || "")) : "";
+      const monNomFormate = profilConnecte ? formaterNomAffichage(profilConnecte.prenom, profilConnecte.nom) : "";
+      const estMoiMeme = Boolean(
+        (currentUser && vendeurId && currentUser.uid === vendeurId) ||
+        (profilConnecte && profilConnecte.id && profilConnecte.id === vendeurId) ||
+        (monNom && (vendeurNom === monNom || nomVendeurAffiche === monNom)) ||
+        (monNomFormate && (vendeurNom === monNomFormate || nomVendeurAffiche === monNomFormate))
+      );
+      const annonceRefId = (annonces.length > 0 && annonces[0].id) ? annonces[0].id : '';
+      const annonceRefTitre = (annonces.length > 0 && annonces[0].titre) ? escapeHtml(annonces[0].titre) : '';
+
       container.innerHTML = `
         <div style="background: #181818; border-radius: 12px; padding: 20px; border: 1px solid #2e2e2e; margin-bottom: 16px;">
           <div style="display: flex; align-items: flex-start; gap: 14px;">
@@ -13582,6 +13606,19 @@
               </div>
             </div>
           </div>
+          ${!estMoiMeme ? `
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #2e2e2e; display: flex; justify-content: flex-end;">
+              <button 
+                type="button"
+                onclick="ouvrirModalSignaler('${escapeHtml(nomVendeurAffiche)}', '${vendeurId || ''}', '${annonceRefId}', '${annonceRefTitre}')"
+                style="background: rgba(239,68,68,0.1); color: #ef4444; 
+                  border: 1px solid rgba(239,68,68,0.3); padding: 7px 14px; 
+                  border-radius: 6px; font-size: 12px; font-weight: 600; 
+                  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                🚨 Signaler ce vendeur
+              </button>
+            </div>
+          ` : ''}
         </div>
 
         <!-- Section Derniers avis -->
@@ -13641,6 +13678,190 @@
       const modal = document.getElementById('seller-profile-modal');
       if (modal) modal.classList.remove('active');
     }
+
+    /* ==========================================================
+       FONCTIONS DU SYSTÈME DE SIGNALEMENT DE VENDEUR
+       ========================================================== */
+    var signalementVendeurId = null;
+    var signalementVendeurNom = null;
+    var signalementAnnonceId = null;
+    var signalementAnnonceTitre = null;
+    var signalementCaptureBase64 = null;
+
+    function ouvrirModalSignaler(vendeurNom, vendeurId, annonceId, annonceTitre) {
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user) {
+        afficherNotification("Connectez-vous pour signaler un vendeur", "🔒");
+        return;
+      }
+      
+      // Récupérer le profil pour vérifier qu'on n'est pas le vendeur
+      var profil = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
+      if ((vendeurId && user.uid === vendeurId) || (profil && profil.id && profil.id === vendeurId)) {
+        afficherNotification("Vous ne pouvez pas vous signaler vous-même", "ℹ️");
+        return;
+      }
+      
+      signalementVendeurId = vendeurId || "";
+      signalementVendeurNom = vendeurNom || "Vendeur";
+      signalementAnnonceId = annonceId || "";
+      signalementAnnonceTitre = annonceTitre || "Compte eFootball";
+      signalementCaptureBase64 = null;
+      
+      // Reset du formulaire
+      var form = document.getElementById('form-signaler-vendeur');
+      if (form) form.reset();
+      var preview = document.getElementById('signal-capture-preview');
+      if (preview) preview.style.display = 'none';
+      var img = document.getElementById('signal-capture-img');
+      if (img) img.src = '';
+      
+      var modal = document.getElementById('modal-signaler-vendeur');
+      if (modal) modal.classList.add('active');
+    }
+
+    function fermerModalSignaler() {
+      var modal = document.getElementById('modal-signaler-vendeur');
+      if (modal) modal.classList.remove('active');
+      signalementCaptureBase64 = null;
+    }
+
+    function gererCaptureSignalement(event) {
+      var fichier = event.target.files[0];
+      if (!fichier) return;
+      
+      if (!fichier.type.startsWith('image/')) {
+        alert("Veuillez sélectionner une image valide.");
+        return;
+      }
+      
+      // Limiter à 1 Mo pour éviter de saturer Firestore
+      if (fichier.size > 1024 * 1024) {
+        alert("L'image est trop lourde (max 1 Mo). Compressez-la avant de l'envoyer.");
+        return;
+      }
+      
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        signalementCaptureBase64 = e.target.result;
+        var img = document.getElementById('signal-capture-img');
+        var preview = document.getElementById('signal-capture-preview');
+        if (img) img.src = signalementCaptureBase64;
+        if (preview) preview.style.display = 'block';
+      };
+      reader.readAsDataURL(fichier);
+    }
+
+    function supprimerCaptureSignalement() {
+      signalementCaptureBase64 = null;
+      var input = document.getElementById('signal-capture-input');
+      if (input) input.value = '';
+      var preview = document.getElementById('signal-capture-preview');
+      if (preview) preview.style.display = 'none';
+    }
+
+    function envoyerSignalement(event) {
+      event.preventDefault();
+      
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!user) {
+        alert("Vous devez être connecté pour signaler.");
+        return;
+      }
+      
+      var motif = document.getElementById('signal-motif').value;
+      var description = document.getElementById('signal-description').value.trim();
+      
+      if (!motif) {
+        alert("Veuillez choisir un motif.");
+        return;
+      }
+      
+      if (description.length < 20) {
+        alert("La description doit contenir au moins 20 caractères.");
+        return;
+      }
+      
+      var btn = document.getElementById('btn-envoyer-signal');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Envoi en cours...';
+      }
+      
+      var profil = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
+      var signaleurNom = profil ? (profil.prenom + ' ' + (profil.nom || '')).trim() : 'Utilisateur';
+      
+      var signalement = {
+        vendeurId: signalementVendeurId || "",
+        vendeurNom: signalementVendeurNom || "Vendeur",
+        annonceId: signalementAnnonceId || "",
+        annonceTitre: signalementAnnonceTitre || "Compte eFootball",
+        signaleurId: user.uid,
+        signaleurNom: signaleurNom,
+        signaleurEmail: user.email || (profil ? profil.email : null) || "Non renseigné",
+        motif: motif,
+        description: description,
+        captureBase64: signalementCaptureBase64 || null,
+        statut: "nouveau",
+        dateCreation: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+      };
+      
+      var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+      if (!firestoreDb) {
+        alert("Base de données indisponible. Veuillez réessayer plus tard.");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '🚨 Envoyer le signalement';
+        }
+        return;
+      }
+
+      firestoreDb.collection("signalements").add(signalement)
+        .then(function() {
+          console.log("✅ Signalement enregistré");
+          
+          // Envoyer un email de notification à l'admin
+          var messageEmail = 
+            "🚨 NOUVEAU SIGNALEMENT EFOOT MARKET SN\n\n" +
+            "Vendeur signalé : " + signalement.vendeurNom + "\n" +
+            "Annonce : " + signalement.annonceTitre + "\n" +
+            "Motif : " + motif + "\n\n" +
+            "Description :\n" + description + "\n\n" +
+            "Signalé par : " + signaleurNom + "\n" +
+            "Email : " + signalement.signaleurEmail + "\n" +
+            "Date : " + new Date().toLocaleString('fr-FR') + "\n\n" +
+            "Connectez-vous à Firebase Console → Firestore → signalements " +
+            "pour voir la capture d'écran et traiter le signalement.";
+          
+          if (typeof envoyerEmail === 'function') {
+            envoyerEmail(
+              "efootmarketcontact@gmail.com",
+              "🚨 Nouveau signalement - EFoot Market SN",
+              messageEmail
+            ).catch(function(e) {
+              console.warn("Erreur envoi email notification :", e);
+            });
+          }
+          
+          fermerModalSignaler();
+          afficherNotification("Signalement envoyé. Merci de nous aider à améliorer la plateforme.", "🚨");
+        })
+        .catch(function(err) {
+          console.error("Erreur signalement :", err);
+          alert("Erreur lors de l'envoi : " + err.message);
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🚨 Envoyer le signalement';
+          }
+        });
+    }
+
+    // Exposer sur window pour les gestionnaires d'événements HTML
+    window.ouvrirModalSignaler = ouvrirModalSignaler;
+    window.fermerModalSignaler = fermerModalSignaler;
+    window.gererCaptureSignalement = gererCaptureSignalement;
+    window.supprimerCaptureSignalement = supprimerCaptureSignalement;
+    window.envoyerSignalement = envoyerSignalement;
 
     /**
      * Charge les avis reçus par le vendeur connecté (source unifiée via getNoteEtAvisVendeur)
@@ -15839,5 +16060,120 @@
       justify-content: center; transition: all 0.2s ease;">
     ❓
   </button>
+  <!-- ==========================================================
+       MODALE SIGNALER UN VENDEUR
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-signaler-vendeur" 
+       onclick="if(event.target===this) fermerModalSignaler()">
+    <div class="modal-card" style="max-width: 520px;">
+      
+      <div class="modal-header-row">
+        <div class="modal-title" style="color: #ef4444;">
+          <span>🚨</span>
+          <span>Signaler ce vendeur</span>
+        </div>
+        <button type="button" class="modal-close-btn" 
+          onclick="fermerModalSignaler()">✕</button>
+      </div>
+
+      <p style="font-size: 13px; color: #aaa; margin-bottom: 16px; 
+         line-height: 1.5;">
+        Signalez un comportement suspect. Notre équipe examinera votre 
+        signalement sous 48h.
+      </p>
+
+      <form id="form-signaler-vendeur" onsubmit="envoyerSignalement(event)">
+        
+        <!-- Motif -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 13px; color: #fff; display: block; 
+             margin-bottom: 6px;">
+            Motif du signalement <span style="color: #ef4444;">*</span>
+          </label>
+          <select id="signal-motif" class="form-control" required>
+            <option value="">Choisissez un motif...</option>
+            <option value="Arnaque / Fraude">💰 Arnaque / Fraude</option>
+            <option value="Vendeur injoignable">📵 Vendeur injoignable</option>
+            <option value="Compte non conforme">❌ Compte non conforme à la description</option>
+            <option value="Compte volé">🔒 Compte volé ou déjà lié</option>
+            <option value="Comportement irrespectueux">😡 Comportement irrespectueux</option>
+            <option value="Prix trompeur">💸 Prix trompeur</option>
+            <option value="Autre">📝 Autre</option>
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 13px; color: #fff; display: block; 
+             margin-bottom: 6px;">
+            Décrivez le problème <span style="color: #ef4444;">*</span>
+          </label>
+          <textarea id="signal-description" class="form-control" 
+            rows="4" required minlength="20" maxlength="1000"
+            placeholder="Expliquez ce qui s'est passé en détail (minimum 20 caractères)..." 
+            style="resize: vertical;"></textarea>
+          <small style="font-size: 11px; color: #888; margin-top: 4px; 
+             display: block;">
+            Minimum 20 caractères. Soyez précis.
+          </small>
+        </div>
+
+        <!-- Capture d'écran -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 13px; color: #fff; display: block; 
+             margin-bottom: 6px;">
+            Capture d'écran (optionnel)
+          </label>
+          <div class="image-upload-zone" 
+               onclick="document.getElementById('signal-capture-input').click()"
+               style="padding: 14px;">
+            <div style="font-size: 22px; margin-bottom: 4px;">📸</div>
+            <div style="font-size: 12.5px; color: #ccc;">
+              Cliquez pour ajouter une preuve
+            </div>
+            <input type="file" id="signal-capture-input" 
+              accept="image/*" style="display: none;" 
+              onchange="gererCaptureSignalement(event)">
+          </div>
+          <div id="signal-capture-preview" 
+            style="display: none; margin-top: 10px; position: relative;">
+            <img id="signal-capture-img" src="" 
+              style="width: 100%; max-height: 200px; object-fit: cover; 
+              border-radius: 8px; border: 1px solid #333;">
+            <button type="button" onclick="supprimerCaptureSignalement()" 
+              style="position: absolute; top: 8px; right: 8px; 
+              background: rgba(0,0,0,0.7); color: #ef4444; 
+              border: 1px solid #ef4444; border-radius: 50%; 
+              width: 28px; height: 28px; cursor: pointer;">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Avertissement -->
+        <div style="background: rgba(239,68,68,0.08); border: 1px solid 
+           rgba(239,68,68,0.3); border-radius: 8px; padding: 10px; 
+           font-size: 11.5px; color: #fca5a5; margin-bottom: 16px; 
+           line-height: 1.5;">
+          ⚠️ <strong>Attention :</strong> Les faux signalements peuvent 
+          entraîner la suspension de votre compte.
+        </div>
+
+        <!-- Boutons -->
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn-secondary" 
+            style="flex: 1;" onclick="fermerModalSignaler()">
+            Annuler
+          </button>
+          <button type="submit" id="btn-envoyer-signal" 
+            class="btn-danger" style="flex: 1; background: #ef4444; 
+            color: #fff; font-weight: 700; border: none; 
+            border-radius: 8px; padding: 12px; cursor: pointer;">
+            🚨 Envoyer le signalement
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 </html>
