@@ -6157,6 +6157,29 @@
   </div>
 
   <!-- ==========================================================
+       MODALE : AUTORISER UN ACHETEUR À PAYER (ESCROW)
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-autoriser-paiement" style="display: none;" onclick="if(event.target===this) fermerModalAutoriserPaiement()">
+    <div class="modal-card" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-title" style="color: #00E676; margin-bottom: 8px; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+        <span>🔑 Qui autoriser à payer ?</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px; line-height: 1.5;">
+        Sélectionne UN SEUL acheteur. Les autres seront mis en attente.
+      </p>
+      
+      <!-- Liste des acheteurs à autoriser -->
+      <div id="liste-acheteurs-autoriser" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <!-- Injecté dynamiquement -->
+      </div>
+
+      <div class="modal-actions" style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <button type="button" class="btn-secondary" style="background: #333; color: white; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13.5px;" onclick="fermerModalAutoriserPaiement()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
        MODALE 1 : INTENTION D'ACHAT SÉCURISÉE (ÉTAPE 1 ACHETEUR)
        ========================================================== -->
   <div class="modal-backdrop" id="modal-intention-achat" style="display: none;">
@@ -9855,7 +9878,7 @@
 
       // CAS 2 : VENDEUR
       if (annonce && user.uid === annonce.vendeurId) {
-        function rendreContenuVendeur(escrowActif, demandeEnAttente) {
+        function rendreContenuVendeur(escrowActif, demandeEnAttente, demandesAnnonce) {
           var html = '';
 
           var stEscrow = escrowActif ? (escrowActif.statut || '').toLowerCase().trim() : '';
@@ -9902,6 +9925,28 @@
               html += '</div>';
             }
 
+            // MODIFICATION 2 : Bouton "🔑 Autoriser à payer" côté vendeur
+            var demandeAutorisee = (demandesAnnonce || []).find(function(d) {
+              return d.autoriseAPayer === true;
+            });
+            if (demandeAutorisee) {
+              var nomAcheteur = escapeHtml(demandeAutorisee.acheteurNom || 'l\'acheteur');
+              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:12px 14px; text-align:center;">' +
+                '<p style="color:#00E676; font-weight:800; font-size:14px; margin:0 0 4px 0;">✅ Tu as autorisé ' + nomAcheteur + ' à payer</p>' +
+                '<p style="color:#ccc; font-size:12.5px; margin:0;">Dis-lui sur WhatsApp qu\'il peut procéder au paiement</p>' +
+              '</div>';
+            }
+
+            var aDemandeAccepteeNonAutorisee = (demandesAnnonce || []).some(function(d) {
+              var s = (d.statut || '').toLowerCase();
+              return s === 'acceptee' && d.autoriseAPayer !== true;
+            });
+            if (aDemandeAccepteeNonAutorisee) {
+              html += '<button type="button" onclick="ouvrirModalAutoriserPaiement(\'' + annonceId + '\')" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">' +
+                '🔑 Autoriser un acheteur à payer' +
+              '</button>';
+            }
+
             // Si annonce.statut === "en_cours" :
             var stAnnonce = (annonce.statut || '').toLowerCase();
             if (stAnnonce === 'en_cours') {
@@ -9943,11 +9988,14 @@
           var s = (d.statut || '').toLowerCase();
           return d.annonceId === annonceId && (s === 'en_attente' || s === 'attente');
         }) || null;
+        var demandesAnnonce = demandesCache.filter(function(d) {
+          return d.annonceId === annonceId;
+        });
 
-        rendreContenuVendeur(escrowTrouve, demandeEnAttente);
+        rendreContenuVendeur(escrowTrouve, demandeEnAttente, demandesAnnonce);
 
         // Si non trouvé dans le cache et Firestore disponible, interroger Firestore
-        if (db && (!escrowTrouve || !demandeEnAttente)) {
+        if (db) {
           var requetes = [];
           if (!escrowTrouve) {
             requetes.push(
@@ -9974,28 +10022,32 @@
                 })
             );
           }
-          if (!demandeEnAttente) {
-            requetes.push(
-              db.collection("demandes")
-                .where("vendeurId", "==", user.uid)
-                .where("annonceId", "==", annonceId)
-                .where("statut", "==", "en_attente")
-                .get()
-                .then(function(snapshot) {
-                  if (!snapshot.empty) {
-                    var docD = snapshot.docs[0];
-                    demandeEnAttente = docD.data() || {};
-                    demandeEnAttente.id = docD.id;
-                  }
-                }).catch(function(err) {
-                  console.warn("Recherche Firestore demande en attente :", err);
-                })
-            );
-          }
+          requetes.push(
+            db.collection("demandes")
+              .where("vendeurId", "==", user.uid)
+              .where("annonceId", "==", annonceId)
+              .get()
+              .then(function(snapshot) {
+                if (!snapshot.empty) {
+                  var docs = snapshot.docs.map(function(d) {
+                    var data = d.data() || {};
+                    data.id = d.id;
+                    return data;
+                  });
+                  demandesAnnonce = docs;
+                  demandeEnAttente = docs.find(function(d) {
+                    var s = (d.statut || '').toLowerCase();
+                    return s === 'en_attente' || s === 'attente';
+                  }) || null;
+                }
+              }).catch(function(err) {
+                console.warn("Recherche Firestore demandes vendeur :", err);
+              })
+          );
           if (requetes.length > 0) {
             Promise.all(requetes).then(function() {
               if (document.getElementById("boutonsAnnonce") === conteneur) {
-                rendreContenuVendeur(escrowTrouve, demandeEnAttente);
+                rendreContenuVendeur(escrowTrouve, demandeEnAttente, demandesAnnonce);
               }
             });
           }
@@ -10142,33 +10194,95 @@
               }
 
               // 3. Si AUCUNE transaction escrow n'existe :
-              var escrowHtmlAcceptee = '';
-              if (escrowDeveloppement === true) {
-                escrowHtmlAcceptee = 
-                  '<div class="section-achat-escrow" style="margin-top: 14px;">' +
-                    '<div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px; color: #fbbf24; font-size: 12.5px; line-height: 1.5; text-align: center; font-weight: 500;">' +
-                      '⚠️ Cette fonctionnalité est en cours de développement. Merci de ne pas l\'utiliser pour l\'instant.' +
+              function afficherBlocSansEscrow(autreAutorise) {
+                var btnWhatsApp = '<button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>';
+
+                if (demande.autoriseAPayer === true) {
+                  // MODIFICATION 4 : Si demande.autoriseAPayer === true : Comportement actuel (bouton actif)
+                  var escrowHtmlAcceptee = '';
+                  if (escrowDeveloppement === true) {
+                    escrowHtmlAcceptee = 
+                      '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                        '<div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px; color: #fbbf24; font-size: 12.5px; line-height: 1.5; text-align: center; font-weight: 500;">' +
+                          '⚠️ Cette fonctionnalité est en cours de développement. Merci de ne pas l\'utiliser pour l\'instant.' +
+                        '</div>' +
+                        '<button type="button" disabled style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                          '🔒 Acheter avec protection admin (bientôt)' +
+                        '</button>' +
+                      '</div>';
+                  } else {
+                    escrowHtmlAcceptee = 
+                      '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                        '<button type="button" onclick="ouvrirModalChoixAdminEscrow(\'' + annonceId + '\')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                          '🔒 Acheter avec protection admin' +
+                        '</button>' +
+                      '</div>';
+                  }
+
+                  conteneur.innerHTML = 
+                    '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);">' +
+                      '<p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p>' +
+                      '<p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p>' +
                     '</div>' +
-                    '<button type="button" disabled style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
-                      '🔒 Acheter avec protection admin (bientôt)' +
-                    '</button>' +
-                  '</div>';
-              } else {
-                escrowHtmlAcceptee = 
-                  '<div class="section-achat-escrow" style="margin-top: 14px;">' +
-                    '<button type="button" onclick="ouvrirModalChoixAdminEscrow(\'' + annonceId + '\')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
-                      '🔒 Acheter avec protection admin' +
-                    '</button>' +
-                  '</div>';
+                    btnWhatsApp +
+                    escrowHtmlAcceptee;
+                } else if (autreAutorise === true) {
+                  // MODIFICATION 5 : Un autre acheteur a déjà été autorisé
+                  conteneur.innerHTML = 
+                    '<div style="background:#27272a; border:1.5px solid #52525b; border-radius:10px; padding:15px; text-align:center; margin-bottom:15px;">' +
+                      '<p style="color:#e4e4e7; font-weight:700; font-size:15px; margin:0 0 4px 0;">⏳ Un autre acheteur est prioritaire</p>' +
+                      '<p style="color:#a1a1aa; font-size:13px; margin:0;">Un autre acheteur a été autorisé en priorité. Tu seras prévenu s\'il abandonne.</p>' +
+                    '</div>' +
+                    btnWhatsApp +
+                    '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                      '<button type="button" disabled="disabled" style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                        '🔒 Acheter avec protection admin' +
+                      '</button>' +
+                    '</div>';
+                } else {
+                  // MODIFICATION 4 : Si demande.autoriseAPayer !== true
+                  conteneur.innerHTML = 
+                    '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #ff9800; border-radius:10px; padding:15px; text-align:center; margin-bottom:15px;">' +
+                      '<p style="color:#ff9800; font-weight:700; font-size:15px; margin:0 0 4px 0;">⏳ En attente d\'autorisation du vendeur</p>' +
+                      '<p style="color:#ccc; font-size:13px; margin:0;">Le vendeur doit d\'abord t\'autoriser à payer.</p>' +
+                    '</div>' +
+                    btnWhatsApp +
+                    '<div class="section-achat-escrow" style="margin-top: 14px;">' +
+                      '<button type="button" disabled="disabled" style="opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                        '🔒 Acheter avec protection admin' +
+                      '</button>' +
+                    '</div>';
+                }
               }
 
-              conteneur.innerHTML = 
-                '<div style="background:#1E1E1E; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid rgba(0,200,83,0.3);">' +
-                  '<p style="color:#00C853; font-weight:bold; margin:0 0 4px 0;">✅ Demande acceptée !</p>' +
-                  '<p style="color:#ccc; font-size:14px; margin:0;">Vous pouvez contacter le vendeur</p>' +
-                '</div>' +
-                '<button onclick="contacterWhatsApp(\'' + telWhatsApp + '\')" style="background:#25D366; color:white; width:100%; padding:15px; border-radius:10px; font-size:16px; font-weight:bold; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">💬 Contacter sur WhatsApp</button>' +
-                escrowHtmlAcceptee;
+              if (demande.autoriseAPayer === true) {
+                afficherBlocSansEscrow(false);
+              } else {
+                if (db) {
+                  db.collection("demandes")
+                    .where("annonceId", "==", annonceId)
+                    .where("autoriseAPayer", "==", true)
+                    .get()
+                    .then(function(authSnap) {
+                      var autre = false;
+                      if (!authSnap.empty) {
+                        authSnap.forEach(function(dDoc) {
+                          var dData = dDoc.data() || {};
+                          if (dData.acheteurId && dData.acheteurId !== user.uid) {
+                            autre = true;
+                          }
+                        });
+                      }
+                      afficherBlocSansEscrow(autre);
+                    })
+                    .catch(function(e) {
+                      console.warn("Erreur vérification acheteur autorisé :", e);
+                      afficherBlocSansEscrow(false);
+                    });
+                } else {
+                  afficherBlocSansEscrow(false);
+                }
+              }
             }
 
             // 1. AVANT d'afficher les boutons, chercher dans escrowAcheteurCache ou Firestore
@@ -11162,6 +11276,8 @@
           vendeurId: annonce.vendeurId || "",
           vendeurNom: annonce.vendeur || "Vendeur",
           statut: "en_attente",
+          autoriseAPayer: false,
+          dateAutorisation: null,
           nombreRefus: 0,
           dateRefus: null,
           dateProchaineDemande: null,
@@ -11980,6 +12096,8 @@
         // ✅ PROTECTION : marquer immédiatement la demande en cours de traitement pour éviter les doublons
         return db.collection("demandes").doc(demandeId).update({
           statut: "acceptee",
+          autoriseAPayer: false,
+          dateAutorisation: null,
           dateAcceptation: firebase.firestore.FieldValue.serverTimestamp(),
           emailEnvoye: false  // ← Nouveau champ de sécurité
         }).then(function() {
@@ -12183,6 +12301,8 @@
                 vendeurId: annonce.vendeurId || "",
                 vendeurNom: annonce.vendeur || "Vendeur",
                 statut: "en_attente",
+                autoriseAPayer: false,
+                dateAutorisation: null,
                 nombreRefus: precedentRefus,
                 dateRefus: null,
                 dateProchaineDemande: null,
@@ -15943,6 +16063,149 @@
       });
     }
 
+    function fermerModalAutoriserPaiement() {
+      var modal = document.getElementById("modal-autoriser-paiement");
+      if (modal) modal.style.display = "none";
+    }
+
+    function ouvrirModalAutoriserPaiement(annonceId) {
+      var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+      var demandes = cache.filter(function(d) {
+        var s = (d.statut || '').toLowerCase();
+        return d.annonceId === annonceId && s === "acceptee";
+      });
+
+      function afficherDansModale(liste) {
+        var nonAutorisees = liste.filter(function(d) {
+          return d.autoriseAPayer !== true;
+        });
+
+        if (nonAutorisees.length === 0) {
+          if (typeof afficherNotification === 'function') {
+            afficherNotification("Aucune demande acceptée à autoriser", "⚠️");
+          } else {
+            alert("Aucune demande acceptée à autoriser");
+          }
+          return;
+        }
+
+        var conteneur = document.getElementById("liste-acheteurs-autoriser");
+        if (!conteneur) return;
+
+        var html = '';
+        nonAutorisees.forEach(function(d) {
+          var nom = escapeHtml(d.acheteurNom || 'Acheteur');
+          var tel = escapeHtml(d.acheteurTelephone || 'Non renseigné');
+          var dateRel = (typeof formaterDateRelative === 'function') ? formaterDateRelative(d.dateCreation) : 'récemment';
+
+          var noteHtml = '';
+          if (typeof getNoteEtAvisVendeur === 'function') {
+            var stats = getNoteEtAvisVendeur(d.acheteurId || d.acheteurNom);
+            if (stats && stats.totalAvis > 0) {
+              var badgeInfo = (typeof afficherBadge === 'function') ? afficherBadge(stats.badge) : null;
+              noteHtml = '<div style="display:flex; align-items:center; gap:8px; margin-top:4px; font-size:12.5px;">' +
+                '<span style="color:#FFD700; font-weight:700;">⭐ ' + stats.noteMoyenne.toFixed(1) + '/5</span>' +
+                '<span style="color:#aaa;">(' + stats.totalAvis + ' avis)</span>' +
+                (badgeInfo ? '<span style="color:' + badgeInfo.couleur + '; font-weight:600;">' + badgeInfo.icone + ' ' + badgeInfo.texte + '</span>' : '') +
+              '</div>';
+            }
+          }
+
+          html += '<div style="background:#202020; border:1px solid #333; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center; gap:12px;">' +
+            '<div style="flex:1;">' +
+              '<div style="font-weight:700; font-size:14.5px; color:#fff;">' + nom + '</div>' +
+              '<div style="color:#aaa; font-size:13px; margin-top:2px;">📱 ' + tel + '</div>' +
+              '<div style="color:#777; font-size:12px; margin-top:2px;">📅 Demande ' + dateRel + '</div>' +
+              noteHtml +
+            '</div>' +
+            '<button type="button" onclick="autoriserAcheteurAPayer(\'' + d.id + '\', \'' + (d.acheteurId || '') + '\')" style="background:#00C853; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:13.5px; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(0,200,83,0.3);">' +
+              '✅ Autoriser' +
+            '</button>' +
+          '</div>';
+        });
+
+        conteneur.innerHTML = html;
+        var modal = document.getElementById("modal-autoriser-paiement");
+        if (modal) modal.style.display = "flex";
+      }
+
+      if (demandes.length === 0 && db && user) {
+        db.collection("demandes")
+          .where("vendeurId", "==", user.uid)
+          .where("annonceId", "==", annonceId)
+          .get()
+          .then(function(snap) {
+            var docs = [];
+            snap.forEach(function(doc) {
+              var data = doc.data() || {};
+              data.id = doc.id;
+              if ((data.statut || '').toLowerCase() === 'acceptee') {
+                docs.push(data);
+              }
+            });
+            if (docs.length === 0) {
+              if (typeof afficherNotification === 'function') {
+                afficherNotification("Aucune demande acceptée à autoriser", "⚠️");
+              } else {
+                alert("Aucune demande acceptée à autoriser");
+              }
+            } else {
+              afficherDansModale(docs);
+            }
+          })
+          .catch(function(err) {
+            console.warn("Erreur chargement demandes pour modal autoriser :", err);
+            if (typeof afficherNotification === 'function') {
+              afficherNotification("Aucune demande acceptée à autoriser", "⚠️");
+            } else {
+              alert("Aucune demande acceptée à autoriser");
+            }
+          });
+      } else {
+        afficherDansModale(demandes);
+      }
+    }
+
+    function autoriserAcheteurAPayer(demandeId, acheteurId) {
+      if (!demandeId || !db) return;
+
+      db.collection("demandes").doc(demandeId).update({
+        autoriseAPayer: true,
+        dateAutorisation: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        if (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
+          var item = demandesVendeurCache.find(function(d) { return d.id === demandeId; });
+          if (item) {
+            item.autoriseAPayer = true;
+            item.dateAutorisation = new Date();
+          }
+        }
+        fermerModalAutoriserPaiement();
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Tu as autorisé cet acheteur à payer.", "✅");
+        } else {
+          alert("✅ Tu as autorisé cet acheteur à payer.");
+        }
+        if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+          if (typeof afficherDetailAnnonce === 'function') {
+            afficherDetailAnnonce(currentDetailAdId);
+          } else if (typeof afficherBoutonsAnnonce === 'function') {
+            afficherBoutonsAnnonce(currentDetailAdId);
+          }
+        } else if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+          if (typeof afficherBoutonsAnnonce === 'function') {
+            afficherBoutonsAnnonce(currentDetailAdId);
+          }
+        }
+        if (typeof afficherDemandesVendeur === 'function') {
+          afficherDemandesVendeur();
+        }
+      }).catch(function(err) {
+        console.error("Erreur autoriserAcheteurAPayer :", err);
+        alert("Erreur lors de l'autorisation : " + (err.message || err));
+      });
+    }
+
     window.escrowDeveloppement = escrowDeveloppement;
     window.adminsEscrowCache = adminsEscrowCache;
     window.escrowAcheteurCache = escrowAcheteurCache;
@@ -15954,6 +16217,9 @@
     window.marquerIdentifiantsTransferes = marquerIdentifiantsTransferes;
     window.ouvrirModalConfirmationPaiement = ouvrirModalConfirmationPaiement;
     window.confirmerReceptionCompteEscrow = confirmerReceptionCompteEscrow;
+    window.ouvrirModalAutoriserPaiement = ouvrirModalAutoriserPaiement;
+    window.fermerModalAutoriserPaiement = fermerModalAutoriserPaiement;
+    window.autoriserAcheteurAPayer = autoriserAcheteurAPayer;
     window.actualiserRenduPageAdminEscrow = actualiserRenduPageAdminEscrow;
     window.confirmerReceptionArgent = confirmerReceptionArgent;
     window.confirmerTransfertVendeur = confirmerTransfertVendeur;
