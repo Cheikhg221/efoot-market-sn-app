@@ -6183,6 +6183,29 @@
   </div>
 
   <!-- ==========================================================
+       MODALE : CHOIX D'UNE DEMANDE ACHETEUR (VENDEUR)
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-choix-demande" style="display: none;" onclick="if(event.target===this) fermerModalChoixDemande()">
+    <div class="modal-card" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
+      <div id="modal-choix-demande-titre" class="modal-title" style="margin-bottom: 8px; font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+        <!-- Titre dynamique -->
+      </div>
+      <p id="modal-choix-demande-desc" style="font-size: 13.5px; color: var(--text-gray, #aaa); margin-bottom: 16px; line-height: 1.5;">
+        <!-- Texte explicatif selon action -->
+      </p>
+      
+      <!-- Liste des demandes -->
+      <div id="liste-demandes-choix" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <!-- Injecté dynamiquement -->
+      </div>
+
+      <div class="modal-actions" style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <button type="button" class="btn-secondary" style="background: #333; color: white; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13.5px;" onclick="fermerModalChoixDemande()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
        MODALE 1 : INTENTION D'ACHAT SÉCURISÉE (ÉTAPE 1 ACHETEUR)
        ========================================================== -->
   <div class="modal-backdrop" id="modal-intention-achat" style="display: none;">
@@ -6501,12 +6524,16 @@
       </h3>
       
       <p style="font-size: 14px; color: #AAAAAA; line-height: 1.6; 
-         margin-bottom: 22px;">
+         margin-bottom: 18px;">
         En acceptant, l'annonce sera <strong style="color: #00C853;">
         réservée</strong> à cet acheteur.<br><br>
         L'acheteur recevra une notification et pourra vous contacter 
         sur WhatsApp pour finaliser la transaction.
       </p>
+
+      <div style="background: rgba(255, 193, 7, 0.15); border: 1.5px solid #FFC107; border-radius: 8px; padding: 12px; margin-bottom: 20px; color: #FFC107; font-size: 13px; line-height: 1.5; font-weight: 600; text-align: left;">
+        ⚠️ Tu peux accepter jusqu'à 2 demandes maximum. Dès la 2ᵉ acceptation, l'annonce sera AUTOMATIQUEMENT retirée du catalogue public.
+      </div>
       
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <button type="button" class="btn-primary" 
@@ -8747,9 +8774,9 @@
       const powerMode = powerModeEl ? powerModeEl.value : 'min';
 
       let resultats = annonces.filter(item => {
-        // MODIFICATION 3 : Masquer les annonces vendues ou en escrow en cours du catalogue public
+        // MODIFICATION 5 : Masquer les annonces vendues, en escrow ou fermées du catalogue public
         var stAnnonce = (item.statut || '').trim().toLowerCase();
-        if (item.statut === 'VENDU' || item.statut === 'vendue' || item.statut === 'escrow_en_cours' || stAnnonce === 'vendu' || stAnnonce === 'vendue' || stAnnonce === 'escrow_en_cours') {
+        if (item.statut === 'VENDU' || item.statut === 'vendue' || item.statut === 'escrow_en_cours' || item.statut === 'fermee' || stAnnonce === 'vendu' || stAnnonce === 'vendue' || stAnnonce === 'escrow_en_cours' || stAnnonce === 'fermee') {
           return false;
         }
 
@@ -9920,34 +9947,56 @@
               html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid rgba(255,193,7,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px;">⏳ En attente du paiement acheteur</div>';
             }
 
-            // Si aucune transaction escrow mais une demande d'achat en attente :
-            if (!escrowActif && demandeEnAttente) {
-              html += '<div style="display:flex; gap:10px; width:100%;">';
-              html += '<button type="button" onclick="accepterDemandeAvecProtection(\'' + demandeEnAttente.id + '\', this)" style="background:#00C853; color:white; flex:1; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">✅ Accepter la demande</button>';
-              html += '<button type="button" onclick="refuserDemandeAvecProtection(\'' + demandeEnAttente.id + '\', this)" style="background:#D32F2F; color:white; flex:1; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Refuser la demande</button>';
-              html += '</div>';
-            }
-
-            // MODIFICATION 2 : Bouton "🔑 Autoriser à payer" côté vendeur
+            // MODIFICATION 1 : Bouton unique ouvrant une modale de choix
+            // Compter les demandes "en_attente" ET les demandes "acceptee" sur cette annonce
+            var demandesEnAttente = (demandesAnnonce || []).filter(function(d) {
+              var s = (d.statut || '').toLowerCase();
+              return s === 'en_attente' || s === 'attente' || s === 'demande_envoyee';
+            });
+            var demandesAcceptees = (demandesAnnonce || []).filter(function(d) {
+              var s = (d.statut || '').toLowerCase();
+              return s === 'acceptee';
+            });
             var demandeAutorisee = (demandesAnnonce || []).find(function(d) {
               return d.autoriseAPayer === true;
             });
-            if (demandeAutorisee) {
-              var nomAcheteur = escapeHtml(demandeAutorisee.acheteurNom || 'l\'acheteur');
-              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:12px 14px; text-align:center;">' +
-                '<p style="color:#00E676; font-weight:800; font-size:14px; margin:0 0 4px 0;">✅ Tu as autorisé ' + nomAcheteur + ' à payer</p>' +
-                '<p style="color:#ccc; font-size:12.5px; margin:0;">Dis-lui sur WhatsApp qu\'il peut procéder au paiement</p>' +
+
+            // Si (demandes en attente > 0) ET (demandes acceptées < 2) :
+            if (demandesEnAttente.length > 0 && demandesAcceptees.length < 2) {
+              var nbAttente = demandesEnAttente.length;
+              var texteDemandes = "🔔 " + nbAttente + (nbAttente > 1 ? " demandes" : " demande") + " en attente";
+              html += '<div style="background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.35); border-radius:10px; padding:14px; text-align:center;">' +
+                '<p style="color:#FFC107; font-weight:700; font-size:14px; margin:0 0 10px 0;">' + texteDemandes + '</p>' +
+                '<div style="display:flex; gap:10px; width:100%;">' +
+                  '<button type="button" onclick="ouvrirModalChoixDemande(\'' + annonceId + '\', \'accepter\')" style="background:#00C853; color:white; flex:1; padding:12px 8px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:13.5px; box-shadow:0 2px 8px rgba(0,200,83,0.3);">✅ Accepter une demande</button>' +
+                  '<button type="button" onclick="ouvrirModalChoixDemande(\'' + annonceId + '\', \'refuser\')" style="background:#D32F2F; color:white; flex:1; padding:12px 8px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:13.5px; box-shadow:0 2px 8px rgba(211,47,47,0.3);">❌ Refuser une demande</button>' +
+                '</div>' +
               '</div>';
             }
 
-            var aDemandeAccepteeNonAutorisee = (demandesAnnonce || []).some(function(d) {
-              var s = (d.statut || '').toLowerCase();
-              return s === 'acceptee' && d.autoriseAPayer !== true;
-            });
-            if (aDemandeAccepteeNonAutorisee) {
-              html += '<button type="button" onclick="ouvrirModalAutoriserPaiement(\'' + annonceId + '\')" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">' +
-                '🔑 Autoriser un acheteur à payer' +
-              '</button>';
+            // Si (demandes acceptées === 2) ET (aucune autoriseAPayer === true) :
+            if (demandesAcceptees.length === 2 && !demandeAutorisee) {
+              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:8px; padding:12px 14px; text-align:center;">' +
+                '<p style="color:#FFC107; font-weight:700; font-size:13.5px; line-height:1.5; margin:0;">⚠️ Tu as atteint la limite de 2 demandes acceptées. Autorise l\'un des 2 acheteurs à payer, ou refuse-en un pour rouvrir l\'annonce.</p>' +
+              '</div>';
+            }
+
+            // Si (une demande a autoriseAPayer === true) :
+            if (demandeAutorisee) {
+              var nomAcheteur = escapeHtml(demandeAutorisee.acheteurNom || 'l\'acheteur');
+              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:12px 14px; text-align:center;">' +
+                '<p style="color:#00E676; font-weight:800; font-size:14px; margin:0 0 4px 0;">✅ ' + nomAcheteur + ' est autorisé à payer</p>' +
+                '<p style="color:#ccc; font-size:12.5px; margin:0;">Dis-lui sur WhatsApp qu\'il peut procéder.</p>' +
+              '</div>';
+            } else {
+              var aDemandeAccepteeNonAutorisee = demandesAcceptees.some(function(d) {
+                return d.autoriseAPayer !== true;
+              });
+              if (aDemandeAccepteeNonAutorisee) {
+                html += '<button type="button" onclick="ouvrirModalAutoriserPaiement(\'' + annonceId + '\')" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">' +
+                  '🔑 Autoriser un acheteur à payer' +
+                '</button>';
+              }
             }
 
             // Si annonce.statut === "en_cours" :
@@ -10108,8 +10157,25 @@
           }
 
           // CAS 3b : Demande EN ATTENTE
-          if (demande.statut === "en_attente") {
-            conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
+          if (demande.statut === "en_attente" || demande.statut === "attente") {
+            // MODIFICATION 9 : Si la demande de l'acheteur est en statut "en_attente" ET qu'il y a déjà 2 demandes acceptées
+            db.collection("demandes")
+              .where("annonceId", "==", annonceId)
+              .where("statut", "==", "acceptee")
+              .get()
+              .then(function(snapAcc) {
+                if (snapAcc.size >= 2) {
+                  conteneur.innerHTML = '<div style="background:#262626; padding:18px; border-radius:10px; text-align:center; border:1px solid #444;">' +
+                    '<p style="color:#ccc; font-size:14px; font-weight:700; margin:0 0 6px 0;">⏳ En attente - 2 acheteurs sont déjà acceptés</p>' +
+                    '<p style="color:#999; font-size:12.5px; margin:0;">Le vendeur te contactera si l\'un d\'eux abandonne.</p>' +
+                  '</div>';
+                } else {
+                  conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
+                }
+              })
+              .catch(function() {
+                conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center; border:1px solid #333;"><p style="color:#FFC107; font-size:16px; font-weight:bold; margin:0 0 6px 0;">🟡 Demande envoyée</p><p style="color:#ccc; margin:0 0 8px 0;">En attente de réponse du vendeur</p><p style="color:#888; font-size:12px; margin:0;">🔒 WhatsApp débloqué après acceptation</p></div>';
+              });
             return;
           }
 
@@ -12062,6 +12128,127 @@
     /**
      * 5. ACTIONS DU VENDEUR & GESTION DES CONFIRMATIONS
      */
+    function fermerModalChoixDemande() {
+      var modal = document.getElementById("modal-choix-demande");
+      if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = "none";
+      }
+    }
+
+    function executerChoixDemande(demandeId, action) {
+      fermerModalChoixDemande();
+      if (action === 'accepter') {
+        ouvrirModalConfirmerAccepter(demandeId);
+      } else {
+        ouvrirModalConfirmerRefuser(demandeId);
+      }
+    }
+
+    function ouvrirModalChoixDemande(annonceId, action) {
+      action = action || 'accepter';
+      var modal = document.getElementById("modal-choix-demande");
+      var elTitre = document.getElementById("modal-choix-demande-titre");
+      var elDesc = document.getElementById("modal-choix-demande-desc");
+      var conteneur = document.getElementById("liste-demandes-choix");
+
+      if (elTitre) {
+        if (action === 'accepter') {
+          elTitre.innerHTML = '<span style="color:#00E676;">✅ Quelle demande accepter ?</span>';
+        } else {
+          elTitre.innerHTML = '<span style="color:#F44336;">❌ Quelle demande refuser ?</span>';
+        }
+      }
+
+      if (elDesc) {
+        if (action === 'accepter') {
+          elDesc.innerHTML = 'Sélectionne la demande que tu souhaites accepter pour cette annonce.<br><span style="color:#FFC107; font-weight:600;">⚠️ Les autres demandes en attente seront automatiquement refusées.</span>';
+        } else {
+          elDesc.innerHTML = 'Sélectionne la demande que tu souhaites refuser pour cette annonce.';
+        }
+      }
+
+      var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+      var demandes = cache.filter(function(d) {
+        var s = (d.statut || '').toLowerCase();
+        return d.annonceId === annonceId && (s === "en_attente" || s === "attente" || s === "demande_envoyee");
+      });
+
+      function afficherListe(liste) {
+        if (!conteneur) return;
+        if (!liste || liste.length === 0) {
+          conteneur.innerHTML = '<p style="color:#888; text-align:center; padding:20px; font-size:13.5px;">Aucune demande en attente sur cette annonce.</p>';
+        } else {
+          var html = '';
+          liste.forEach(function(d) {
+            var nom = escapeHtml(d.acheteurNom || 'Acheteur');
+            var tel = escapeHtml(d.acheteurTelephone || 'Non renseigné');
+            var dateRel = (typeof formaterDateRelative === 'function') ? formaterDateRelative(d.dateCreation) : 'récemment';
+
+            var noteHtml = '';
+            if (typeof getNoteEtAvisVendeur === 'function') {
+              var stats = getNoteEtAvisVendeur(d.acheteurId || d.acheteurNom);
+              if (stats && stats.totalAvis > 0) {
+                var badgeInfo = (typeof afficherBadge === 'function') ? afficherBadge(stats.badge) : null;
+                noteHtml = '<div style="display:flex; align-items:center; gap:8px; margin-top:3px; font-size:12.5px;">' +
+                  '<span style="color:#FFD700; font-weight:700;">⭐ ' + stats.noteMoyenne.toFixed(1) + '/5</span>' +
+                  '<span style="color:#aaa;">(' + stats.totalAvis + ' avis)</span>' +
+                  (badgeInfo ? '<span style="color:' + badgeInfo.couleur + '; font-weight:600;">' + badgeInfo.icone + ' ' + badgeInfo.texte + '</span>' : '') +
+                '</div>';
+              }
+            }
+
+            var btnCouleur = action === 'refuser' ? '#D32F2F' : '#00C853';
+            var btnShadow = action === 'refuser' ? 'rgba(211,47,47,0.3)' : 'rgba(0,200,83,0.3)';
+
+            html += '<div style="background:#202020; border:1px solid #333; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center; gap:12px;">' +
+              '<div style="flex:1;">' +
+                '<div style="font-weight:700; font-size:14.5px; color:#fff;">👤 ' + nom + '</div>' +
+                '<div style="color:#aaa; font-size:13px; margin-top:2px;">📱 ' + tel + '</div>' +
+                '<div style="color:#777; font-size:12px; margin-top:2px;">⏱️ ' + dateRel + '</div>' +
+                noteHtml +
+              '</div>' +
+              '<button type="button" onclick="executerChoixDemande(\'' + d.id + '\', \'' + action + '\')" style="background:' + btnCouleur + '; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:13.5px; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px ' + btnShadow + ';">' +
+                'Sélectionner' +
+              '</button>' +
+            '</div>';
+          });
+          conteneur.innerHTML = html;
+        }
+
+        if (modal) {
+          modal.classList.add('active');
+          modal.style.display = 'flex';
+        }
+      }
+
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (demandes.length === 0 && db && user) {
+        db.collection("demandes")
+          .where("vendeurId", "==", user.uid)
+          .where("annonceId", "==", annonceId)
+          .get()
+          .then(function(snap) {
+            var docs = [];
+            snap.forEach(function(doc) {
+              var data = doc.data() || {};
+              data.id = doc.id;
+              var s = (data.statut || '').toLowerCase();
+              if (s === 'en_attente' || s === 'attente' || s === 'demande_envoyee') {
+                docs.push(data);
+              }
+            });
+            afficherListe(docs);
+          })
+          .catch(function(err) {
+            console.warn("Erreur chargement demandes pour modal choix :", err);
+            afficherListe([]);
+          });
+      } else {
+        afficherListe(demandes);
+      }
+    }
+
     function ouvrirModalConfirmerAccepter(demandeId, btn) {
       demandeEnAttenteConfirmation = demandeId;
       boutonEnAttenteConfirmation = btn;
@@ -12184,29 +12371,69 @@
         }
         
         var annonceId = data ? data.annonceId : null;
+        if (!annonceId) return;
 
-        // ✅ PROTECTION : marquer immédiatement la demande en cours de traitement pour éviter les doublons
-        return db.collection("demandes").doc(demandeId).update({
-          statut: "acceptee",
-          autoriseAPayer: false,
-          dateAutorisation: null,
-          dateAcceptation: firebase.firestore.FieldValue.serverTimestamp(),
-          emailEnvoye: false  // ← Nouveau champ de sécurité
-        }).then(function() {
-          if (annonceId) {
-            db.collection("annonces").doc(annonceId).update({
-              statut: "en_cours",
-              accepteAutresOffres: true
-            }).catch(function(e) { console.warn("Mise à jour statut annonce:", e); });
-
-            var annonces = getAnnonces();
-            var ad = annonces.find(function(a) { return a.id === annonceId; });
-            if (ad) {
-              ad.statut = "en_cours";
-              ad.accepteAutresOffres = true;
-              setAnnonces(annonces);
+        // MODIFICATION 4 : AVANT de mettre à jour Firestore, compter les demandes existantes sur cette annonce avec statut === "acceptee"
+        return db.collection("demandes")
+          .where("annonceId", "==", annonceId)
+          .where("statut", "==", "acceptee")
+          .get()
+          .then(function(snapAcceptees) {
+            var compteurAcceptees = snapAcceptees.size;
+            if (compteurAcceptees >= 2) {
+              alert("⚠️ Tu as déjà accepté 2 demandes sur cette annonce. C'est le maximum autorisé.");
+              if (typeof afficherNotification === 'function') {
+                afficherNotification("⚠️ Tu as déjà accepté 2 demandes sur cette annonce. C'est le maximum autorisé.", "⚠️");
+              }
+              return;
             }
-          }
+
+            // Si compteur < 2 : procéder à l'acceptation
+            return db.collection("demandes").doc(demandeId).update({
+              statut: "acceptee",
+              autoriseAPayer: false,
+              dateAutorisation: null,
+              dateAcceptation: firebase.firestore.FieldValue.serverTimestamp(),
+              emailEnvoye: false
+            }).then(function() {
+              // Mettre à jour le cache local pour la demande acceptée
+              if (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
+                var itemAccepte = demandesVendeurCache.find(function(d) { return d.id === demandeId; });
+                if (itemAccepte) {
+                  itemAccepte.statut = "acceptee";
+                  itemAccepte.autoriseAPayer = false;
+                  itemAccepte.dateAcceptation = new Date();
+                }
+              }
+
+              // APRÈS la mise à jour, si le compteur (avant mise à jour) était === 1 (donc maintenant 2) :
+              if (compteurAcceptees === 1) {
+                db.collection("annonces").doc(annonceId).update({
+                  statut: "fermee"
+                }).catch(function(e) { console.warn("Mise à jour statut annonce fermee:", e); });
+
+                var annonces = getAnnonces();
+                var ad = annonces.find(function(a) { return a.id === annonceId; });
+                if (ad) {
+                  ad.statut = "fermee";
+                  setAnnonces(annonces);
+                }
+                afficherNotification("🔒 L'annonce est maintenant fermée. Elle n'apparaît plus dans le catalogue.", "🔒");
+              } else {
+                db.collection("annonces").doc(annonceId).update({
+                  statut: "en_cours",
+                  accepteAutresOffres: true
+                }).catch(function(e) { console.warn("Mise à jour statut annonce:", e); });
+
+                var annonces = getAnnonces();
+                var ad = annonces.find(function(a) { return a.id === annonceId; });
+                if (ad) {
+                  ad.statut = "en_cours";
+                  ad.accepteAutresOffres = true;
+                  setAnnonces(annonces);
+                }
+                afficherNotification("Demande acceptée ! Transaction en cours.", "✅");
+              }
 
           // Notifier l'acheteur par email
           db.collection("demandes").doc(demandeId).get().then(function(doc) {
@@ -12270,7 +12497,8 @@
             afficherDetailAnnonce(annonceId);
           }
         });
-      }).catch(function(error) {
+      });
+    }).catch(function(error) {
         alert("Erreur : " + error.message);
       });
     }
@@ -12289,7 +12517,8 @@
 
       db.collection("demandes").doc(demandeId).get()
       .then(function(doc) {
-        var demande = doc.data();
+        var demande = doc.data() || {};
+        var annonceId = demande.annonceId;
         var nombreRefus = (demande.nombreRefus || 0) + 1;
         
         var delaiMs = 0;
@@ -12312,6 +12541,40 @@
           dateProchaineDemande: dateProchaine,
           bloqueDefinitif: bloqueDefinitif
         }).then(function() {
+          if (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
+            var dCache = demandesVendeurCache.find(function(d) { return d.id === demandeId; });
+            if (dCache) {
+              dCache.statut = "refusee";
+              dCache.dateRefus = new Date();
+            }
+          }
+
+          // MODIFICATION 8 : Compter les demandes restantes en statut "acceptee" sur cette annonce
+          if (annonceId) {
+            return db.collection("demandes")
+              .where("annonceId", "==", annonceId)
+              .where("statut", "==", "acceptee")
+              .get()
+              .then(function(snapAcc) {
+                var nbAccepteesRestantes = snapAcc.size;
+                if (nbAccepteesRestantes < 2) {
+                  db.collection("annonces").doc(annonceId).update({
+                    statut: "active",
+                    accepteAutresOffres: true
+                  }).catch(function(e) { console.warn("Erreur réouverture annonce :", e); });
+
+                  var annonces = getAnnonces();
+                  var ad = annonces.find(function(a) { return a.id === annonceId; });
+                  if (ad) {
+                    ad.statut = "active";
+                    ad.accepteAutresOffres = true;
+                    setAnnonces(annonces);
+                  }
+                  afficherNotification("🔓 L'annonce est de nouveau ouverte au catalogue.", "🔓");
+                }
+                return nombreRefus;
+              });
+          }
           return nombreRefus;
         });
       })
@@ -16463,19 +16726,16 @@
       var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
       var demandes = cache.filter(function(d) {
         var s = (d.statut || '').toLowerCase();
-        return d.annonceId === annonceId && s === "acceptee";
+        return d.annonceId === annonceId && s === "acceptee" && d.autoriseAPayer !== true;
       });
 
-      function afficherDansModale(liste) {
-        var nonAutorisees = liste.filter(function(d) {
-          return d.autoriseAPayer !== true;
-        });
-
-        if (nonAutorisees.length === 0) {
+      function afficherDansModale(nonAutorisees) {
+        if (!nonAutorisees || nonAutorisees.length === 0) {
+          var msg = "Aucune demande acceptée à autoriser. Accepte d'abord une demande.";
           if (typeof afficherNotification === 'function') {
-            afficherNotification("Aucune demande acceptée à autoriser", "⚠️");
+            afficherNotification(msg, "⚠️");
           } else {
-            alert("Aucune demande acceptée à autoriser");
+            alert(msg);
           }
           return;
         }
@@ -16517,9 +16777,13 @@
 
         conteneur.innerHTML = html;
         var modal = document.getElementById("modal-autoriser-paiement");
-        if (modal) modal.style.display = "flex";
+        if (modal) {
+          modal.classList.add('active');
+          modal.style.display = "flex";
+        }
       }
 
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       if (demandes.length === 0 && db && user) {
         db.collection("demandes")
           .where("vendeurId", "==", user.uid)
@@ -16530,27 +16794,15 @@
             snap.forEach(function(doc) {
               var data = doc.data() || {};
               data.id = doc.id;
-              if ((data.statut || '').toLowerCase() === 'acceptee') {
+              if ((data.statut || '').toLowerCase() === 'acceptee' && data.autoriseAPayer !== true) {
                 docs.push(data);
               }
             });
-            if (docs.length === 0) {
-              if (typeof afficherNotification === 'function') {
-                afficherNotification("Aucune demande acceptée à autoriser", "⚠️");
-              } else {
-                alert("Aucune demande acceptée à autoriser");
-              }
-            } else {
-              afficherDansModale(docs);
-            }
+            afficherDansModale(docs);
           })
           .catch(function(err) {
             console.warn("Erreur chargement demandes pour modal autoriser :", err);
-            if (typeof afficherNotification === 'function') {
-              afficherNotification("Aucune demande acceptée à autoriser", "⚠️");
-            } else {
-              alert("Aucune demande acceptée à autoriser");
-            }
+            afficherDansModale([]);
           });
       } else {
         afficherDansModale(demandes);
@@ -16560,37 +16812,83 @@
     function autoriserAcheteurAPayer(demandeId, acheteurId) {
       if (!demandeId || !db) return;
 
-      db.collection("demandes").doc(demandeId).update({
-        autoriseAPayer: true,
-        dateAutorisation: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function() {
-        if (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
-          var item = demandesVendeurCache.find(function(d) { return d.id === demandeId; });
-          if (item) {
-            item.autoriseAPayer = true;
-            item.dateAutorisation = new Date();
+      db.collection("demandes").doc(demandeId).get().then(function(docSnap) {
+        if (!docSnap.exists) {
+          var msgErr = "Demande introuvable";
+          if (typeof afficherNotification === 'function') afficherNotification(msgErr, "⚠️");
+          else alert(msgErr);
+          return;
+        }
+
+        var demandeData = docSnap.data() || {};
+        var annonceId = demandeData.annonceId;
+
+        // MODIFICATION 5 : Vérifier dans Firestore si une AUTRE demande sur la même annonce a déjà autoriseAPayer === true
+        var verifQuery = annonceId
+          ? db.collection("demandes").where("annonceId", "==", annonceId).where("autoriseAPayer", "==", true).get()
+          : Promise.resolve({ empty: true, docs: [] });
+
+        return verifQuery.then(function(querySnap) {
+          var autreAutorisee = false;
+          if (querySnap && !querySnap.empty) {
+            querySnap.forEach(function(d) {
+              if (d.id !== demandeId) {
+                autreAutorisee = true;
+              }
+            });
           }
-        }
-        fermerModalAutoriserPaiement();
-        if (typeof afficherNotification === 'function') {
-          afficherNotification("Tu as autorisé cet acheteur à payer.", "✅");
-        } else {
-          alert("✅ Tu as autorisé cet acheteur à payer.");
-        }
-        if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-          if (typeof afficherDetailAnnonce === 'function') {
-            afficherDetailAnnonce(currentDetailAdId);
-          } else if (typeof afficherBoutonsAnnonce === 'function') {
-            afficherBoutonsAnnonce(currentDetailAdId);
+
+          // Vérifier aussi dans le cache local
+          if (!autreAutorisee && annonceId && typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
+            autreAutorisee = demandesVendeurCache.some(function(d) {
+              return d.annonceId === annonceId && d.id !== demandeId && d.autoriseAPayer === true;
+            });
           }
-        } else if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-          if (typeof afficherBoutonsAnnonce === 'function') {
-            afficherBoutonsAnnonce(currentDetailAdId);
+
+          if (autreAutorisee) {
+            var msgAlerte = "⚠️ Tu as déjà autorisé un autre acheteur à payer.";
+            alert(msgAlerte);
+            if (typeof afficherNotification === 'function') {
+              afficherNotification(msgAlerte, "⚠️");
+            }
+            fermerModalAutoriserPaiement();
+            return;
           }
-        }
-        if (typeof afficherDemandesVendeur === 'function') {
-          afficherDemandesVendeur();
-        }
+
+          // Si NON : mettre à jour la demande autoriseAPayer: true, dateAutorisation: serverTimestamp
+          return db.collection("demandes").doc(demandeId).update({
+            autoriseAPayer: true,
+            dateAutorisation: firebase.firestore.FieldValue.serverTimestamp()
+          }).then(function() {
+            if (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
+              var item = demandesVendeurCache.find(function(d) { return d.id === demandeId; });
+              if (item) {
+                item.autoriseAPayer = true;
+                item.dateAutorisation = new Date();
+              }
+            }
+            fermerModalAutoriserPaiement();
+            if (typeof afficherNotification === 'function') {
+              afficherNotification("Tu as autorisé cet acheteur à payer.", "✅");
+            } else {
+              alert("✅ Tu as autorisé cet acheteur à payer.");
+            }
+            if (typeof currentPage !== 'undefined' && currentPage === 'detail' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+              if (typeof afficherDetailAnnonce === 'function') {
+                afficherDetailAnnonce(currentDetailAdId);
+              } else if (typeof afficherBoutonsAnnonce === 'function') {
+                afficherBoutonsAnnonce(currentDetailAdId);
+              }
+            } else if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+              if (typeof afficherBoutonsAnnonce === 'function') {
+                afficherBoutonsAnnonce(currentDetailAdId);
+              }
+            }
+            if (typeof afficherDemandesVendeur === 'function') {
+              afficherDemandesVendeur();
+            }
+          });
+        });
       }).catch(function(err) {
         console.error("Erreur autoriserAcheteurAPayer :", err);
         alert("Erreur lors de l'autorisation : " + (err.message || err));
@@ -16610,6 +16908,9 @@
     window.confirmerReceptionCompteEscrow = confirmerReceptionCompteEscrow;
     window.ouvrirModalAutoriserPaiement = ouvrirModalAutoriserPaiement;
     window.fermerModalAutoriserPaiement = fermerModalAutoriserPaiement;
+    window.ouvrirModalChoixDemande = ouvrirModalChoixDemande;
+    window.fermerModalChoixDemande = fermerModalChoixDemande;
+    window.executerChoixDemande = executerChoixDemande;
     window.autoriserAcheteurAPayer = autoriserAcheteurAPayer;
     window.actualiserRenduPageAdminEscrow = actualiserRenduPageAdminEscrow;
     window.confirmerReceptionArgent = confirmerReceptionArgent;
@@ -18439,34 +18740,48 @@
           var annonces = getAnnonces();
           var ad = annonces.find(function(a) { return a.id === annonceId; });
           if (ad) {
-            if (demandesRestantes > 0) {
-              // Il reste des demandes : garder en_cours
-              ad.statut = "en_cours";
-              ad.accepteAutresOffres = true;
-            } else {
-              // Plus de demandes : remettre active
-              ad.statut = "active";
-              ad.accepteAutresOffres = true;
-            }
+            ad.statut = "active";
+            ad.accepteAutresOffres = true;
             setAnnonces(annonces);
           }
+          afficherNotification("🔓 L'annonce est de nouveau ouverte au catalogue.", "🔓");
           return Promise.resolve();
         }
         
-        var updateData = {};
-        if (demandesRestantes > 0) {
-          // Il reste des demandes : garder en_cours
-          updateData.statut = "en_cours";
-          updateData.accepteAutresOffres = true;
-          console.log("✅ Annulation : il reste " + demandesRestantes + " demande(s). Annonce conservée en 'en_cours'.");
-        } else {
-          // Plus de demandes : remettre active
-          updateData.statut = "active";
-          updateData.accepteAutresOffres = true;
-          console.log("✅ Annulation : plus de demandes. Annonce remise en 'active'.");
-        }
-        
-        return db.collection("annonces").doc(annonceId).update(updateData);
+        // MODIFICATION 8 : compter les demandes restantes en statut "acceptee" sur cette annonce
+        return db.collection("demandes")
+          .where("annonceId", "==", annonceId)
+          .where("statut", "==", "acceptee")
+          .get()
+          .then(function(snapshot) {
+            var nbAccepteesRestantes = 0;
+            snapshot.forEach(function(doc) {
+              if (doc.id !== demandeId) {
+                nbAccepteesRestantes++;
+              }
+            });
+
+            var updateData = {};
+            if (nbAccepteesRestantes < 2) {
+              updateData.statut = "active";
+              updateData.accepteAutresOffres = true;
+              afficherNotification("🔓 L'annonce est de nouveau ouverte au catalogue.", "🔓");
+              console.log("🔓 Annulation : moins de 2 demandes acceptées. Annonce remise en 'active'.");
+            } else {
+              updateData.statut = "fermee";
+              console.log("🔒 Annulation : 2 demandes restent acceptées. Annonce maintenue 'fermee'.");
+            }
+
+            var annonces = getAnnonces();
+            var ad = annonces.find(function(a) { return a.id === annonceId; });
+            if (ad) {
+              ad.statut = updateData.statut;
+              ad.accepteAutresOffres = updateData.accepteAutresOffres !== false;
+              setAnnonces(annonces);
+            }
+
+            return db.collection("annonces").doc(annonceId).update(updateData);
+          });
       }
       
       // 4. Notification et rafraîchissement
