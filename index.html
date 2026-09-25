@@ -2217,14 +2217,14 @@
       border: 1px solid rgba(220, 38, 38, 0.5);
     }
 
-    /* Stepper visuel à 4 étapes */
+    /* Stepper visuel à 4 ou 5 étapes */
     .tx-stepper-container {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin: 16px 0;
       position: relative;
-      padding: 0 10px;
+      padding: 0 6px;
     }
 
     .tx-step-item {
@@ -2235,6 +2235,7 @@
       z-index: 2;
       flex: 1;
       text-align: center;
+      min-width: 0;
     }
 
     .tx-step-circle {
@@ -2251,6 +2252,7 @@
       color: var(--text-gray);
       transition: var(--transition);
       margin-bottom: 6px;
+      flex-shrink: 0;
     }
 
     .tx-step-item.active .tx-step-circle {
@@ -2273,11 +2275,12 @@
     }
 
     .tx-step-label {
-      font-size: 10.5px;
+      font-size: 10px;
       color: var(--text-muted);
       font-weight: 500;
-      max-width: 80px;
+      max-width: 70px;
       line-height: 1.2;
+      word-break: break-word;
     }
 
     .tx-step-item.active .tx-step-label {
@@ -2292,8 +2295,8 @@
     .tx-step-line {
       position: absolute;
       top: 14px;
-      left: 10%;
-      right: 10%;
+      left: 8%;
+      right: 8%;
       height: 2px;
       background: #333;
       z-index: 1;
@@ -11108,6 +11111,95 @@
       `;
     }
 
+    /**
+     * MODIFICATION 1 : Génère le HTML du stepper visuel à 5 étapes pour les transactions Escrow
+     */
+    function formaterStepperHtmlEscrow(escrowStatut, demandeAutorisee) {
+      var s = (escrowStatut || '').toLowerCase().trim();
+
+      var step1Class = 'completed';
+      var step2Class = 'completed';
+      var step3Class = '';
+      var step4Class = '';
+      var step5Class = '';
+      var progressWidth = '40%';
+
+      if (s === 'termine' || s === 'terminee') {
+        step3Class = 'completed';
+        step4Class = 'completed';
+        step5Class = 'completed';
+        progressWidth = '100%';
+      } else if (s === 'compte_recu') {
+        step3Class = 'completed';
+        step4Class = 'completed';
+        step5Class = 'active';
+        progressWidth = '90%';
+      } else if (s === 'identifiants_transferes') {
+        step3Class = 'completed';
+        step4Class = 'active';
+        progressWidth = '75%';
+      } else if (s === 'paiement_recu') {
+        step3Class = 'completed';
+        step4Class = 'active';
+        progressWidth = '60%';
+      } else if (s === 'paiement_envoye') {
+        step3Class = 'active';
+        progressWidth = '45%';
+      } else if (s === 'attente_paiement') {
+        step3Class = 'active';
+        progressWidth = '40%';
+      } else if (demandeAutorisee || !s) {
+        // Aucune transaction escrow (demande.autoriseAPayer === true mais pas encore choisie d'admin)
+        step3Class = 'active';
+        progressWidth = '40%';
+      } else {
+        step3Class = 'active';
+        progressWidth = '40%';
+      }
+
+      return `
+        <div class="tx-stepper-container">
+          <div class="tx-step-line">
+            <div class="tx-step-line-progress" style="width: ${progressWidth};"></div>
+          </div>
+          <div class="tx-step-item ${step1Class}">
+            <div class="tx-step-circle">1</div>
+            <div class="tx-step-label">Demande</div>
+          </div>
+          <div class="tx-step-item ${step2Class}">
+            <div class="tx-step-circle">2</div>
+            <div class="tx-step-label">Acceptée</div>
+          </div>
+          <div class="tx-step-item ${step3Class}">
+            <div class="tx-step-circle">3</div>
+            <div class="tx-step-label">Autorisée</div>
+          </div>
+          <div class="tx-step-item ${step4Class}">
+            <div class="tx-step-circle">4</div>
+            <div class="tx-step-label">Livraison</div>
+          </div>
+          <div class="tx-step-item ${step5Class}">
+            <div class="tx-step-circle">5</div>
+            <div class="tx-step-label">Terminée</div>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Traduit le statut affiché en haut à droite du suivi pour les contextes Escrow
+     */
+    function getLibelleStatutSuiviEscrow(statut) {
+      var s = (statut || '').toLowerCase().trim();
+      if (s === 'attente_paiement') return "⏳ En attente de paiement";
+      if (s === 'paiement_envoye') return "📤 Paiement en vérification";
+      if (s === 'paiement_recu') return "💰 Argent sécurisé";
+      if (s === 'identifiants_transferes') return "📦 Livraison en cours";
+      if (s === 'compte_recu') return "🎉 Compte reçu";
+      if (s === 'termine' || s === 'terminee') return "✅ Terminée";
+      return null;
+    }
+
     /* ==========================================================
        GESTION DES ACTIONS DU CYCLE DE TRANSACTION
        ========================================================== */
@@ -12685,7 +12777,15 @@
         // Vue vendeur de cette annonce
         const txActive = txsVendeur.find(t => t.statut !== 'REFUSEE') || txsVendeur[0];
 
-        if (!txActive) {
+        // Détection escrow et demandes côté vendeur
+        const userV = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+        const escrowVendeur = (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache))
+          ? escrowVendeurCache.find(e => e.annonceId === ad.id && (userV ? e.vendeurId === userV.uid : true)) || escrowVendeurCache.find(e => e.annonceId === ad.id)
+          : null;
+        const demandesV = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+        const demandeAutoriseeV = demandesV.some(d => d.annonceId === ad.id && d.autoriseAPayer === true);
+
+        if (!txActive && !escrowVendeur) {
           return `
             <div class="detail-transaction-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -12693,7 +12793,7 @@
                   <span>👤</span> <span>Gestion Vendeur de cette annonce</span>
                 </div>
                 <span class="badge-pill" style="color: #00E676; background: rgba(0, 200, 83, 0.12); border: 1px solid rgba(0, 200, 83, 0.25);">
-                  ${ad.statut === 'VENDU' ? '✅ Vendu' : (ad.statut === 'EN_COURS' ? '🔵 En cours' : '🟢 En vente')}
+                  ${ad.statut === 'VENDU' || ad.statut === 'vendue' ? '✅ Vendu' : (ad.statut === 'EN_COURS' || ad.statut === 'escrow_en_cours' ? '🔵 En cours' : '🟢 En vente')}
                 </span>
               </div>
               <div style="font-size: 12.5px; color: var(--text-gray); line-height: 1.5;">
@@ -12703,10 +12803,51 @@
           `;
         }
 
-        const stepper = formaterStepperHtml(txActive.statut);
+        let stepper = '';
+        let badgeClasseVendeur = 'ACCEPTEE';
+        let badgeTexteVendeur = '';
+
+        if (escrowVendeur) {
+          stepper = formaterStepperHtmlEscrow(escrowVendeur.statut);
+          badgeTexteVendeur = getLibelleStatutSuiviEscrow(escrowVendeur.statut) || '🔒 Escrow';
+          const stV = (escrowVendeur.statut || '').toLowerCase().trim();
+          badgeClasseVendeur = (stV === 'termine' || stV === 'terminee') ? 'TERMINEE' : 'ACCEPTEE';
+        } else if (demandeAutoriseeV) {
+          stepper = formaterStepperHtmlEscrow(null, true);
+          badgeTexteVendeur = '🔑 Paiement autorisé';
+          badgeClasseVendeur = 'ACCEPTEE';
+        } else if (txActive) {
+          stepper = formaterStepperHtml(txActive.statut);
+          badgeTexteVendeur = getLibelleStatut(txActive.statut);
+          badgeClasseVendeur = txActive.statut;
+        }
+
         let actionBox = '';
 
-        if (txActive.statut === 'DEMANDE_ENVOYEE') {
+        if (escrowVendeur) {
+          const stV = (escrowVendeur.statut || '').toLowerCase().trim();
+          let msgV = '';
+          if (stV === 'attente_paiement') {
+            msgV = "⏳ En attente que l'acheteur effectue son paiement sécurisé à l'admin";
+          } else if (stV === 'paiement_envoye') {
+            msgV = "⏳ L'acheteur a envoyé l'argent - En vérification par l'admin";
+          } else if (stV === 'paiement_recu') {
+            msgV = "💰 Argent sécurisé - Transfère les identifiants Konami ID à l'acheteur";
+          } else if (stV === 'identifiants_transferes') {
+            msgV = "⏳ En attente que l'acheteur confirme la réception du compte";
+          } else if (stV === 'compte_recu') {
+            msgV = "🎉 Compte reçu par l'acheteur - L'admin va te transférer les fonds";
+          } else if (stV === 'termine' || stV === 'terminee') {
+            msgV = "✅ Transaction terminée avec succès - Paiement transféré";
+          }
+          if (msgV) {
+            actionBox = `
+              <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13px; color: #34d399; font-weight: 700; margin-top: 10px; text-align: center;">
+                ${msgV}
+              </div>
+            `;
+          }
+        } else if (txActive.statut === 'DEMANDE_ENVOYEE') {
           actionBox = `
             <div class="tx-action-box box-demande">
               <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 13.5px;">
@@ -12805,8 +12946,8 @@
               <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
                 <span>🤝</span> <span>Suivi de Transaction (Vendeur)</span>
               </div>
-              <span class="tx-status-badge ${txActive.statut}">
-                ${getLibelleStatut(txActive.statut)}
+              <span class="tx-status-badge ${badgeClasseVendeur}">
+                ${badgeTexteVendeur}
               </span>
             </div>
             ${stepper}
@@ -12825,6 +12966,15 @@
         escrowAcheteur = escrowAcheteurCache.find(function(e) { return e.annonceId === ad.id; });
       }
 
+      // Demande associée (pour autoriseAPayer)
+      var demandeAssociee = maTx || ((typeof demandesAcheteurCache !== 'undefined' && Array.isArray(demandesAcheteurCache))
+        ? demandesAcheteurCache.find(function(d) { return d.annonceId === ad.id && (user ? d.acheteurId === user.uid : true); })
+        : null);
+      if (!demandeAssociee && (typeof demandesAcheteurCache !== 'undefined' && Array.isArray(demandesAcheteurCache))) {
+        demandeAssociee = demandesAcheteurCache.find(function(d) { return d.annonceId === ad.id; });
+      }
+      var demandeAutorisee = Boolean(demandeAssociee && demandeAssociee.autoriseAPayer === true);
+
       var stEscrow = escrowAcheteur ? (escrowAcheteur.statut || '').toLowerCase().trim() : null;
       var msgEscrow = null;
       if (stEscrow === 'attente_paiement') {
@@ -12841,6 +12991,24 @@
         msgEscrow = "✅ Transaction terminée avec succès";
       }
 
+      var stepperAcheteur = '';
+      var badgeAcheteurTexte = '';
+      var badgeAcheteurClasse = 'ACCEPTEE';
+
+      if (escrowAcheteur) {
+        stepperAcheteur = formaterStepperHtmlEscrow(escrowAcheteur.statut);
+        badgeAcheteurTexte = getLibelleStatutSuiviEscrow(escrowAcheteur.statut) || '🔒 Escrow';
+        if (stEscrow === 'termine' || stEscrow === 'terminee') badgeAcheteurClasse = 'TERMINEE';
+      } else if (demandeAutorisee) {
+        stepperAcheteur = formaterStepperHtmlEscrow(null, true);
+        badgeAcheteurTexte = '🔑 Autorisée à payer';
+        badgeAcheteurClasse = 'ACCEPTEE';
+      } else if (maTx) {
+        stepperAcheteur = formaterStepperHtml(maTx.statut);
+        badgeAcheteurTexte = getLibelleStatut(maTx.statut);
+        badgeAcheteurClasse = maTx.statut;
+      }
+
       if (!maTx) {
         // Si transaction escrow terminée
         if ((ad.statut === 'VENDU' || ad.statut === 'vendue') && escrowAcheteur && (stEscrow === 'termine' || stEscrow === 'terminee')) {
@@ -12850,8 +13018,9 @@
                 <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
                   <span>🤝</span> <span>Suivi de Transaction (Acheteur)</span>
                 </div>
-                <span class="tx-status-badge TERMINEE">✅ VENDU</span>
+                <span class="tx-status-badge ${badgeAcheteurClasse}">${badgeAcheteurTexte || '✅ VENDU'}</span>
               </div>
+              ${stepperAcheteur}
               <div class="tx-action-box box-terminee" style="margin-top: 10px;">
                 <div style="font-weight: 700; color: #34d399; font-size: 13.5px; margin-bottom: 6px;">
                   ✅ Transaction terminée avec succès !
@@ -12879,10 +13048,29 @@
                 <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
                   <span>🤝</span> <span>Suivi de Transaction (Acheteur)</span>
                 </div>
-                <span class="tx-status-badge ACCEPTEE">🔒 Escrow</span>
+                <span class="tx-status-badge ${badgeAcheteurClasse}">${badgeAcheteurTexte}</span>
               </div>
+              ${stepperAcheteur}
               <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13.5px; color: #34d399; font-weight: 700; margin-top: 10px; text-align: center;">
                 ${msgEscrow}
+              </div>
+            </div>
+          `;
+        }
+
+        // Si demande autorisée mais pas encore d'escrow
+        if (demandeAutorisee) {
+          return `
+            <div class="detail-transaction-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>🤝</span> <span>Suivi de Transaction (Acheteur)</span>
+                </div>
+                <span class="tx-status-badge ACCEPTEE">🔑 Autorisée à payer</span>
+              </div>
+              ${stepperAcheteur}
+              <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13px; color: #34d399; font-weight: 700; margin-top: 10px; text-align: center;">
+                Le vendeur vous a autorisé à payer ! Cliquez sur « Acheter avec protection admin » ci-dessus pour finaliser votre transaction.
               </div>
             </div>
           `;
@@ -12901,7 +13089,7 @@
         }
         
         // Cas 2 : Annonce EN COURS + FERMÉE (accepteAutresOffres === false)
-        if ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS') && ad.accepteAutresOffres === false) {
+        if ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS' || ad.statut === 'escrow_en_cours') && ad.accepteAutresOffres === false) {
           return `
             <div class="detail-transaction-card">
               <span class="tx-status-badge ACCEPTEE">🟡 Transaction en cours</span>
@@ -12915,7 +13103,7 @@
         }
         
         // Cas 3 : Annonce EN COURS + OUVERTE (accepteAutresOffres === true)
-        if ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS') && ad.accepteAutresOffres === true) {
+        if ((ad.statut === 'en_cours' || ad.statut === 'EN_COURS' || ad.statut === 'escrow_en_cours') && ad.accepteAutresOffres === true) {
           return `
             <div class="detail-transaction-card">
               <span class="tx-status-badge ACCEPTEE">🟡 Transaction en cours</span>
@@ -12951,7 +13139,7 @@
       }
 
       // L'acheteur a déjà une transaction sur ce compte
-      const stepper = formaterStepperHtml(maTx.statut);
+      const stepper = stepperAcheteur || formaterStepperHtml(maTx.statut);
       let actionBox = '';
 
       const maTxStatut = (maTx.statut || '').toUpperCase();
@@ -13007,11 +13195,15 @@
               <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13px; color: #34d399; font-weight: 700; margin-bottom: 12px; text-align: center;">
                 ${msgEscrow}
               </div>
+            ` : (demandeAutorisee ? `
+              <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13px; color: #34d399; font-weight: 700; margin-bottom: 12px; text-align: center;">
+                🔑 Le vendeur vous a autorisé à payer ! Procédez au paiement sécurisé via le bouton ci-dessus.
+              </div>
             ` : `
               <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 8px; padding: 10px; font-size: 12px; color: #93c5fd; margin-bottom: 12px;">
-                ⏳ En attente du marquage "VENDU" par le vendeur. Les options de confirmation apparaîtront ensuite.
+                ⏳ En attente de l'autorisation du vendeur pour procéder au paiement.
               </div>
-            `}
+            `)}
           </div>
         `;
       } else if (maTxStatut === 'LIVRAISON_CONFIRMEE') {
@@ -13081,8 +13273,8 @@
             <div style="font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
               <span>🤝</span> <span>Suivi de Transaction (Acheteur)</span>
             </div>
-            <span class="tx-status-badge ${maTx.statut}">
-              ${getLibelleStatut(maTx.statut)}
+            <span class="tx-status-badge ${badgeAcheteurClasse}">
+              ${badgeAcheteurTexte}
             </span>
           </div>
           ${stepper}
@@ -13188,8 +13380,27 @@
 
         demandes.forEach(d => {
           const st = (d.statut || 'en_attente').toLowerCase();
-          const stepperHtml = formaterStepperHtml(st);
-          const libelleStatut = getLibelleStatut(st);
+
+          // Recherche escrow associé
+          const escrowsTous = (typeof escrowVendeurCache !== 'undefined' ? escrowVendeurCache : []).concat(typeof escrowAcheteurCache !== 'undefined' ? escrowAcheteurCache : []);
+          const escAssocie = escrowsTous.find(e => (e.demandeId && e.demandeId === d.id) || (e.annonceId && d.annonceId && e.annonceId === d.annonceId));
+
+          let stepperHtml = '';
+          let libelleStatut = '';
+          let badgeStatusClass = st;
+          if (escAssocie) {
+            stepperHtml = formaterStepperHtmlEscrow(escAssocie.statut);
+            libelleStatut = getLibelleStatutSuiviEscrow(escAssocie.statut) || getLibelleStatut(st);
+            const stEsc = (escAssocie.statut || '').toLowerCase().trim();
+            badgeStatusClass = (stEsc === 'termine' || stEsc === 'terminee') ? 'terminee' : 'acceptee';
+          } else if (d.autoriseAPayer === true) {
+            stepperHtml = formaterStepperHtmlEscrow(null, true);
+            libelleStatut = '🔑 Autorisée à payer';
+            badgeStatusClass = 'acceptee';
+          } else {
+            stepperHtml = formaterStepperHtml(st);
+            libelleStatut = getLibelleStatut(st);
+          }
 
           let dateStr = "";
           if (d.dateCreation) {
@@ -13453,7 +13664,7 @@
             <div class="tx-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="tx-status-badge ${st}">
+                  <span class="tx-status-badge ${badgeStatusClass}">
                     ${libelleStatut}
                   </span>
                   ${roleLabel}
