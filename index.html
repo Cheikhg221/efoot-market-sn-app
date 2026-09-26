@@ -16897,217 +16897,171 @@
 
     function fermerModalAutoriserPaiement() {
       var modal = document.getElementById("modal-autoriser-paiement");
-      if (modal) modal.style.display = "none";
+      if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = "none";
+      }
     }
 
-    function ouvrirModalAutoriserPaiement(annonceId) {
-      var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+    // MODIFICATION 1 : Confirmation avant d'autoriser
+    function confirmerAutoriserPaiement(demandeId, acheteurId, nomAcheteur) {
+      var message = "⚠️ CONFIRMATION\n\n" +
+                    "Autoriser " + nomAcheteur + " à payer ?\n\n" +
+                    "➤ Cet acheteur pourra envoyer son argent à l'admin.\n" +
+                    "➤ Les autres acheteurs acceptés seront mis en attente.\n" +
+                    "➤ Un seul acheteur peut être autorisé à la fois.\n\n" +
+                    "Clique sur OK pour confirmer.";
+      if (confirm(message)) {
+        autoriserAcheteurAPayer(demandeId, acheteurId);
+      }
+    }
 
-      // MODIFICATION 5 : Si une demande sur cette annonce a déjà autoriseAPayer === true :
-      var dejaAutorise = cache.some(function(d) {
-        return d.annonceId === annonceId && d.autoriseAPayer === true;
+    // MODIFICATION 4 : Sécuriser ouvrirModalAutoriserPaiement (cache uniquement, pas de requête Firestore)
+    function ouvrirModalAutoriserPaiement(annonceId) {
+      var dejaAutorisee = (demandesVendeurCache || []).some(function(d) {
+        return d.annonceId === annonceId 
+               && d.autoriseAPayer === true;
       });
-      if (dejaAutorise) {
-        alert("⚠️ Un acheteur est déjà autorisé à payer.");
+      
+      if (dejaAutorisee) {
+        alert("⚠️ Un acheteur est déjà autorisé à payer sur cette annonce.");
         return;
       }
 
+      var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
       var demandes = cache.filter(function(d) {
         var s = (d.statut || '').toLowerCase();
         return d.annonceId === annonceId && s === "acceptee" && d.autoriseAPayer !== true;
       });
 
-      function afficherDansModale(nonAutorisees) {
-        if (!nonAutorisees || nonAutorisees.length === 0) {
-          var msg = "Aucune demande acceptée à autoriser. Accepte d'abord une demande.";
-          if (typeof afficherNotification === 'function') {
-            afficherNotification(msg, "⚠️");
-          } else {
-            alert(msg);
-          }
-          return;
+      if (!demandes || demandes.length === 0) {
+        var msg = "Aucune demande acceptée à autoriser. Accepte d'abord une demande.";
+        if (typeof afficherNotification === 'function') {
+          afficherNotification(msg, "⚠️");
+        } else {
+          alert(msg);
         }
-
-        var conteneur = document.getElementById("liste-acheteurs-autoriser");
-        if (!conteneur) return;
-
-        var html = '';
-        nonAutorisees.forEach(function(d) {
-          var nom = escapeHtml(d.acheteurNom || 'Acheteur');
-          var tel = escapeHtml(d.acheteurTelephone || 'Non renseigné');
-          var dateRel = (typeof formaterDateRelative === 'function') ? formaterDateRelative(d.dateCreation) : 'récemment';
-
-          var noteHtml = '';
-          if (typeof getNoteEtAvisVendeur === 'function') {
-            var stats = getNoteEtAvisVendeur(d.acheteurId || d.acheteurNom);
-            if (stats && stats.totalAvis > 0) {
-              var badgeInfo = (typeof afficherBadge === 'function') ? afficherBadge(stats.badge) : null;
-              noteHtml = '<div style="display:flex; align-items:center; gap:8px; margin-top:4px; font-size:12.5px;">' +
-                '<span style="color:#FFD700; font-weight:700;">⭐ ' + stats.noteMoyenne.toFixed(1) + '/5</span>' +
-                '<span style="color:#aaa;">(' + stats.totalAvis + ' avis)</span>' +
-                (badgeInfo ? '<span style="color:' + badgeInfo.couleur + '; font-weight:600;">' + badgeInfo.icone + ' ' + badgeInfo.texte + '</span>' : '') +
-              '</div>';
-            }
-          }
-
-          html += '<div style="background:#202020; border:1px solid #333; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center; gap:12px;">' +
-            '<div style="flex:1;">' +
-              '<div style="font-weight:700; font-size:14.5px; color:#fff;">' + nom + '</div>' +
-              '<div style="color:#aaa; font-size:13px; margin-top:2px;">📱 ' + tel + '</div>' +
-              '<div style="color:#777; font-size:12px; margin-top:2px;">📅 Demande ' + dateRel + '</div>' +
-              noteHtml +
-            '</div>' +
-            '<button type="button" onclick="autoriserAcheteurAPayer(\'' + d.id + '\', \'' + (d.acheteurId || '') + '\')" style="background:#00C853; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:13.5px; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(0,200,83,0.3);">' +
-              '✅ Autoriser' +
-            '</button>' +
-          '</div>';
-        });
-
-        conteneur.innerHTML = html;
-        var modal = document.getElementById("modal-autoriser-paiement");
-        if (modal) {
-          modal.classList.add('active');
-          modal.style.display = "flex";
-        }
+        return;
       }
 
-      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      if (demandes.length === 0 && db && user) {
-        // MODIFICATION 4 : 1 seul .where() + filtrage JS
-        db.collection("demandes")
-          .where("annonceId", "==", annonceId)
-          .get()
-          .then(function(snap) {
-            var dejaAutoriseFirestore = false;
-            var docs = [];
-            snap.forEach(function(doc) {
-              var data = doc.data() || {};
-              data.id = doc.id;
-              if (user && data.vendeurId && data.vendeurId !== user.uid) {
-                return;
-              }
-              if (data.autoriseAPayer === true) {
-                dejaAutoriseFirestore = true;
-              }
-              if ((data.statut || '').toLowerCase() === 'acceptee' && data.autoriseAPayer !== true) {
-                docs.push(data);
-              }
-            });
-            if (dejaAutoriseFirestore) {
-              alert("⚠️ Un acheteur est déjà autorisé à payer.");
-              return;
-            }
-            afficherDansModale(docs);
-          })
-          .catch(function(err) {
-            console.warn("Erreur chargement demandes pour modal autoriser :", err);
-            afficherDansModale([]);
-          });
-      } else {
-        afficherDansModale(demandes);
+      var conteneur = document.getElementById("liste-acheteurs-autoriser");
+      if (!conteneur) return;
+
+      var html = '';
+      demandes.forEach(function(d) {
+        var nom = escapeHtml(d.acheteurNom || 'Acheteur');
+        var tel = escapeHtml(d.acheteurTelephone || 'Non renseigné');
+        var dateRel = (typeof formaterDateRelative === 'function') ? formaterDateRelative(d.dateCreation) : 'récemment';
+
+        var noteHtml = '';
+        if (typeof getNoteEtAvisVendeur === 'function') {
+          var stats = getNoteEtAvisVendeur(d.acheteurId || d.acheteurNom);
+          if (stats && stats.totalAvis > 0) {
+            var badgeInfo = (typeof afficherBadge === 'function') ? afficherBadge(stats.badge) : null;
+            noteHtml = '<div style="display:flex; align-items:center; gap:8px; margin-top:4px; font-size:12.5px;">' +
+              '<span style="color:#FFD700; font-weight:700;">⭐ ' + stats.noteMoyenne.toFixed(1) + '/5</span>' +
+              '<span style="color:#aaa;">(' + stats.totalAvis + ' avis)</span>' +
+              (badgeInfo ? '<span style="color:' + badgeInfo.couleur + '; font-weight:600;">' + badgeInfo.icone + ' ' + badgeInfo.texte + '</span>' : '') +
+            '</div>';
+          }
+        }
+
+        var nomPourJs = (d.acheteurNom || 'Acheteur').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+        // MODIFICATION 5 : onclick appelle confirmerAutoriserPaiement
+        html += '<div style="background:#202020; border:1px solid #333; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center; gap:12px;">' +
+          '<div style="flex:1;">' +
+            '<div style="font-weight:700; font-size:14.5px; color:#fff;">' + nom + '</div>' +
+            '<div style="color:#aaa; font-size:13px; margin-top:2px;">📱 ' + tel + '</div>' +
+            '<div style="color:#777; font-size:12px; margin-top:2px;">📅 Demande ' + dateRel + '</div>' +
+            noteHtml +
+          '</div>' +
+          '<button type="button" onclick="confirmerAutoriserPaiement(\'' + d.id + '\', \'' + (d.acheteurId || '') + '\', \'' + nomPourJs + '\')" style="background:#00C853; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:13.5px; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(0,200,83,0.3);">' +
+            '✅ Autoriser' +
+          '</button>' +
+        '</div>';
+      });
+
+      conteneur.innerHTML = html;
+      var modal = document.getElementById("modal-autoriser-paiement");
+      if (modal) {
+        modal.classList.add('active');
+        modal.style.display = "flex";
       }
     }
 
-    // MODIFICATION 4 : Un seul acheteur autorisé à payer
+    // MODIFICATION 2 : Vérifier D'ABORD dans le cache local + sécurité anti-blocage
     function autoriserAcheteurAPayer(demandeId, acheteurId) {
-      if (!demandeId) return;
+      if (!demandeId || !db) return;
 
-      // 1. AVANT toute chose, vérifier dans demandesVendeurCache :
-      var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
-      var annonceId = (cache.find(function(d) { return d.id === demandeId; }) || {}).annonceId;
-      var dejaAutorisee = cache.some(function(d) {
-        return d.annonceId === annonceId 
-               && d.id !== demandeId 
-               && d.autoriseAPayer === true;
+      // Sécurité anti-blocage
+      var securiteFermeture = setTimeout(function() {
+        fermerModalAutoriserPaiement();
+      }, 3000);
+
+      // Récupérer l'annonceId
+      var demandeLocale = (demandesVendeurCache || []).find(function(d) { 
+        return d.id === demandeId; 
       });
+      var annonceId = demandeLocale ? demandeLocale.annonceId : null;
 
-      // 2. Si dejaAutorisee === true :
-      if (dejaAutorisee === true) {
+      // Vérifier dans le cache local si un autre acheteur est déjà autorisé
+      var dejaAutorisee = false;
+      if (annonceId && Array.isArray(demandesVendeurCache)) {
+        dejaAutorisee = demandesVendeurCache.some(function(d) {
+          return d.annonceId === annonceId 
+                 && d.id !== demandeId 
+                 && d.autoriseAPayer === true;
+        });
+      }
+
+      if (dejaAutorisee) {
+        clearTimeout(securiteFermeture);
         alert("⚠️ Un acheteur est déjà autorisé à payer sur cette annonce. Tu ne peux en autoriser qu'un seul à la fois.");
         fermerModalAutoriserPaiement();
         return;
       }
 
-      if (!db) {
-        fermerModalAutoriserPaiement();
-        return;
-      }
-
-      var recupererAnnoncePromise = annonceId 
-        ? Promise.resolve(annonceId)
-        : db.collection("demandes").doc(demandeId).get().then(function(snap) {
-            return (snap.exists && snap.data()) ? snap.data().annonceId : null;
-          });
-
-      recupererAnnoncePromise.then(function(idAnnonce) {
-        if (!idAnnonce) {
-          alert("Erreur : annonce introuvable pour cette demande.");
-          return;
+      // Procéder à l'update
+      db.collection("demandes").doc(demandeId).update({
+        autoriseAPayer: true,
+        dateAutorisation: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        clearTimeout(securiteFermeture);
+        
+        // Mettre à jour le cache local
+        if (Array.isArray(demandesVendeurCache)) {
+          var item = demandesVendeurCache.find(function(d) { return d.id === demandeId; });
+          if (item) {
+            item.autoriseAPayer = true;
+            item.dateAutorisation = new Date();
+          }
         }
-        annonceId = idAnnonce;
-
-        // 3. Faire la vérification Firestore : where("annonceId", "==", annonceId) + filtrage JS
-        return db.collection("demandes")
-          .where("annonceId", "==", annonceId)
-          .get()
-          .then(function(querySnap) {
-            var conflit = false;
-            querySnap.forEach(function(d) {
-              var dData = d.data() || {};
-              if (d.id !== demandeId && dData.autoriseAPayer === true) {
-                conflit = true;
-              }
-            });
-
-            if (conflit) {
-              alert("⚠️ Un acheteur est déjà autorisé à payer sur cette annonce. Tu ne peux en autoriser qu'un seul à la fois.");
-              fermerModalAutoriserPaiement();
-              return;
-            }
-
-            // 4. Si tout est OK : update : autoriseAPayer: true, dateAutorisation: serverTimestamp
-            return db.collection("demandes").doc(demandeId).update({
-              autoriseAPayer: true,
-              dateAutorisation: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(function() {
-              // Mettre à jour le cache demandesVendeurCache immédiatement
-              if (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
-                var item = demandesVendeurCache.find(function(d) { return d.id === demandeId; });
-                if (item) {
-                  item.autoriseAPayer = true;
-                  item.dateAutorisation = new Date();
-                }
-              }
-              fermerModalAutoriserPaiement();
-              if (typeof afficherNotification === 'function') {
-                afficherNotification("Tu as autorisé cet acheteur à payer.", "✅");
-              } else {
-                alert("✅ Tu as autorisé cet acheteur à payer.");
-              }
-
-              // Rafraîchir afficherDetailAnnonce + afficherSectionDemandesRecues + afficherMesTransactions
-              if (typeof afficherDetailAnnonce === 'function' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
-                afficherDetailAnnonce(currentDetailAdId);
-              }
-              if (typeof afficherSectionDemandesRecues === 'function') {
-                afficherSectionDemandesRecues();
-              }
-              if (typeof afficherMesTransactions === 'function') {
-                afficherMesTransactions();
-              }
-              if (typeof afficherDemandesVendeur === 'function') {
-                afficherDemandesVendeur();
-              }
-            });
-          })
-          .catch(function(err) {
-            // En cas d'erreur Firestore, afficher une alerte et NE PAS PROCÉDER à l'update
-            console.error("Erreur Firestore vérification autoriser :", err);
-            alert("⚠️ Erreur Firestore lors de la vérification : " + (err.message || err));
-          });
+        
+        // FERMER LA MODALE IMMÉDIATEMENT
+        fermerModalAutoriserPaiement();
+        
+        afficherNotification("Tu as autorisé cet acheteur à payer.", "✅");
+        
+        // Rafraîchir les vues
+        if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+          if (typeof afficherDetailAnnonce === 'function') {
+            afficherDetailAnnonce(currentDetailAdId);
+          } else if (typeof afficherBoutonsAnnonce === 'function') {
+            afficherBoutonsAnnonce(currentDetailAdId);
+          }
+        }
+        if (typeof afficherSectionDemandesRecues === 'function') {
+          afficherSectionDemandesRecues(demandesVendeurCache);
+        }
+        if (typeof afficherMesTransactions === 'function') {
+          afficherMesTransactions();
+        }
       }).catch(function(err) {
+        clearTimeout(securiteFermeture);
         console.error("Erreur autoriserAcheteurAPayer :", err);
-        alert("⚠️ Erreur lors de l'autorisation : " + (err.message || err));
+        alert("Erreur lors de l'autorisation : " + (err.message || err));
+        fermerModalAutoriserPaiement();
       });
     }
 
@@ -17178,6 +17132,7 @@
     window.executerActionDemande = executerActionDemande;
     window.fermerModalActionDemande = fermerModalActionDemande;
     window.autoriserAcheteurAPayer = autoriserAcheteurAPayer;
+    window.confirmerAutoriserPaiement = confirmerAutoriserPaiement;
     window.retirerAutorisationPaiement = retirerAutorisationPaiement;
     window.actualiserRenduPageAdminEscrow = actualiserRenduPageAdminEscrow;
     window.confirmerReceptionArgent = confirmerReceptionArgent;
