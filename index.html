@@ -15930,6 +15930,13 @@
         var telephone = escapeHtml(admin.telephone || admin.tel || admin.whatsapp || 'Non renseigné');
         var moyenPaiement = escapeHtml(admin.moyenPaiement || admin.moyensPaiement || admin.paiement || 'Wave / Orange Money');
         var adId = escapeHtml(currentEscrowAnnonceId || '');
+        var demId = '';
+        if (currentEscrowAnnonceId && typeof demandesAcheteurCache !== 'undefined' && Array.isArray(demandesAcheteurCache)) {
+          var dItem = demandesAcheteurCache.find(function(d) { return d.annonceId === currentEscrowAnnonceId; });
+          if (dItem && dItem.id) {
+            demId = escapeHtml(dItem.id);
+          }
+        }
 
         html += 
           '<div style="background: #202020; border: 1px solid #333; border-radius: 8px; padding: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">' +
@@ -15947,7 +15954,7 @@
                 '💳 <strong>Moyen de paiement :</strong> ' + moyenPaiement +
               '</div>' +
             '</div>' +
-            '<button type="button" class="btn-primary" style="background: #00C853; color: #fff; padding: 9px 15px; border-radius: 6px; font-weight: 700; font-size: 12.5px; border: none; cursor: pointer; white-space: nowrap;" onclick="choisirAdminEscrow(\'' + id + '\', \'' + nom.replace(/'/g, "\\'") + '\', \'' + telephone.replace(/'/g, "\\'") + '\', \'' + moyenPaiement.replace(/'/g, "\\'") + '\', \'' + adId + '\')">' +
+            '<button type="button" class="btn-primary" style="background: #00C853; color: #fff; padding: 9px 15px; border-radius: 6px; font-weight: 700; font-size: 12.5px; border: none; cursor: pointer; white-space: nowrap;" onclick="choisirAdminEscrow(\'' + id + '\', \'' + nom.replace(/'/g, "\\'") + '\', \'' + telephone.replace(/'/g, "\\'") + '\', \'' + moyenPaiement.replace(/'/g, "\\'") + '\', \'' + adId + '\', \'' + demId + '\')">' +
               'Choisir cet admin' +
             '</button>' +
           '</div>';
@@ -16145,10 +16152,20 @@
      * 1. Crée un document Firestore collection "escrow" avec tous les champs + statut "attente_paiement",
      * puis affiche la modale de confirmation d'envoi
      */
-    function choisirAdminEscrow(adminId, adminNom, adminTelephone, moyenPaiement, annonceId) {
+    function choisirAdminEscrow(adminId, adminNom, adminTelephone, moyenPaiement, annonceId, demandeId) {
       // MODIFICATION 3 : Empêcher le double-clic
       if (window.__choisirAdminEnCours) return;
       window.__choisirAdminEnCours = true;
+
+      // MODIFICATION 1 : Récupérer demandeId si non fourni
+      if (!demandeId && annonceId && typeof demandesAcheteurCache !== 'undefined' && Array.isArray(demandesAcheteurCache)) {
+        var dTrouvee = demandesAcheteurCache.find(function(d) {
+          return d.annonceId === annonceId;
+        });
+        if (dTrouvee && dTrouvee.id) {
+          demandeId = dTrouvee.id;
+        }
+      }
 
       // MODIFICATION 1 : Confirmation avant choisirAdminEscrow
       if (!confirm("⚠️ CONFIRMATION\n\n" +
@@ -16203,6 +16220,7 @@
 
         var escrowDoc = {
           annonceId: annonceId || "",
+          demandeId: demandeId || "",
           annonceTitre: titre,
           annoncePrix: prix,
           montant: prix,
@@ -16615,89 +16633,143 @@
         ? firebase.firestore.FieldValue.serverTimestamp()
         : new Date();
 
+      var dataEscrow = {};
+
       firestoreDb.collection("escrow").doc(escrowId).update({
         statut: "termine",
         dateTransfert: serverTimestamp,
         dateMiseAJour: serverTimestamp
       }).then(function() {
-        // MODIFICATION 1 : Quand escrow.statut devient "termine" → annonce.statut = "vendue"
-        var annonceId = tx ? tx.annonceId : null;
-        var demandeId = tx ? tx.demandeId : null;
+        // Toujours récupérer depuis Firestore pour avoir les vraies données
+        return firestoreDb.collection("escrow").doc(escrowId).get();
+      })
+      .then(function(docSnap) {
+        if (!docSnap || !docSnap.exists) return;
+        dataEscrow = docSnap.data() || {};
+        var annonceId = dataEscrow.annonceId;
+        var demandeId = dataEscrow.demandeId;
+        var acheteurId = dataEscrow.acheteurId;
 
-        var recupPromise = (annonceId)
-          ? Promise.resolve({ annonceId: annonceId, demandeId: demandeId })
-          : firestoreDb.collection("escrow").doc(escrowId).get().then(function(snap) {
-              var data = (snap && snap.exists) ? (snap.data() || {}) : {};
-              return {
-                annonceId: data.annonceId || null,
-                demandeId: data.demandeId || null
-              };
-            });
+        var promises = [];
 
-        return recupPromise.then(function(res) {
-          var aId = res.annonceId;
-          var dId = res.demandeId;
-
-          if (aId) {
-            firestoreDb.collection("annonces").doc(aId).update({
+        // 1. Mettre à jour l'annonce en "vendue"
+        if (annonceId) {
+          promises.push(
+            firestoreDb.collection("annonces").doc(annonceId).update({
               statut: "vendue",
               dateVente: serverTimestamp
-            }).catch(function(e) {
-              console.warn("Erreur mise à jour annonce vendue :", e);
-            });
-            if (typeof annoncesFirestore !== 'undefined' && Array.isArray(annoncesFirestore)) {
-              var aLoc = annoncesFirestore.find(function(a) { return a.id === aId; });
-              if (aLoc) {
-                aLoc.statut = "vendue";
-                aLoc.dateVente = new Date();
-              }
+            })
+          );
+
+          // Mise à jour du cache local annonces
+          if (typeof annoncesFirestore !== 'undefined' && Array.isArray(annoncesFirestore)) {
+            var aLoc = annoncesFirestore.find(function(a) { return a.id === annonceId; });
+            if (aLoc) {
+              aLoc.statut = "vendue";
+              aLoc.dateVente = new Date();
             }
           }
+        }
 
-          if (dId) {
-            firestoreDb.collection("demandes").doc(dId).update({
-              statut: "terminee"
-            }).catch(function(e) {
-              console.warn("Erreur mise à jour demande terminee :", e);
-            });
-          } else if (aId) {
+        // 2. Mettre à jour la demande en "terminee"
+        if (demandeId) {
+          promises.push(
+            firestoreDb.collection("demandes").doc(demandeId).update({
+              statut: "terminee",
+              dateTerminee: serverTimestamp
+            })
+          );
+        } else if (annonceId && acheteurId) {
+          // Fallback : chercher par annonceId + acheteurId
+          promises.push(
             firestoreDb.collection("demandes")
-              .where("annonceId", "==", aId)
+              .where("acheteurId", "==", acheteurId)
               .get()
-              .then(function(dSnap) {
-                dSnap.forEach(function(dDoc) {
-                  var st = (dDoc.data().statut || '').toLowerCase();
-                  if (st === 'acceptee' || st === 'en_cours') {
-                    dDoc.ref.update({ statut: "terminee" }).catch(function(e) { console.warn(e); });
+              .then(function(snap) {
+                var updates = [];
+                snap.forEach(function(d) {
+                  var dData = d.data() || {};
+                  if (dData.annonceId === annonceId 
+                      && (dData.statut || '').toLowerCase() !== 'refusee'
+                      && (dData.statut || '').toLowerCase() !== 'terminee') {
+                    updates.push(
+                      d.ref.update({
+                        statut: "terminee",
+                        dateTerminee: serverTimestamp
+                      })
+                    );
                   }
                 });
-              }).catch(function(e) {
-                console.warn("Erreur recherche demande pour statut terminee :", e);
-              });
-          }
-        });
-      }).then(function() {
+                return Promise.all(updates);
+              })
+          );
+        }
+
+        // 3. Mettre à jour les caches locaux
+        if (typeof demandesAcheteurCache !== 'undefined' && Array.isArray(demandesAcheteurCache)) {
+          demandesAcheteurCache.forEach(function(d) {
+            if (d.annonceId === annonceId && (d.statut || '').toLowerCase() !== 'refusee') {
+              d.statut = "terminee";
+            }
+          });
+        }
+        if (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) {
+          demandesVendeurCache.forEach(function(d) {
+            if (d.annonceId === annonceId && (d.statut || '').toLowerCase() !== 'refusee') {
+              d.statut = "terminee";
+            }
+          });
+        }
+        if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
+          var ea = escrowAcheteurCache.find(function(e) { return e.id === escrowId; });
+          if (ea) ea.statut = "termine";
+        }
+        if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+          var ev = escrowVendeurCache.find(function(e) { return e.id === escrowId; });
+          if (ev) ev.statut = "termine";
+        }
+
+        return Promise.all(promises);
+      })
+      .then(function() {
         if (typeof afficherNotification === 'function') {
           afficherNotification("Transfert confirmé ! Transaction terminée.", "🎉");
         }
 
-        var vendeurId = tx ? (tx.vendeurId || "") : "";
-        var emailPromise = (vendeurId && typeof recupererEmailUtilisateur === 'function')
-          ? recupererEmailUtilisateur(vendeurId)
-          : Promise.resolve(null);
+        // Rafraîchir toutes les vues
+        if (typeof appliquerFiltres === 'function') appliquerFiltres();
+        if (typeof afficherDetailAnnonce === 'function' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+          afficherDetailAnnonce(currentDetailAdId);
+        }
+        if (typeof afficherMesAnnonces === 'function') afficherMesAnnonces();
+        if (typeof afficherSectionDemandesRecues === 'function') {
+          afficherSectionDemandesRecues(demandesVendeurCache);
+        }
+        if (typeof afficherSectionDemandesEnvoyees === 'function') {
+          afficherSectionDemandesEnvoyees(demandesAcheteurCache);
+        }
+        if (typeof afficherMesTransactions === 'function') afficherMesTransactions();
+        if (typeof actualiserRenduPageAdminEscrow === 'function') {
+          actualiserRenduPageAdminEscrow();
+        }
 
-        emailPromise.then(function(emailVendeur) {
-          if (emailVendeur && typeof envoyerEmail === 'function') {
-            var sujet = "💸 L'admin t'a envoyé l'argent";
-            var message = "Bonjour, l'admin vous a envoyé l'argent de votre vente sur EFoot Market SN. La transaction est désormais clôturée avec succès.";
-            envoyerEmail(emailVendeur, sujet, message).catch(function(e) {
-              console.warn("Erreur notification EmailJS transfert vendeur :", e);
-            });
-          }
-        }).catch(function(e) {
-          console.warn("Erreur recupererEmailUtilisateur vendeur :", e);
-        });
-      }).catch(function(err) {
+        // Email au vendeur
+        var vendeurId = dataEscrow.vendeurId || "";
+        if (vendeurId && typeof recupererEmailUtilisateur === 'function' && typeof envoyerEmail === 'function') {
+          recupererEmailUtilisateur(vendeurId).then(function(emailVendeur) {
+            if (emailVendeur) {
+              envoyerEmail(
+                emailVendeur,
+                "💸 L'admin t'a envoyé l'argent",
+                "Bonjour, l'admin vous a envoyé l'argent de votre vente sur EFoot Market SN. La transaction est désormais clôturée avec succès."
+              ).catch(function(e) {
+                console.warn("Erreur email vendeur :", e);
+              });
+            }
+          });
+        }
+      })
+      .catch(function(err) {
         console.error("Erreur confirmerTransfertVendeur :", err);
         alert("Erreur lors de la confirmation du transfert : " + (err.message || err));
       });
