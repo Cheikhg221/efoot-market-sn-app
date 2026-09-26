@@ -16497,6 +16497,16 @@
         return;
       }
 
+      // MODIFICATION 1 : Confirmation Admin — "J'ai reçu l'argent"
+      if (!confirm("⚠️ CONFIRMATION\n\n" +
+                   "Confirme-tu avoir reçu l'argent de l'acheteur ?\n\n" +
+                   "➤ Vérifie ton compte Wave / Orange Money\n" +
+                   "➤ Le montant exact doit être reçu\n" +
+                   "➤ Une fois confirmé, le vendeur sera notifié\n\n" +
+                   "Clique sur OK uniquement si tu as bien reçu l'argent.")) {
+        return;
+      }
+
       var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
         ? firebase.firestore.FieldValue.serverTimestamp()
         : new Date();
@@ -16565,6 +16575,17 @@
       var tx = (escrowAdminCache || []).find(function(t) { return t.id === escrowId; });
       if (tx && tx.adminId && tx.adminId !== user.uid) {
         alert("Vous n'êtes pas l'administrateur assigné à cette transaction.");
+        return;
+      }
+
+      // MODIFICATION 4 : Confirmation Admin — "J'ai transféré l'argent au vendeur"
+      if (!confirm("⚠️ CONFIRMATION\n\n" +
+                   "Confirme-tu avoir transféré l'argent au vendeur ?\n\n" +
+                   "➤ Vérifie avoir envoyé le montant exact\n" +
+                   "➤ Vérifie le numéro du vendeur (Wave / Orange Money)\n" +
+                   "➤ Une fois confirmé, la transaction sera TERMINÉE\n" +
+                   "➤ Cette action est IRRÉVERSIBLE\n\n" +
+                   "Clique sur OK uniquement si tu as bien transféré l'argent.")) {
         return;
       }
 
@@ -16728,6 +16749,17 @@
      */
     function marquerIdentifiantsTransferes(escrowId) {
       if (!escrowId) return;
+
+      // MODIFICATION 2 : Confirmation Vendeur — "J'ai transféré les identifiants"
+      if (!confirm("⚠️ CONFIRMATION\n\n" +
+                   "Confirme-tu avoir transféré les identifiants Konami ID à l'acheteur ?\n\n" +
+                   "➤ Vérifie avoir envoyé : email + mot de passe\n" +
+                   "➤ L'acheteur doit pouvoir se connecter au compte\n" +
+                   "➤ Une fois confirmé, l'acheteur sera notifié\n\n" +
+                   "Clique sur OK uniquement si tu as bien transmis les identifiants.")) {
+        return;
+      }
+
       var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
       if (!firestoreDb) return;
 
@@ -16817,7 +16849,15 @@
      */
     function confirmerReceptionCompteEscrow(escrowId) {
       if (!escrowId) return;
-      if (!confirm("Confirmez-vous avoir bien reçu et vérifié le compte eFootball ?")) {
+
+      // MODIFICATION 3 : Confirmation Acheteur — "J'ai reçu le compte"
+      if (!confirm("⚠️ CONFIRMATION\n\n" +
+                   "Confirme-tu avoir reçu et testé le compte eFootball ?\n\n" +
+                   "➤ Connecte-toi au compte avec les identifiants reçus\n" +
+                   "➤ Vérifie que tout fonctionne correctement\n" +
+                   "➤ Vérifie que les joueurs promis sont bien présents\n" +
+                   "➤ Une fois confirmé, l'admin sera notifié pour payer le vendeur\n\n" +
+                   "Clique sur OK uniquement si tout est bon.")) {
         return;
       }
       var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
