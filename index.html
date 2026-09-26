@@ -9229,11 +9229,13 @@
       try {
         unsubscribeAnnoncesEnAttente = db.collection("annonces")
           .where("vendeurId", "==", userCourant.uid)
-          .where("statut", "==", "EN_ATTENTE_CONFIRMATION_ACHETEUR")
           .onSnapshot(function(snapshot) {
             annoncesEnAttenteCache = [];
             snapshot.forEach(function(doc) {
-              annoncesEnAttenteCache.push({ id: doc.id, ...doc.data() });
+              var d = doc.data() || {};
+              if (d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+                annoncesEnAttenteCache.push({ id: doc.id, ...d });
+              }
             });
             if (currentPage === 'mes-annonces') {
               afficherMesAnnonces();
@@ -9562,15 +9564,17 @@
         // Si l'utilisateur est connecté, s'assurer que ses demandes pour cette annonce sont chargées
         if (user && db && (!demandesAcheteurCache || !demandesAcheteurCache.some(function(d) { return d.annonceId === adData.id; }))) {
           db.collection("demandes")
-            .where("acheteurId", "==", user.uid)
             .where("annonceId", "==", adData.id)
             .get()
             .then(function(snap) {
               if (!snap.empty) {
                 snap.forEach(function(doc) {
-                  var d = { id: doc.id, ...doc.data() };
-                  if (!demandesAcheteurCache.some(function(x) { return x.id === d.id; })) {
-                    demandesAcheteurCache.push(d);
+                  var data = doc.data() || {};
+                  if (data.acheteurId === user.uid) {
+                    var d = { id: doc.id, ...data };
+                    if (!demandesAcheteurCache.some(function(x) { return x.id === d.id; })) {
+                      demandesAcheteurCache.push(d);
+                    }
                   }
                 });
               }
@@ -9886,18 +9890,26 @@
         if (user && annonce.vendeurId !== user.uid && db) {
           db.collection("demandes")
             .where("annonceId", "==", annonceId)
-            .where("acheteurId", "==", user.uid)
             .get()
             .then(function(snapshot) {
+              var maDemandeDoc = null;
               if (!snapshot.empty) {
-                var d = snapshot.docs[0].data();
+                snapshot.forEach(function(doc) {
+                  var data = doc.data() || {};
+                  if (data.acheteurId === user.uid) {
+                    maDemandeDoc = doc;
+                  }
+                });
+              }
+              if (maDemandeDoc) {
+                var d = maDemandeDoc.data();
                 var dStatut = (d.statut || "").toLowerCase();
                 if (dStatut === "terminee") {
                   var tousAvis = typeof getAvis === 'function' ? getAvis() : [];
                   var profil = typeof getProfilUtilisateur === 'function' ? getProfilUtilisateur() : null;
                   var monNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
                   var monAvis = tousAvis.find(function(a) {
-                    return (snapshot.docs[0].id && a.transactionId === snapshot.docs[0].id) ||
+                    return (maDemandeDoc.id && a.transactionId === maDemandeDoc.id) ||
                            (a.vendeurNom === (d.vendeurNom || annonce.vendeur) && a.acheteurNom === monNom && a.annonceId === annonceId) ||
                            (user && a.acheteurId === user.uid && a.annonceId === annonceId);
                   });
@@ -10085,22 +10097,26 @@
           if (!escrowTrouve) {
             requetes.push(
               db.collection("escrow")
-                .where("vendeurId", "==", user.uid)
                 .where("annonceId", "==", annonceId)
                 .get()
                 .then(function(snapshot) {
                   if (!snapshot.empty) {
-                    var docs = snapshot.docs.map(function(d) {
+                    var docs = [];
+                    snapshot.forEach(function(d) {
                       var data = d.data() || {};
                       data.id = d.id;
-                      return data;
+                      if (!user || data.vendeurId === user.uid) {
+                        docs.push(data);
+                      }
                     });
                     docs.sort(function(a, b) {
                       var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
                       var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
                       return dateB - dateA;
                     });
-                    escrowTrouve = docs[0];
+                    if (docs.length > 0) {
+                      escrowTrouve = docs[0];
+                    }
                   }
                 }).catch(function(err) {
                   console.warn("Recherche Firestore escrow vendeur :", err);
@@ -10109,15 +10125,17 @@
           }
           requetes.push(
             db.collection("demandes")
-              .where("vendeurId", "==", user.uid)
               .where("annonceId", "==", annonceId)
               .get()
               .then(function(snapshot) {
                 if (!snapshot.empty) {
-                  var docs = snapshot.docs.map(function(d) {
+                  var docs = [];
+                  snapshot.docs.forEach(function(d) {
                     var data = d.data() || {};
-                    data.id = d.id;
-                    return data;
+                    if (!user || !data.vendeurId || data.vendeurId === user.uid) {
+                      data.id = d.id;
+                      docs.push(data);
+                    }
                   });
                   demandesAnnonce = docs;
                   demandeEnAttente = docs.find(function(d) {
@@ -10150,11 +10168,20 @@
 
       db.collection("demandes")
         .where("annonceId", "==", annonceId)
-        .where("acheteurId", "==", user.uid)
         .onSnapshot(function(snapshot) {
+          var docsAcheteur = [];
+          if (!snapshot.empty) {
+            snapshot.forEach(function(doc) {
+              var data = doc.data() || {};
+              if (data.acheteurId === user.uid) {
+                data.id = doc.id;
+                docsAcheteur.push(data);
+              }
+            });
+          }
 
           // CAS 3a : Aucune demande
-          if (snapshot.empty) {
+          if (docsAcheteur.length === 0) {
             if (annonce && annonce.statut === "en_cours" && annonce.accepteAutresOffres === false) {
               conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#FFC107; font-weight:bold; margin:0 0 6px 0;">🟡 Transaction en cours</p><p style="color:#888; margin:0;">Fermé aux nouvelles offres</p></div>';
               return;
@@ -10163,7 +10190,7 @@
             return;
           }
 
-          var demande = snapshot.docs[0].data();
+          var demande = docsAcheteur[0];
 
           // CAS 3-PREMIER : Demande TERMINÉE
           if (demande.statut === "terminee" || demande.statut === "TERMINEE") {
@@ -10194,10 +10221,15 @@
             // MODIFICATION 9 : Si la demande de l'acheteur est en statut "en_attente" ET qu'il y a déjà 2 demandes acceptées
             db.collection("demandes")
               .where("annonceId", "==", annonceId)
-              .where("statut", "==", "acceptee")
               .get()
               .then(function(snapAcc) {
-                if (snapAcc.size >= 2) {
+                var nbAcc = 0;
+                snapAcc.forEach(function(doc) {
+                  if (((doc.data() || {}).statut || '').toLowerCase() === 'acceptee') {
+                    nbAcc++;
+                  }
+                });
+                if (nbAcc >= 2) {
                   conteneur.innerHTML = '<div style="background:#262626; padding:18px; border-radius:10px; text-align:center; border:1px solid #444;">' +
                     '<p style="color:#ccc; font-size:14px; font-weight:700; margin:0 0 6px 0;">⏳ En attente - 2 acheteurs sont déjà acceptés</p>' +
                     '<p style="color:#999; font-size:12.5px; margin:0;">Le vendeur te contactera si l\'un d\'eux abandonne.</p>' +
@@ -10363,14 +10395,13 @@
                 if (db) {
                   db.collection("demandes")
                     .where("annonceId", "==", annonceId)
-                    .where("autoriseAPayer", "==", true)
                     .get()
                     .then(function(authSnap) {
                       var autre = false;
                       if (!authSnap.empty) {
                         authSnap.forEach(function(dDoc) {
                           var dData = dDoc.data() || {};
-                          if (dData.acheteurId && dData.acheteurId !== user.uid) {
+                          if (dData.autoriseAPayer === true && dData.acheteurId && dData.acheteurId !== user.uid) {
                             autre = true;
                           }
                         });
@@ -10400,29 +10431,33 @@
 
             if (db) {
               db.collection("escrow")
-                .where("annonceId", "==", annonceId)
                 .where("acheteurId", "==", user.uid)
                 .get()
                 .then(function(escrowSnap) {
                   var escrowDoc = null;
                   if (!escrowSnap.empty) {
-                    var escrows = escrowSnap.docs.map(function(d) {
+                    var escrows = [];
+                    escrowSnap.forEach(function(d) {
                       var data = d.data() || {};
                       data.id = d.id;
-                      return data;
+                      if (data.annonceId === annonceId) {
+                        escrows.push(data);
+                      }
                     });
                     escrows.sort(function(a, b) {
                       var dateA = a.dateCreation ? (a.dateCreation.seconds || (a.dateCreation.toDate ? a.dateCreation.toDate().getTime() : 0)) : 0;
                       var dateB = b.dateCreation ? (b.dateCreation.seconds || (b.dateCreation.toDate ? b.dateCreation.toDate().getTime() : 0)) : 0;
                       return dateB - dateA;
                     });
-                    escrowDoc = escrows[0];
-                    if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
-                      var existIdx = escrowAcheteurCache.findIndex(function(e) { return e.id === escrowDoc.id; });
-                      if (existIdx === -1) {
-                        escrowAcheteurCache.unshift(escrowDoc);
-                      } else {
-                        escrowAcheteurCache[existIdx] = escrowDoc;
+                    if (escrows.length > 0) {
+                      escrowDoc = escrows[0];
+                      if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
+                        var existIdx = escrowAcheteurCache.findIndex(function(e) { return e.id === escrowDoc.id; });
+                        if (existIdx === -1) {
+                          escrowAcheteurCache.unshift(escrowDoc);
+                        } else {
+                          escrowAcheteurCache[existIdx] = escrowDoc;
+                        }
                       }
                     }
                   }
@@ -12258,13 +12293,15 @@
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       if (demandes.length === 0 && db && user) {
         db.collection("demandes")
-          .where("vendeurId", "==", user.uid)
           .where("annonceId", "==", annonceId)
           .get()
           .then(function(snap) {
             var docs = [];
             snap.forEach(function(doc) {
               var data = doc.data() || {};
+              if (user && data.vendeurId && data.vendeurId !== user.uid) {
+                return;
+              }
               data.id = doc.id;
               var s = (data.statut || '').toLowerCase();
               if (s === 'en_attente' || s === 'attente' || s === 'demande_envoyee') {
@@ -12503,13 +12540,17 @@
         var annonceId = data ? data.annonceId : null;
         if (!annonceId) return;
 
-        // MODIFICATION 4 : AVANT de mettre à jour Firestore, compter les demandes existantes sur cette annonce avec statut === "acceptee"
+        // MODIFICATION 1 : Compter les demandes existantes avec 1 seul .where() + filtrage JS
         return db.collection("demandes")
           .where("annonceId", "==", annonceId)
-          .where("statut", "==", "acceptee")
           .get()
-          .then(function(snapAcceptees) {
-            var compteurAcceptees = snapAcceptees.size;
+          .then(function(snap) {
+            var compteurAcceptees = 0;
+            snap.forEach(function(doc) {
+              if (((doc.data() || {}).statut || '').toLowerCase() === 'acceptee') {
+                compteurAcceptees++;
+              }
+            });
             if (compteurAcceptees >= 2) {
               alert("⚠️ Tu as déjà accepté 2 demandes sur cette annonce. C'est le maximum autorisé.");
               if (typeof afficherNotification === 'function') {
@@ -12679,14 +12720,18 @@
             }
           }
 
-          // MODIFICATION 8 : Compter les demandes restantes en statut "acceptee" sur cette annonce
+          // MODIFICATION 2 : Compter les demandes restantes avec 1 seul .where() + filtrage JS
           if (annonceId) {
             return db.collection("demandes")
               .where("annonceId", "==", annonceId)
-              .where("statut", "==", "acceptee")
               .get()
-              .then(function(snapAcc) {
-                var nbAccepteesRestantes = snapAcc.size;
+              .then(function(snap) {
+                var nbAccepteesRestantes = 0;
+                snap.forEach(function(doc) {
+                  if (((doc.data() || {}).statut || '').toLowerCase() === 'acceptee') {
+                    nbAccepteesRestantes++;
+                  }
+                });
                 if (nbAccepteesRestantes < 2) {
                   db.collection("annonces").doc(annonceId).update({
                     statut: "active",
@@ -12753,14 +12798,13 @@
       // Vérifier si l'acheteur a déjà eu des refus sur cette annonce pour reporter le palier de refus
       db.collection("demandes")
         .where("annonceId", "==", annonceId)
-        .where("acheteurId", "==", user.uid)
         .get()
         .then(function(snapshot) {
           var precedentRefus = 0;
           if (snapshot && !snapshot.empty) {
             snapshot.forEach(function(d) {
-              var data = d.data();
-              if (data.nombreRefus && data.nombreRefus > precedentRefus) {
+              var data = d.data() || {};
+              if (data.acheteurId === user.uid && data.nombreRefus && data.nombreRefus > precedentRefus) {
                 precedentRefus = data.nombreRefus;
               }
             });
@@ -14226,19 +14270,23 @@
       // Si pas encore en cache local ou si l'ID doit être récupéré depuis Firestore
       if (db) {
         db.collection("demandes")
-          .where("acheteurId", "==", user.uid)
           .where("annonceId", "==", annonceId)
           .get()
           .then(function(snapshot) {
             let docTrouve = null;
             snapshot.forEach(function(doc) {
-              const data = doc.data();
-              if ((data.statut || '').toLowerCase() === 'terminee') {
+              const data = doc.data() || {};
+              if (data.acheteurId === user.uid && (data.statut || '').toLowerCase() === 'terminee') {
                 docTrouve = { id: doc.id, ...data };
               }
             });
             if (!docTrouve && !snapshot.empty) {
-              docTrouve = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+              snapshot.forEach(function(doc) {
+                const data = doc.data() || {};
+                if (!docTrouve && data.acheteurId === user.uid) {
+                  docTrouve = { id: doc.id, ...data };
+                }
+              });
             }
 
             if (docTrouve) {
@@ -16925,8 +16973,8 @@
 
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       if (demandes.length === 0 && db && user) {
+        // MODIFICATION 4 : 1 seul .where() + filtrage JS
         db.collection("demandes")
-          .where("vendeurId", "==", user.uid)
           .where("annonceId", "==", annonceId)
           .get()
           .then(function(snap) {
@@ -16935,6 +16983,9 @@
             snap.forEach(function(doc) {
               var data = doc.data() || {};
               data.id = doc.id;
+              if (user && data.vendeurId && data.vendeurId !== user.uid) {
+                return;
+              }
               if (data.autoriseAPayer === true) {
                 dejaAutoriseFirestore = true;
               }
@@ -16995,15 +17046,15 @@
         }
         annonceId = idAnnonce;
 
-        // 3. Faire la vérification Firestore : where annonceId == annonceId + where autoriseAPayer == true
+        // 3. Faire la vérification Firestore : where("annonceId", "==", annonceId) + filtrage JS
         return db.collection("demandes")
           .where("annonceId", "==", annonceId)
-          .where("autoriseAPayer", "==", true)
           .get()
           .then(function(querySnap) {
             var conflit = false;
             querySnap.forEach(function(d) {
-              if (d.id !== demandeId) {
+              var dData = d.data() || {};
+              if (d.id !== demandeId && dData.autoriseAPayer === true) {
                 conflit = true;
               }
             });
@@ -18079,11 +18130,14 @@
       try {
         unsubscribeMesAnnoncesEscrow = db.collection("annonces")
           .where("vendeurId", "==", user.uid)
-          .where("statut", "==", "escrow_en_cours")
           .onSnapshot(function(snapshot) {
             mesAnnoncesEscrowCache = [];
             snapshot.forEach(function(doc) {
-              mesAnnoncesEscrowCache.push({ id: doc.id, ...doc.data() });
+              var data = doc.data() || {};
+              var s = (data.statut || '').toLowerCase();
+              if (s === 'escrow_en_cours') {
+                mesAnnoncesEscrowCache.push({ id: doc.id, ...data });
+              }
             });
             if (currentPage === 'mes-annonces') {
               afficherMesAnnonces();
@@ -18111,11 +18165,14 @@
       try {
         unsubscribeMesAnnoncesVendues = db.collection("annonces")
           .where("vendeurId", "==", user.uid)
-          .where("statut", "==", "vendue")
           .onSnapshot(function(snapshot) {
             mesAnnoncesVenduesCache = [];
             snapshot.forEach(function(doc) {
-              mesAnnoncesVenduesCache.push({ id: doc.id, ...doc.data() });
+              var data = doc.data() || {};
+              var s = (data.statut || '').toLowerCase();
+              if (s === 'vendue' || s === 'vendu') {
+                mesAnnoncesVenduesCache.push({ id: doc.id, ...data });
+              }
             });
             if (currentPage === 'mes-annonces') {
               afficherMesAnnonces();
@@ -18964,15 +19021,15 @@
           return Promise.resolve();
         }
         
-        // MODIFICATION 8 : compter les demandes restantes en statut "acceptee" sur cette annonce
+        // MODIFICATION 5 : compter les demandes restantes avec 1 seul .where() + filtrage JS
         return db.collection("demandes")
           .where("annonceId", "==", annonceId)
-          .where("statut", "==", "acceptee")
           .get()
           .then(function(snapshot) {
             var nbAccepteesRestantes = 0;
             snapshot.forEach(function(doc) {
-              if (doc.id !== demandeId) {
+              var s = ((doc.data() || {}).statut || '').toLowerCase();
+              if (doc.id !== demandeId && s === 'acceptee') {
                 nbAccepteesRestantes++;
               }
             });
