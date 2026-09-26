@@ -16146,14 +16146,34 @@
      * puis affiche la modale de confirmation d'envoi
      */
     function choisirAdminEscrow(adminId, adminNom, adminTelephone, moyenPaiement, annonceId) {
+      // MODIFICATION 3 : Empêcher le double-clic
+      if (window.__choisirAdminEnCours) return;
+      window.__choisirAdminEnCours = true;
+
+      // MODIFICATION 1 : Confirmation avant choisirAdminEscrow
+      if (!confirm("⚠️ CONFIRMATION\n\n" +
+                   "Tu vas choisir cet admin pour sécuriser ta transaction :\n\n" +
+                   "🛡️ Admin : " + adminNom + "\n" +
+                   "💳 Moyen de paiement : " + moyenPaiement + "\n" +
+                   "📞 Téléphone : " + adminTelephone + "\n\n" +
+                   "➤ Tu devras envoyer le montant exact à cet admin\n" +
+                   "➤ L'admin gardera l'argent jusqu'à ce que tu reçoives le compte\n" +
+                   "➤ Si problème, l'admin te rembourse\n\n" +
+                   "Clique sur OK pour confirmer ton choix.")) {
+        window.__choisirAdminEnCours = false;
+        return;
+      }
+
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
       if (!user) {
+        window.__choisirAdminEnCours = false;
         alert("Veuillez vous connecter pour continuer.");
         return;
       }
 
       var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
       if (!firestoreDb) {
+        window.__choisirAdminEnCours = false;
         alert("Service indisponible pour le moment.");
         return;
       }
@@ -16212,12 +16232,14 @@
         });
       })
       .then(function(info) {
+        window.__choisirAdminEnCours = false;
         fermerModalChoixAdminEscrow();
         if (info && info.escrowId) {
           ouvrirModalConfirmationEnvoi(info.escrowId, info.prix, info.adminNom, info.moyenPaiement, info.adminTelephone);
         }
       })
       .catch(function(err) {
+        window.__choisirAdminEnCours = false;
         console.error("Erreur création transaction escrow :", err);
         alert("Erreur lors de la création de la protection admin : " + (err.message || err));
       });
