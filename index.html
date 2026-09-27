@@ -16641,6 +16641,10 @@
               snapshot.forEach(function(doc) {
                 var data = doc.data() || {};
                 data.id = doc.id;
+                // MODIFICATION 2 : Filtrer les escrows refusés par l'admin pour ne plus les afficher
+                if ((data.statut || '').toLowerCase().trim() === 'refuse_par_admin') {
+                  return;
+                }
                 items.push(data);
               });
             }
@@ -16675,7 +16679,9 @@
       var statRecu = document.getElementById('escrow-stat-recu');
       var statTransferer = document.getElementById('escrow-stat-transferer');
 
-      var list = escrowAdminCache || [];
+      var list = (escrowAdminCache || []).filter(function(tx) {
+        return (tx.statut || '').toLowerCase().trim() !== 'refuse_par_admin';
+      });
 
       // 8. Calcul des compteurs
       var nbActionRequise = 0;
@@ -16772,6 +16778,16 @@
           html += '  <button type="button" style="background: #f59e0b; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'attente\')">⏸️ Mettre en attente</button>';
           html += '  <button type="button" style="background: #ef4444; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'refuser\')">❌ Refuser</button>';
           html += '</div>';
+        } else if (st === 'admin_en_attente') {
+          // MODIFICATION 1 : Statut admin_en_attente — bandeau d'info + boutons d'action maintenus
+          html += '<div style="background: rgba(161, 161, 170, 0.15); border: 1px solid #a1a1aa; border-radius: 8px; padding: 10px 14px; margin-top: 6px; font-size: 13px; color: #d4d4d8; line-height: 1.4;">';
+          html += '  ⏸️ Tu as mis cette sollicitation en attente. Tu peux changer d\'avis à tout moment ci-dessous.';
+          html += '</div>';
+          html += '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding-top: 10px; border-top: 1px solid #27272a;">';
+          html += '  <button type="button" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'accepter\')">✅ Accepter</button>';
+          html += '  <button type="button" style="background: #f59e0b; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'attente\')">⏸️ Mettre en attente</button>';
+          html += '  <button type="button" style="background: #ef4444; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'refuser\')">❌ Refuser</button>';
+          html += '</div>';
         } else if (st === 'paiement_envoye') {
           html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; padding-top: 12px; border-top: 1px solid #27272a;">';
           html += '  <button type="button" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="confirmerReceptionArgent(\'' + escapeHtml(tx.id) + '\')">✅ J\'ai reçu l\'argent</button>';
@@ -16808,9 +16824,21 @@
       } else if (action === 'attente') {
         if (!confirm("⏸️ MISE EN ATTENTE\n\nMettre cette sollicitation en attente ?\n\n➤ L'acheteur sera notifié\n➤ Tu pourras la traiter plus tard\n\nClique sur OK pour confirmer.")) return;
         nouveauStatut = 'admin_en_attente';
-        messageNotif = "Sollicitation mise en attente.";
+        // MODIFICATION 4 : Message adapté après mise en attente
+        messageNotif = "⏸️ Sollicitation mise en attente. Tu peux changer d'avis à tout moment.";
       } else if (action === 'refuser') {
-        if (!confirm("❌ REFUS\n\nRefuser cette sollicitation ?\n\n➤ L'acheteur pourra choisir un autre admin\n➤ Cette action est immédiate\n\nClique sur OK pour confirmer.")) return;
+        // MODIFICATION 3 : Confirmation de refus plus explicite et irréversible
+        if (!confirm(
+          "❌ REFUS DÉFINITIF\n\n" +
+          "Confirme-tu le refus de cette sollicitation ?\n\n" +
+          "⚠️ ATTENTION — Cette action est IRRÉVERSIBLE :\n" +
+          "➤ Tu ne pourras PAS annuler ce refus\n" +
+          "➤ La demande disparaîtra définitivement de ton espace\n" +
+          "➤ L'acheteur devra choisir un autre admin\n\n" +
+          "Clique sur OK pour confirmer le refus définitif."
+        )) {
+          return;
+        }
         nouveauStatut = 'refuse_par_admin';
         messageNotif = "Sollicitation refusée.";
       } else {
@@ -16829,14 +16857,22 @@
         dateReponseAdmin: serverTimestamp,
         dateMiseAJour: serverTimestamp
       }).then(function() {
-        // Mettre à jour le cache
+        // MODIFICATION 5 : Rafraîchir correctement après chaque action
         if (typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) {
-          var item = escrowAdminCache.find(function(e) { return e.id === escrowId; });
-          if (item) item.statut = nouveauStatut;
+          if (action === 'refuser') {
+            escrowAdminCache = escrowAdminCache.filter(function(e) { 
+              return e.id !== escrowId; 
+            });
+            window.escrowAdminCache = escrowAdminCache;
+          } else {
+            var item = escrowAdminCache.find(function(e) { return e.id === escrowId; });
+            if (item) item.statut = nouveauStatut;
+          }
         }
 
+        var iconeNotif = action === 'attente' ? "⏸️" : (action === 'refuser' ? "❌" : "✅");
         if (typeof afficherNotification === 'function') {
-          afficherNotification(messageNotif, "✅");
+          afficherNotification(messageNotif, iconeNotif);
         } else {
           alert(messageNotif);
         }
