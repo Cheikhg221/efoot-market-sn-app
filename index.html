@@ -2274,6 +2274,18 @@
       color: #fff;
     }
 
+    .tx-step-item.pause .tx-step-circle {
+      border-color: #a1a1aa;
+      background: rgba(161, 161, 170, 0.2);
+      color: #d4d4d8;
+      box-shadow: 0 0 10px rgba(161, 161, 170, 0.3);
+    }
+
+    .tx-step-item.pause .tx-step-label {
+      color: #a1a1aa;
+      font-weight: 600;
+    }
+
     .tx-step-label {
       font-size: 10px;
       color: var(--text-muted);
@@ -10250,9 +10262,41 @@
               if (escrow) {
                 var stEscrow = (escrow.statut || '').toLowerCase().trim();
                 var htmlEscrow = '';
+                var nomAdmin = escapeHtml(escrow.adminNom || "l'admin");
 
+                // MODIFICATION 5 : Messages et actions selon statut sollicitation admin
+                if (stEscrow === 'sollicitation_admin') {
+                  htmlEscrow = 
+                    '<div style="background:rgba(251,191,36,0.15); border:1.5px solid #fbbf24; border-radius:10px; padding:14px; text-align:center; margin-bottom:12px;">' +
+                      '<p style="color:#fbbf24; font-weight:800; font-size:15px; margin:0 0 6px 0;">⏳ En attente de la réponse de l\'admin ' + nomAdmin + '</p>' +
+                      '<p style="color:#e4e4e7; font-size:13px; margin:0; line-height:1.4;">L\'admin va examiner ta demande. Tu peux patienter ou retirer ta sollicitation pour choisir un autre admin.</p>' +
+                    '</div>' +
+                    '<button type="button" onclick="retirerSollicitation(\'' + escrow.id + '\')" style="background:#3f3f46; color:white; width:100%; padding:14px; border-radius:10px; font-size:14.5px; font-weight:700; border:1px solid #52525b; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">' +
+                      '🔄 Retirer ma sollicitation' +
+                    '</button>';
+                }
+                else if (stEscrow === 'admin_en_attente') {
+                  htmlEscrow = 
+                    '<div style="background:rgba(161,161,170,0.15); border:1.5px solid #a1a1aa; border-radius:10px; padding:14px; text-align:center; margin-bottom:12px;">' +
+                      '<p style="color:#d4d4d8; font-weight:800; font-size:15px; margin:0 0 6px 0;">⏸️ L\'admin ' + nomAdmin + ' a mis ta demande en attente</p>' +
+                      '<p style="color:#e4e4e7; font-size:13px; margin:0; line-height:1.4;">Il traitera ta demande dès que possible.</p>' +
+                    '</div>' +
+                    '<button type="button" onclick="retirerSollicitation(\'' + escrow.id + '\')" style="background:#3f3f46; color:white; width:100%; padding:14px; border-radius:10px; font-size:14.5px; font-weight:700; border:1px solid #52525b; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">' +
+                      '🔄 Retirer ma sollicitation' +
+                    '</button>';
+                }
+                else if (stEscrow === 'refuse_par_admin') {
+                  htmlEscrow = 
+                    '<div style="background:rgba(239,68,68,0.15); border:1.5px solid #ef4444; border-radius:10px; padding:14px; text-align:center; margin-bottom:12px;">' +
+                      '<p style="color:#f87171; font-weight:800; font-size:15px; margin:0 0 6px 0;">❌ L\'admin ' + nomAdmin + ' a refusé ta demande</p>' +
+                      '<p style="color:#e4e4e7; font-size:13px; margin:0; line-height:1.4;">Choisis un autre admin pour continuer.</p>' +
+                    '</div>' +
+                    '<button type="button" onclick="ouvrirModalChoixAdminEscrow(\'' + (escrow.annonceId || annonceId) + '\')" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:700; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">' +
+                      '🔒 Choisir un autre admin' +
+                    '</button>';
+                }
                 // a) Si escrow.statut === "attente_paiement" :
-                if (stEscrow === 'attente_paiement') {
+                else if (stEscrow === 'attente_paiement') {
                   htmlEscrow = 
                     '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #ff9800; border-radius:10px; padding:14px; text-align:center; color:#ff9800; font-weight:700; font-size:15px; margin-bottom:12px;">' +
                       '⏳ En attente de ton paiement à l\'admin' +
@@ -11257,8 +11301,33 @@
       var step4Class = '';
       var step5Class = '';
       var progressWidth = '40%';
+      var step3Label = 'Autorisée';
 
-      if (s === 'termine' || s === 'terminee') {
+      if (s === 'sollicitation_admin') {
+        step1Class = 'completed';
+        step2Class = 'completed';
+        step3Class = 'active';
+        step4Class = '';
+        step5Class = '';
+        progressWidth = '40%';
+        step3Label = 'Attente admin';
+      } else if (s === 'admin_en_attente') {
+        step1Class = 'completed';
+        step2Class = 'completed';
+        step3Class = 'active pause';
+        step4Class = '';
+        step5Class = '';
+        progressWidth = '40%';
+        step3Label = 'En pause';
+      } else if (s === 'refuse_par_admin') {
+        step1Class = 'completed';
+        step2Class = 'completed';
+        step3Class = 'refused';
+        step4Class = '';
+        step5Class = '';
+        progressWidth = '33%';
+        step3Label = 'Refusée';
+      } else if (s === 'termine' || s === 'terminee') {
         step3Class = 'completed';
         step4Class = 'completed';
         step5Class = 'completed';
@@ -11306,7 +11375,7 @@
           </div>
           <div class="tx-step-item ${step3Class}">
             <div class="tx-step-circle">3</div>
-            <div class="tx-step-label">Autorisée</div>
+            <div class="tx-step-label">${step3Label}</div>
           </div>
           <div class="tx-step-item ${step4Class}">
             <div class="tx-step-circle">4</div>
@@ -11325,6 +11394,9 @@
      */
     function getLibelleStatutSuiviEscrow(statut) {
       var s = (statut || '').toLowerCase().trim();
+      if (s === 'sollicitation_admin') return "⏳ Attente réponse admin";
+      if (s === 'admin_en_attente') return "⏸️ Admin en attente";
+      if (s === 'refuse_par_admin') return "❌ Refusée par admin";
       if (s === 'attente_paiement') return "⏳ En attente de paiement";
       if (s === 'paiement_envoye') return "📤 Paiement en vérification";
       if (s === 'paiement_recu') return "💰 Argent sécurisé";
@@ -13264,7 +13336,13 @@
         if (escrowVendeur) {
           const stV = (escrowVendeur.statut || '').toLowerCase().trim();
           let msgV = '';
-          if (stV === 'attente_paiement') {
+          if (stV === 'sollicitation_admin') {
+            msgV = "⏳ En attente de la réponse de l'admin à la sollicitation de l'acheteur";
+          } else if (stV === 'admin_en_attente') {
+            msgV = "⏸️ L'admin a mis la sollicitation en attente";
+          } else if (stV === 'refuse_par_admin') {
+            msgV = "❌ Sollicitation refusée par l'admin - En attente d'un autre admin";
+          } else if (stV === 'attente_paiement') {
             msgV = "⏳ En attente que l'acheteur effectue son paiement sécurisé à l'admin";
           } else if (stV === 'paiement_envoye') {
             msgV = "⏳ L'acheteur a envoyé l'argent - En vérification par l'admin";
@@ -13414,7 +13492,13 @@
 
       var stEscrow = escrowAcheteur ? (escrowAcheteur.statut || '').toLowerCase().trim() : null;
       var msgEscrow = null;
-      if (stEscrow === 'attente_paiement') {
+      if (stEscrow === 'sollicitation_admin') {
+        msgEscrow = "⏳ En attente de la réponse de l'admin";
+      } else if (stEscrow === 'admin_en_attente') {
+        msgEscrow = "⏸️ L'admin a mis ta demande en attente";
+      } else if (stEscrow === 'refuse_par_admin') {
+        msgEscrow = "❌ L'admin a refusé ta demande";
+      } else if (stEscrow === 'attente_paiement') {
         msgEscrow = "⏳ En attente de ton paiement à l'admin";
       } else if (stEscrow === 'paiement_envoye') {
         msgEscrow = "📤 Paiement envoyé - En vérification par l'admin";
@@ -16234,7 +16318,8 @@
           adminNom: adminNom || "",
           adminTelephone: adminTelephone || "",
           moyenPaiement: moyenPaiement || "",
-          statut: "attente_paiement",
+          statut: "sollicitation_admin",
+          dateSollicitation: firebase.firestore.FieldValue.serverTimestamp(),
           dateCreation: firebase.firestore.FieldValue.serverTimestamp(),
           dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
         };
@@ -16253,7 +16338,17 @@
         window.__choisirAdminEnCours = false;
         fermerModalChoixAdminEscrow();
         if (info && info.escrowId) {
-          ouvrirModalConfirmationEnvoi(info.escrowId, info.prix, info.adminNom, info.moyenPaiement, info.adminTelephone);
+          if (typeof afficherNotification === 'function') {
+            afficherNotification("Sollicitation envoyée à l'admin. En attente de sa réponse.", "⏳");
+          }
+          if (typeof afficherDetailAnnonce === 'function' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+            afficherDetailAnnonce(currentDetailAdId);
+          } else if (typeof afficherBoutonsAnnonce === 'function' && typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+            afficherBoutonsAnnonce(currentDetailAdId);
+          }
+          if (typeof afficherSectionDemandesEnvoyees === 'function') {
+            afficherSectionDemandesEnvoyees(demandesAcheteurCache);
+          }
         }
       })
       .catch(function(err) {
@@ -16269,6 +16364,24 @@
     function getStatutInfoAdminEscrow(statut) {
       var s = (statut || '').toLowerCase().trim();
       switch (s) {
+        case 'sollicitation_admin':
+          return {
+            libelle: '🔔 Nouvelle sollicitation à traiter',
+            couleur: '#fbbf24',
+            actionRequise: true
+          };
+        case 'admin_en_attente':
+          return {
+            libelle: '⏸️ Mise en attente par toi',
+            couleur: '#a1a1aa',
+            actionRequise: false
+          };
+        case 'refuse_par_admin':
+          return {
+            libelle: '❌ Refusée par toi',
+            couleur: '#ef4444',
+            actionRequise: false
+          };
         case 'attente_paiement':
           return {
             libelle: '⏳ En attente du paiement acheteur',
@@ -16412,10 +16525,11 @@
 
       list.forEach(function(tx) {
         var s = (tx.statut || '').toLowerCase().trim();
-        if (s === 'paiement_envoye' || s === 'compte_recu') {
+        // MODIFICATION 7 : Compter aussi sollicitation_admin comme action requise
+        if (s === 'sollicitation_admin' || s === 'paiement_envoye' || s === 'compte_recu') {
           nbActionRequise++;
         }
-        if (s === 'attente_paiement') {
+        if (s === 'attente_paiement' || s === 'sollicitation_admin' || s === 'admin_en_attente') {
           nbAttente++;
         } else if (s === 'paiement_recu') {
           nbRecu++;
@@ -16491,7 +16605,14 @@
         html += '</div>';
 
         // 5. Les boutons d'action selon le statut
-        if (st === 'paiement_envoye') {
+        // MODIFICATION 3 : Boutons d'action Admin pour sollicitation_admin
+        if (st === 'sollicitation_admin') {
+          html += '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; padding-top: 12px; border-top: 1px solid #27272a;">';
+          html += '  <button type="button" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'accepter\')">✅ Accepter</button>';
+          html += '  <button type="button" style="background: #f59e0b; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'attente\')">⏸️ Mettre en attente</button>';
+          html += '  <button type="button" style="background: #ef4444; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;" onclick="repondreSollicitation(\'' + escapeHtml(tx.id) + '\', \'refuser\')">❌ Refuser</button>';
+          html += '</div>';
+        } else if (st === 'paiement_envoye') {
           html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; padding-top: 12px; border-top: 1px solid #27272a;">';
           html += '  <button type="button" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="confirmerReceptionArgent(\'' + escapeHtml(tx.id) + '\')">✅ J\'ai reçu l\'argent</button>';
           html += '  <button type="button" style="background: #ef4444; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="alert(\'Contacte l\\\'acheteur pour vérifier\')">❌ Je n\'ai rien reçu</button>';
@@ -16511,6 +16632,143 @@
       });
 
       container.innerHTML = html;
+    }
+
+    // MODIFICATION 4 : Créer repondreSollicitation(escrowId, action)
+    function repondreSollicitation(escrowId, action) {
+      if (!escrowId || !action) return;
+
+      var nouveauStatut = '';
+      var messageNotif = '';
+
+      if (action === 'accepter') {
+        if (!confirm("✅ CONFIRMATION\n\nAccepter cette sollicitation ?\n\n➤ L'acheteur pourra envoyer son argent\n➤ Tu devras vérifier sa réception\n\nClique sur OK pour confirmer.")) return;
+        nouveauStatut = 'attente_paiement';
+        messageNotif = "Sollicitation acceptée ! L'acheteur peut payer.";
+      } else if (action === 'attente') {
+        if (!confirm("⏸️ MISE EN ATTENTE\n\nMettre cette sollicitation en attente ?\n\n➤ L'acheteur sera notifié\n➤ Tu pourras la traiter plus tard\n\nClique sur OK pour confirmer.")) return;
+        nouveauStatut = 'admin_en_attente';
+        messageNotif = "Sollicitation mise en attente.";
+      } else if (action === 'refuser') {
+        if (!confirm("❌ REFUS\n\nRefuser cette sollicitation ?\n\n➤ L'acheteur pourra choisir un autre admin\n➤ Cette action est immédiate\n\nClique sur OK pour confirmer.")) return;
+        nouveauStatut = 'refuse_par_admin';
+        messageNotif = "Sollicitation refusée.";
+      } else {
+        return;
+      }
+
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) return;
+
+      var serverTimestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : new Date();
+
+      firestoreDb.collection("escrow").doc(escrowId).update({
+        statut: nouveauStatut,
+        dateReponseAdmin: serverTimestamp,
+        dateMiseAJour: serverTimestamp
+      }).then(function() {
+        // Mettre à jour le cache
+        if (typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) {
+          var item = escrowAdminCache.find(function(e) { return e.id === escrowId; });
+          if (item) item.statut = nouveauStatut;
+        }
+
+        if (typeof afficherNotification === 'function') {
+          afficherNotification(messageNotif, "✅");
+        } else {
+          alert(messageNotif);
+        }
+        actualiserRenduPageAdminEscrow();
+
+        // Envoyer un email à l'acheteur
+        firestoreDb.collection("escrow").doc(escrowId).get().then(function(snap) {
+          if (!snap.exists) return;
+          var data = snap.data() || {};
+          var acheteurId = data.acheteurId;
+          var adminNom = data.adminNom || "l'admin";
+          var annonceTitre = data.annonceTitre || "Compte eFootball";
+
+          if (acheteurId && typeof recupererEmailUtilisateur === 'function') {
+            recupererEmailUtilisateur(acheteurId).then(function(emailAcheteur) {
+              if (!emailAcheteur || typeof envoyerEmail !== 'function') return;
+
+              var sujet = "";
+              var message = "";
+
+              if (action === 'accepter') {
+                sujet = "✅ Ton admin a accepté la sollicitation";
+                message = "Bonjour,\n\nL'admin " + adminNom + " a accepté ta sollicitation pour la transaction :\n\n📦 " + annonceTitre + "\n\nTu peux maintenant procéder au paiement sécurisé. Connecte-toi sur efootmarketsn.store pour continuer.";
+              } else if (action === 'attente') {
+                sujet = "⏸️ Sollicitation mise en attente";
+                message = "Bonjour,\n\nL'admin " + adminNom + " a mis ta sollicitation en attente pour la transaction :\n\n📦 " + annonceTitre + "\n\nIl traitera ta demande dès que possible. Tu peux aussi retirer ta sollicitation et choisir un autre admin si tu préfères.";
+              } else if (action === 'refuser') {
+                sujet = "❌ Sollicitation refusée";
+                message = "Bonjour,\n\nL'admin " + adminNom + " a refusé ta sollicitation pour la transaction :\n\n📦 " + annonceTitre + "\n\nTu peux retirer ta sollicitation et choisir un autre admin. Connecte-toi sur efootmarketsn.store.";
+              }
+
+              envoyerEmail(emailAcheteur, sujet, message).catch(function(e) {
+                console.warn("Erreur email acheteur sollicitation :", e);
+              });
+            });
+          }
+        });
+      }).catch(function(err) {
+        console.error("Erreur repondreSollicitation :", err);
+        alert("Erreur : " + (err.message || err));
+      });
+    }
+
+    // MODIFICATION 6 : Créer retirerSollicitation(escrowId)
+    function retirerSollicitation(escrowId) {
+      if (!escrowId) return;
+
+      if (!confirm("⚠️ CONFIRMATION\n\nRetirer ta sollicitation ?\n\n➤ L'admin actuel ne verra plus ta demande\n➤ Tu pourras choisir un autre admin\n➤ Cette action est immédiate\n\nClique sur OK pour confirmer.")) {
+        return;
+      }
+
+      var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
+      if (!firestoreDb) return;
+
+      firestoreDb.collection("escrow").doc(escrowId).delete()
+        .then(function() {
+          // Mettre à jour les caches
+          if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
+            escrowAcheteurCache = escrowAcheteurCache.filter(function(e) { return e.id !== escrowId; });
+            window.escrowAcheteurCache = escrowAcheteurCache;
+          }
+          if (typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) {
+            escrowAdminCache = escrowAdminCache.filter(function(e) { return e.id !== escrowId; });
+            window.escrowAdminCache = escrowAdminCache;
+          }
+          if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+            escrowVendeurCache = escrowVendeurCache.filter(function(e) { return e.id !== escrowId; });
+            window.escrowVendeurCache = escrowVendeurCache;
+          }
+
+          if (typeof afficherNotification === 'function') {
+            afficherNotification("Sollicitation retirée. Choisis un autre admin.", "🔄");
+          } else {
+            alert("Sollicitation retirée. Choisis un autre admin.");
+          }
+
+          // Rafraîchir les vues
+          if (typeof afficherSectionDemandesEnvoyees === 'function') {
+            afficherSectionDemandesEnvoyees(demandesAcheteurCache);
+          }
+          if (typeof currentDetailAdId !== 'undefined' && currentDetailAdId) {
+            if (typeof afficherDetailAnnonce === 'function') {
+              afficherDetailAnnonce(currentDetailAdId);
+            } else if (typeof afficherBoutonsAnnonce === 'function') {
+              afficherBoutonsAnnonce(currentDetailAdId);
+            }
+          }
+        })
+        .catch(function(err) {
+          console.error("Erreur retirerSollicitation :", err);
+          alert("Erreur : " + (err.message || err));
+        });
     }
 
     /**
@@ -17269,6 +17527,8 @@
     window.confirmerAutoriserPaiement = confirmerAutoriserPaiement;
     window.retirerAutorisationPaiement = retirerAutorisationPaiement;
     window.actualiserRenduPageAdminEscrow = actualiserRenduPageAdminEscrow;
+    window.repondreSollicitation = repondreSollicitation;
+    window.retirerSollicitation = retirerSollicitation;
     window.confirmerReceptionArgent = confirmerReceptionArgent;
     window.confirmerTransfertVendeur = confirmerTransfertVendeur;
     window.getStatutInfoAdminEscrow = getStatutInfoAdminEscrow;
@@ -18394,7 +18654,22 @@
           var bgBandeau = 'rgba(255,193,7,0.15)';
           var borderBandeau = '#FFC107';
 
-          if (stEsc === 'attente_paiement') {
+          if (stEsc === 'sollicitation_admin') {
+            bandeauContenu = '⏳ En attente de la réponse de l\'admin';
+            couleurBandeau = '#fbbf24';
+            bgBandeau = 'rgba(251,191,36,0.15)';
+            borderBandeau = '#fbbf24';
+          } else if (stEsc === 'admin_en_attente') {
+            bandeauContenu = '⏸️ L\'admin a mis la sollicitation en attente';
+            couleurBandeau = '#a1a1aa';
+            bgBandeau = 'rgba(161,161,170,0.15)';
+            borderBandeau = '#a1a1aa';
+          } else if (stEsc === 'refuse_par_admin') {
+            bandeauContenu = '❌ Sollicitation refusée par l\'admin';
+            couleurBandeau = '#ef4444';
+            bgBandeau = 'rgba(239,68,68,0.15)';
+            borderBandeau = '#ef4444';
+          } else if (stEsc === 'attente_paiement') {
             bandeauContenu = '⏳ En attente du paiement acheteur';
             couleurBandeau = '#FFC107';
             bgBandeau = 'rgba(255,193,7,0.15)';
