@@ -4115,6 +4115,152 @@
       }
     }
 
+    /* Bannière promotionnelle Escrow */
+    .banner-escrow-promo {
+      background: linear-gradient(135deg, #1a3d24 0%, #0f2918 50%, #1a3d24 100%);
+      border: 1.5px solid #00C853;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 200, 83, 0.25);
+      animation: escrowBannerGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes escrowBannerGlow {
+      from { box-shadow: 0 4px 20px rgba(0, 200, 83, 0.2); }
+      to { box-shadow: 0 4px 28px rgba(0, 200, 83, 0.45); }
+    }
+
+    .banner-escrow-promo::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 230, 118, 0.08), transparent);
+      animation: escrowBannerShine 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes escrowBannerShine {
+      0% { left: -100%; }
+      50% { left: 100%; }
+      100% { left: 100%; }
+    }
+
+    .banner-escrow-content {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+    }
+
+    .banner-escrow-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.6));
+      animation: escrowIconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes escrowIconPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .banner-escrow-text {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .banner-escrow-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 3px;
+      letter-spacing: 0.2px;
+    }
+
+    .banner-escrow-subtitle {
+      font-size: 12.5px;
+      color: #B9F6CA;
+      line-height: 1.4;
+    }
+
+    .banner-escrow-cta {
+      background: #00C853;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: var(--transition);
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+
+    .banner-escrow-cta:hover {
+      background: #00E676;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 230, 118, 0.5);
+    }
+
+    .banner-escrow-close {
+      background: rgba(0, 0, 0, 0.3);
+      color: #B9F6CA;
+      border: 1px solid rgba(0, 230, 118, 0.4);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 14px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .banner-escrow-close:hover {
+      background: #00C853;
+      color: #000;
+      border-color: #00C853;
+    }
+
+    @media (max-width: 600px) {
+      .banner-escrow-content {
+        gap: 10px;
+      }
+      .banner-escrow-icon {
+        font-size: 26px;
+      }
+      .banner-escrow-title {
+        font-size: 13.5px;
+      }
+      .banner-escrow-subtitle {
+        font-size: 11.5px;
+      }
+      .banner-escrow-cta {
+        width: 100%;
+        padding: 10px;
+        font-size: 13px;
+        order: 3;
+        margin-top: 4px;
+      }
+      .banner-escrow-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+      }
+    }
+
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -4574,6 +4720,21 @@
          -------------------------------------------------------- -->
     <section id="page-accueil" class="page-view active">
       
+      <!-- Bannière promotionnelle Escrow -->
+      <div id="banner-escrow-promo" class="banner-escrow-promo" style="display:none;">
+        <div class="banner-escrow-content">
+          <div class="banner-escrow-icon">🔒</div>
+          <div class="banner-escrow-text">
+            <div class="banner-escrow-title">NOUVEAU : Achat sécurisé avec protection admin</div>
+            <div class="banner-escrow-subtitle">Ton argent est protégé jusqu'à ce que tu reçoives ton compte eFootball. Zéro risque d'arnaque.</div>
+          </div>
+          <button type="button" class="banner-escrow-cta" onclick="changerPage('comment-ca-marche')">
+            En savoir plus →
+          </button>
+          <button type="button" class="banner-escrow-close" onclick="fermerBannerEscrowPromo()" title="Fermer">✕</button>
+        </div>
+      </div>
+
       <!-- Bannière des meilleures offres -->
       <div class="home-banner">
         <div class="banner-title">
@@ -5428,6 +5589,168 @@
           <p style="font-size: 14.5px; color: #aaa; margin: 4px 0 24px 0; line-height: 1.5;">Guide complet pour acheter et vendre vos comptes eFootball en toute sécurité au Sénégal</p>
 
           <div class="legal-body">
+
+            <!-- ═══ SECTION ÉPINGLÉE : TRANSACTION ESCROW / PROTECTION ADMIN ═══ -->
+            <div style="background: linear-gradient(135deg, #1a3d24 0%, #0f2918 100%); border: 2px solid #00C853; border-radius: 12px; padding: 20px; margin-bottom: 32px; box-shadow: 0 6px 24px rgba(0, 200, 83, 0.25); position: relative; overflow: hidden;">
+              
+              <!-- Badge ÉPINGLÉ -->
+              <div style="position: absolute; top: 12px; right: 12px; background: #FFD600; color: #000; padding: 4px 10px; border-radius: 12px; font-size: 10.5px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                📌 ÉPINGLÉ
+              </div>
+
+              <!-- Titre -->
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;">
+                <div style="font-size: 32px; filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.6));">🔒</div>
+                <h2 style="font-size: 20px; color: #00E676; margin: 0; font-weight: 800; letter-spacing: 0.3px;">
+                  Comment se déroule une transaction avec protection admin ?
+                </h2>
+              </div>
+
+              <p style="font-size: 13.5px; color: #B9F6CA; line-height: 1.6; margin: 0 0 20px 0;">
+                Cette méthode <strong style="color: #fff;">100% sécurisée</strong> permet d'acheter un compte eFootball sans risque d'arnaque. 
+                Un administrateur de confiance sert d'intermédiaire : il garde l'argent de l'acheteur jusqu'à ce que le compte soit 
+                bien livré. <strong style="color: #fff;">Si problème, l'argent est remboursé.</strong>
+              </p>
+
+              <!-- Timeline des étapes -->
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+
+                <!-- Étape 1 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #60a5fa;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #60a5fa; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">1</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">💬 L'acheteur envoie une demande d'achat</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      L'acheteur trouve un compte qui l'intéresse et clique sur <strong style="color: #00E676;">« Je veux acheter »</strong>. Le vendeur reçoit la demande dans son tableau de bord.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 2 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #60a5fa;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #60a5fa; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">2</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">✅ Le vendeur accepte la demande</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      Le vendeur étudie la demande et clique sur <strong style="color: #00E676;">« Accepter »</strong>. 
+                      Il peut accepter jusqu'à 2 demandes maximum. Dès la 2ᵉ acceptation, l'annonce est retirée du catalogue public.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 3 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #FFD600;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #FFD600; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">3</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">🔑 Le vendeur autorise l'acheteur à payer</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      Le vendeur choisit <strong style="color: #FFD600;">UN SEUL acheteur</strong> parmi les demandes acceptées et l'autorise à payer. 
+                      L'acheteur reçoit une notification.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 4 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #fbbf24;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #fbbf24; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">4</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">🛡️ L'acheteur choisit un admin de confiance</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      L'acheteur sélectionne un admin parmi la liste des admins agréés. Il voit ses coordonnées 
+                      (nom, région, téléphone, moyen de paiement Wave / OM).
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 5 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #fbbf24;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #fbbf24; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">5</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">📩 L'admin reçoit la sollicitation</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      L'admin reçoit la demande dans son espace. Il peut <strong style="color: #00E676;">Accepter</strong>, 
+                      <strong style="color: #fbbf24;">Mettre en attente</strong> ou <strong style="color: #ef4444;">Refuser</strong>. 
+                      L'acheteur peut retirer sa sollicitation et choisir un autre admin à tout moment.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 6 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #00C853;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #00C853; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">6</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">💸 L'acheteur envoie l'argent à l'admin</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      Une fois l'admin validé, l'acheteur envoie le <strong style="color: #00E676;">montant exact</strong> à l'admin via Wave ou Orange Money. 
+                      Puis il clique sur <strong style="color: #00E676;">« J'ai envoyé l'argent »</strong>. 
+                      À cet instant, l'annonce est <strong>retirée du catalogue</strong> et toutes les autres demandes sont automatiquement refusées.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 7 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #00C853;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #00C853; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">7</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">✅ L'admin vérifie et confirme la réception</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      L'admin vérifie sur son compte Wave / OM que l'argent a bien été reçu. Si tout est bon, il clique sur 
+                      <strong style="color: #00E676;">« J'ai reçu l'argent »</strong>. Le vendeur est notifié : il peut livrer le compte.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 8 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #00C853;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #00C853; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">8</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">📦 Le vendeur transfère les identifiants</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      Le vendeur contacte l'acheteur sur WhatsApp et lui transmet les identifiants Konami ID. 
+                      Puis il clique sur <strong style="color: #00E676;">« J'ai transféré les identifiants »</strong>.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 9 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #00C853;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #00C853; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">9</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">🎮 L'acheteur teste et confirme la réception</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      L'acheteur se connecte au compte, vérifie que tout correspond à la description et que les joueurs promis sont bien là. 
+                      Si tout est bon, il clique sur <strong style="color: #00E676;">« J'ai reçu le compte »</strong>.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Étape 10 -->
+                <div style="display: flex; gap: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px; border-left: 3px solid #00E676;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #00E676; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">10</div>
+                  <div style="flex: 1;">
+                    <div style="font-size: 14.5px; font-weight: 700; color: #00E676; margin-bottom: 4px;">💸 L'admin transfère l'argent au vendeur</div>
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                      L'admin envoie l'argent au vendeur via Wave / OM et clique sur 
+                      <strong style="color: #00E676;">« J'ai transféré l'argent au vendeur »</strong>. 
+                      <strong style="color: #00E676;">La transaction est terminée ✅</strong>. 
+                      L'acheteur laisse un avis étoilé sur le vendeur.
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Avertissement final -->
+              <div style="margin-top: 20px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.4); border-radius: 10px; padding: 14px; display: flex; gap: 10px; align-items: flex-start;">
+                <span style="font-size: 20px; flex-shrink: 0;">⚠️</span>
+                <div style="font-size: 12.5px; color: #fbbf24; line-height: 1.5;">
+                  <strong style="color: #FFD600;">Règle d'or :</strong> Ne confirme JAMAIS la réception du compte avant d'avoir testé la connexion Konami ID. 
+                  Si problème, contacte l'admin pour bloquer la transaction. 
+                  <strong style="color: #fff;">L'argent reste chez l'admin</strong> jusqu'à ta confirmation.
+                </div>
+              </div>
+
+            </div>
 
             <!-- ═══ SECTION 1 : POUR LES ACHETEURS ═══ -->
             <h2 style="font-size: 20px; color: #00C853; margin-top: 32px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid rgba(0,200,83,0.3);">
@@ -8477,6 +8800,9 @@
 
       // Actions spécifiques selon la page demandée
       if (pageId === 'accueil') {
+        if (typeof afficherBannerEscrowPromo === 'function') {
+          afficherBannerEscrowPromo();
+        }
         nettoyerHashAnnonce();
         appliquerFiltres();
       } else if (pageId === 'mes-annonces') {
@@ -19907,6 +20233,40 @@
       }
     });
 
+    // MODIFICATION 3 : JavaScript — Afficher/masquer la bannière promo Escrow
+    var STORAGE_BANNER_ESCROW = 'efoot_banner_escrow_dismissed';
+
+    function afficherBannerEscrowPromo() {
+      var banner = document.getElementById('banner-escrow-promo');
+      if (!banner) return;
+      
+      // Vérifier si l'utilisateur a déjà fermé la bannière
+      var dismissed = localStorage.getItem(STORAGE_BANNER_ESCROW);
+      if (dismissed === 'true') {
+        banner.style.display = 'none';
+        return;
+      }
+      
+      banner.style.display = 'block';
+    }
+
+    function fermerBannerEscrowPromo() {
+      var banner = document.getElementById('banner-escrow-promo');
+      if (banner) {
+        banner.style.display = 'none';
+      }
+      try {
+        localStorage.setItem(STORAGE_BANNER_ESCROW, 'true');
+      } catch (e) {}
+      if (typeof afficherNotification === 'function') {
+        afficherNotification("Bannière masquée pour cette session", "✅");
+      }
+    }
+
+    // Exposer sur window
+    window.afficherBannerEscrowPromo = afficherBannerEscrowPromo;
+    window.fermerBannerEscrowPromo = fermerBannerEscrowPromo;
+
     /* ==========================================================
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
@@ -19972,6 +20332,9 @@
       try {
         // Démarrer l'écoute temps réel de la collection Firestore "annonces"
         afficherAnnonces();
+        if (typeof afficherBannerEscrowPromo === 'function') {
+          afficherBannerEscrowPromo();
+        }
       } catch (e) {
         console.warn("Erreur afficherAnnonces init :", e);
       }
