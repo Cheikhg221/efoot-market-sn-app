@@ -13587,9 +13587,9 @@
       } else if (stEscrow === 'admin_en_attente') {
         msgEscrow = "⏸️ L'admin a mis ta sollicitation en attente";
       } else if (stEscrow === 'refuse_par_admin') {
-        msgEscrow = "❌ L'admin a refusé ta sollicitation. Choisis un autre admin pour continuer.";
+        msgEscrow = "❌ L'admin a refusé ta sollicitation. Clique sur '🔒 Choisir un autre admin' ci-dessus pour continuer.";
       } else if (stEscrow === 'attente_paiement') {
-        msgEscrow = "🔑 Le vendeur t'a autorisé à payer via un admin. Clique sur 'Acheter avec protection admin' ci-dessus pour sécuriser ton paiement.";
+        msgEscrow = "💡 Rappel : Envoie le montant à l'admin, puis clique sur '💸 J'ai envoyé l'argent' ci-dessus pour confirmer.";
       } else if (stEscrow === 'paiement_envoye') {
         msgEscrow = "📤 Paiement envoyé à l'admin. Il va vérifier la réception, puis le vendeur pourra te transférer les identifiants.";
       } else if (stEscrow === 'paiement_recu') {
@@ -13681,7 +13681,7 @@
               </div>
               ${stepperAcheteur}
               <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13px; color: #34d399; font-weight: 700; margin-top: 10px; text-align: center;">
-                Le vendeur vous a autorisé à payer ! Cliquez sur « Acheter avec protection admin » ci-dessus pour finaliser votre transaction.
+                🔑 Le vendeur t'a autorisé à payer. Choisis maintenant un admin de confiance en cliquant sur '🔒 Acheter avec protection admin' ci-dessus.
               </div>
             </div>
           `;
@@ -13817,13 +13817,13 @@
           afficherBoutonWhatsApp = false;
         } else if (stEscrow === 'refuse_par_admin') {
           titreBox = "❌ Sollicitation refusée";
-          texteMessage = "❌ L'admin a refusé ta sollicitation. Choisis un autre admin pour continuer.";
+          texteMessage = "❌ L'admin a refusé ta sollicitation. Clique sur '🔒 Choisir un autre admin' ci-dessus pour continuer.";
           couleurTitre = "#ef4444";
           classeBox = "box-litige";
           afficherBoutonWhatsApp = false;
         } else if (stEscrow === 'attente_paiement') {
           titreBox = "🔑 Paiement sécurisé autorisé";
-          texteMessage = "🔑 Le vendeur t'a autorisé à payer via un admin. Clique sur 'Acheter avec protection admin' ci-dessus pour sécuriser ton paiement.";
+          texteMessage = "Le vendeur t'a autorisé à payer. Envoie le montant exact à l'admin via Wave / Orange Money, puis clique sur '💸 J'ai envoyé l'argent' ci-dessus pour confirmer.<div style=\"font-size: 12px; color: #fbbf24; margin-top: 6px; font-weight: 600;\">💡 Rappel : Envoie le montant à l'admin, puis clique sur 'J'ai envoyé l'argent'.</div>";
           couleurTitre = "#fbbf24";
           classeBox = "box-demande";
           afficherBoutonWhatsApp = false;
@@ -13859,7 +13859,7 @@
           afficherBoutonWhatsApp = false;
         } else if (demandeAutorisee) {
           titreBox = "🔑 Autorisation de paiement reçue";
-          texteMessage = "🔑 Le vendeur t'a autorisé à payer via un admin. Clique sur 'Acheter avec protection admin' ci-dessus pour sécuriser ton paiement.";
+          texteMessage = "🔑 Le vendeur t'a autorisé à payer. Choisis maintenant un admin de confiance en cliquant sur '🔒 Acheter avec protection admin' ci-dessus.";
           couleurTitre = "#34d399";
           classeBox = "box-acceptee";
           afficherBoutonWhatsApp = false;
