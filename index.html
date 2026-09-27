@@ -11351,13 +11351,14 @@
       } else if (s === 'attente_paiement') {
         step3Class = 'active';
         progressWidth = '40%';
-      } else if (demandeAutorisee || !s) {
-        // Aucune transaction escrow (demande.autoriseAPayer === true mais pas encore choisie d'admin)
+      } else if (demandeAutorisee) {
+        // Demande autorisée par le vendeur à payer via admin
         step3Class = 'active';
         progressWidth = '40%';
       } else {
-        step3Class = 'active';
-        progressWidth = '40%';
+        // Avant l'autorisation, l'étape 3 doit être inactive
+        step3Class = '';
+        progressWidth = '25%';
       }
 
       return `
@@ -12020,13 +12021,59 @@
       var escrows = (typeof escrowVendeurCache !== 'undefined' && escrowVendeurCache) ? escrowVendeurCache : [];
       var html = '';
       
-      var totalElements = demandes.length + escrows.length;
-      if (totalElements === 0) {
+      // 1. Construire un tableau UNIFIÉ de tous les éléments
+      var elements = [];
+
+      (escrows || []).forEach(function(e) {
+        var sec = 0;
+        if (e && e.dateCreation) {
+          if (typeof e.dateCreation.seconds === 'number') {
+            sec = e.dateCreation.seconds;
+          } else if (typeof e.dateCreation.toDate === 'function') {
+            sec = e.dateCreation.toDate().getTime() / 1000;
+          } else if (e.dateCreation instanceof Date) {
+            sec = e.dateCreation.getTime() / 1000;
+          } else if (typeof e.dateCreation === 'string') {
+            sec = new Date(e.dateCreation).getTime() / 1000;
+          }
+        }
+        elements.push({
+          type: 'escrow',
+          date: sec || 0,
+          data: e
+        });
+      });
+
+      (demandes || []).forEach(function(d) {
+        var sec = 0;
+        if (d && d.dateCreation) {
+          if (typeof d.dateCreation.seconds === 'number') {
+            sec = d.dateCreation.seconds;
+          } else if (typeof d.dateCreation.toDate === 'function') {
+            sec = d.dateCreation.toDate().getTime() / 1000;
+          } else if (d.dateCreation instanceof Date) {
+            sec = d.dateCreation.getTime() / 1000;
+          } else if (typeof d.dateCreation === 'string') {
+            sec = new Date(d.dateCreation).getTime() / 1000;
+          }
+        }
+        elements.push({
+          type: 'demande',
+          date: sec || 0,
+          data: d
+        });
+      });
+
+      if (elements.length === 0) {
         html += '<p style="color:#888;">Aucune demande reçue</p>';
       } else {
-        // 1. Transactions Escrow côté vendeur (avec badge spécial "🔒 ESCROW")
-        if (escrows.length > 0) {
-          escrows.forEach(function(e) {
+        // 2. Trier elements par date DÉCROISSANTE (plus récent en premier)
+        elements.sort(function(a, b) { return b.date - a.date; });
+
+        // 3. Rendu unifié dans l'ordre trié
+        elements.forEach(function(el) {
+          if (el.type === 'escrow') {
+            var e = el.data;
             var stEscrow = (e.statut || '').toLowerCase().trim();
             var stInfo = (typeof getStatutInfoAdminEscrow === 'function') ? getStatutInfoAdminEscrow(stEscrow) : null;
             var libelleStatut = stInfo ? stInfo.libelle : ((typeof getLibelleStatutEscrow === 'function') ? getLibelleStatutEscrow(stEscrow) : stEscrow);
@@ -12085,50 +12132,48 @@
 
             html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
             html += '</div>';
-          });
-        }
-
-        // 2. Demandes normales
-        demandes.forEach(function(d) {
-          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
-          html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
-          html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
-          html += '<p>👤 Acheteur : ' + escapeHtml(d.acheteurNom || "Acheteur") + '</p>';
-          if (d.nombreRefus && d.nombreRefus > 0) {
-            html += '<p style="color:#FFC107; font-size:12px; margin:4px 0 8px 0;">⚠️ Déjà refusé ' + d.nombreRefus + ' fois</p>';
-          }
-          html += '<p>📞 ' + escapeHtml(d.acheteurTelephone || "Non renseigné") + '</p>';
-          
-          var statutNorm = (d.statut || '').toUpperCase();
-
-          if (statutNorm === "EN_ATTENTE" || statutNorm === "DEMANDE_ENVOYEE") {
-            html += '<p style="color:#FFC107;">🟡 En attente de votre réponse</p>';
-            html += '<button id="btn-accepter-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerAccepter(\'' + d.id + '\', this)" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
-            html += '<button id="btn-refuser-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerRefuser(\'' + d.id + '\', this)" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
-          } else if (statutNorm === "ACCEPTEE") {
-            html += '<p style="color:#00C853;">✅ Acceptée</p>';
-          } else if (statutNorm === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
-            html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:10px; margin:6px 0;">';
-            html += '<p style="color:#FFC107; font-weight:700; margin:0 0 4px 0;">⏳ Vente en attente de confirmation</p>';
-            html += '<p style="color:#ccc; font-size:12px; margin:0;">Vous avez marqué ce compte comme VENDU. L\'acheteur doit confirmer la réception pour finaliser.</p>';
-            html += '</div>';
-          } else if (statutNorm === "LIVRAISON_CONFIRMEE") {
-            html += '<p style="color:#00C853; font-weight:600;">✅ Réception confirmée par l\'acheteur !</p>';
-          } else if (statutNorm === "REFUSEE") {
-            var motif = d.motifRefus || "";
-            if (motif.indexOf("vendu") !== -1) {
-              html += '<p style="color:#F44336;">❌ Refusée — <span style="color:#888; font-size:12px;">Compte vendu à un autre acheteur</span></p>';
-            } else {
-              html += '<p style="color:#F44336;">❌ Refusée par vous</p>';
+          } else {
+            var d = el.data;
+            html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
+            html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
+            html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
+            html += '<p>👤 Acheteur : ' + escapeHtml(d.acheteurNom || "Acheteur") + '</p>';
+            if (d.nombreRefus && d.nombreRefus > 0) {
+              html += '<p style="color:#FFC107; font-size:12px; margin:4px 0 8px 0;">⚠️ Déjà refusé ' + d.nombreRefus + ' fois</p>';
             }
-          } else if (statutNorm === "TERMINEE") {
-            html += '<p style="color:#34d399; font-weight:700;">🎉 Vente terminée</p>';
-          } else if (statutNorm === "ANNULEE") {
-            html += '<p style="color:#f87171; font-weight:600;">❌ Transaction annulée</p>';
+            html += '<p>📞 ' + escapeHtml(d.acheteurTelephone || "Non renseigné") + '</p>';
+            
+            var statutNorm = (d.statut || '').toUpperCase();
+
+            if (statutNorm === "EN_ATTENTE" || statutNorm === "DEMANDE_ENVOYEE") {
+              html += '<p style="color:#FFC107;">🟡 En attente de votre réponse</p>';
+              html += '<button id="btn-accepter-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerAccepter(\'' + d.id + '\', this)" style="background:#00C853; color:white; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer; font-weight:700;">✅ Accepter</button>';
+              html += '<button id="btn-refuser-' + d.id + '" onclick="event.stopPropagation(); ouvrirModalConfirmerRefuser(\'' + d.id + '\', this)" style="background:#F44336; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:700;">❌ Refuser</button>';
+            } else if (statutNorm === "ACCEPTEE") {
+              html += '<p style="color:#00C853;">✅ Acceptée</p>';
+            } else if (statutNorm === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+              html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:10px; margin:6px 0;">';
+              html += '<p style="color:#FFC107; font-weight:700; margin:0 0 4px 0;">⏳ Vente en attente de confirmation</p>';
+              html += '<p style="color:#ccc; font-size:12px; margin:0;">Vous avez marqué ce compte comme VENDU. L\'acheteur doit confirmer la réception pour finaliser.</p>';
+              html += '</div>';
+            } else if (statutNorm === "LIVRAISON_CONFIRMEE") {
+              html += '<p style="color:#00C853; font-weight:600;">✅ Réception confirmée par l\'acheteur !</p>';
+            } else if (statutNorm === "REFUSEE") {
+              var motif = d.motifRefus || "";
+              if (motif.indexOf("vendu") !== -1) {
+                html += '<p style="color:#F44336;">❌ Refusée — <span style="color:#888; font-size:12px;">Compte vendu à un autre acheteur</span></p>';
+              } else {
+                html += '<p style="color:#F44336;">❌ Refusée par vous</p>';
+              }
+            } else if (statutNorm === "TERMINEE") {
+              html += '<p style="color:#34d399; font-weight:700;">🎉 Vente terminée</p>';
+            } else if (statutNorm === "ANNULEE") {
+              html += '<p style="color:#f87171; font-weight:600;">❌ Transaction annulée</p>';
+            }
+            
+            html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
+            html += '</div>';
           }
-          
-          html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
-          html += '</div>';
         });
       }
       
@@ -12151,13 +12196,59 @@
       var escrows = (typeof escrowAcheteurCache !== 'undefined' && escrowAcheteurCache) ? escrowAcheteurCache : [];
       var html = '';
       
-      var totalElements = demandes.length + escrows.length;
-      if (totalElements === 0) {
+      // 1. Construire un tableau UNIFIÉ de tous les éléments
+      var elements = [];
+
+      (escrows || []).forEach(function(e) {
+        var sec = 0;
+        if (e && e.dateCreation) {
+          if (typeof e.dateCreation.seconds === 'number') {
+            sec = e.dateCreation.seconds;
+          } else if (typeof e.dateCreation.toDate === 'function') {
+            sec = e.dateCreation.toDate().getTime() / 1000;
+          } else if (e.dateCreation instanceof Date) {
+            sec = e.dateCreation.getTime() / 1000;
+          } else if (typeof e.dateCreation === 'string') {
+            sec = new Date(e.dateCreation).getTime() / 1000;
+          }
+        }
+        elements.push({
+          type: 'escrow',
+          date: sec || 0,
+          data: e
+        });
+      });
+
+      (demandes || []).forEach(function(d) {
+        var sec = 0;
+        if (d && d.dateCreation) {
+          if (typeof d.dateCreation.seconds === 'number') {
+            sec = d.dateCreation.seconds;
+          } else if (typeof d.dateCreation.toDate === 'function') {
+            sec = d.dateCreation.toDate().getTime() / 1000;
+          } else if (d.dateCreation instanceof Date) {
+            sec = d.dateCreation.getTime() / 1000;
+          } else if (typeof d.dateCreation === 'string') {
+            sec = new Date(d.dateCreation).getTime() / 1000;
+          }
+        }
+        elements.push({
+          type: 'demande',
+          date: sec || 0,
+          data: d
+        });
+      });
+
+      if (elements.length === 0) {
         html += '<p style="color:#888;">Aucune demande envoyée</p>';
       } else {
-        // 1. Transactions Escrow (avec badge spécial "🔒 ESCROW")
-        if (escrows.length > 0) {
-          escrows.forEach(function(e) {
+        // 2. Trier elements par date DÉCROISSANTE (plus récent en premier)
+        elements.sort(function(a, b) { return b.date - a.date; });
+
+        // 3. Rendu unifié dans l'ordre trié
+        elements.forEach(function(el) {
+          if (el.type === 'escrow') {
+            var e = el.data;
             var stEscrow = (e.statut || '').toLowerCase().trim();
             var libelle = (typeof getLibelleStatutEscrow === 'function') ? getLibelleStatutEscrow(stEscrow) : (stEscrow || 'En attente');
             var couleur = (typeof getCouleurStatutEscrow === 'function') ? getCouleurStatutEscrow(stEscrow) : '#fff';
@@ -12187,70 +12278,68 @@
 
             html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
             html += '</div>';
-          });
-        }
-
-        // 2. Demandes normales
-        demandes.forEach(function(d) {
-          html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
-          html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
-          html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
-          html += '<p>👤 Vendeur : ' + escapeHtml(d.vendeurNom || "Vendeur") + '</p>';
-          
-          if (d.statut === "terminee" || d.statut === "TERMINEE") {
-            html += '<p style="color:#34d399; font-weight:700; margin:6px 0;">🎉 Terminée</p>';
-            const tousAvis = getAvis();
-            const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-            const profil = getProfilUtilisateur();
-            const monNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
-            const monAvis = tousAvis.find(function(a) {
-              return (d.id && a.transactionId === d.id) || 
-                     (a.vendeurNom === d.vendeurNom && a.acheteurNom === monNom && a.annonceId === d.annonceId) ||
-                     (user && a.acheteurId === user.uid && a.annonceId === d.annonceId);
-            });
-            if (monAvis) {
-              html += '<p style="font-size:12px; color:var(--text-gray); margin:4px 0 8px 0;">Votre avis : ' + monAvis.note + '/5 ★</p>';
-              html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirProfilVendeur(\'' + escapeHtml(d.vendeurNom || '') + '\', \'' + (d.vendeurId || '') + '\')">👤 Voir le profil</button>';
-            } else {
-              html += '<button type="button" class="btn-tx-review" style="font-size:12px; padding:8px 14px; margin-top:4px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + d.id + '\', \'' + escapeHtml(d.vendeurNom || 'Vendeur') + '\', \'' + d.annonceId + '\', \'' + escapeHtml(d.annonceTitre || 'Compte eFootball') + '\', \'' + (d.vendeurId || '') + '\')">⭐ Laisser un avis</button>';
+          } else {
+            var d = el.data;
+            html += '<div class="carte-demande" style="border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; background:#1E1E1E; cursor:pointer; transition: border-color 0.2s;" onclick="changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#333\'">';
+            html += '<h4 style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">📦 ' + escapeHtml(d.annonceTitre || "Compte eFootball") + ' <span style="font-size:11px; color:#888; font-weight:normal;">→ Voir l\'annonce</span></h4>';
+            html += '<p>💰 ' + (d.annoncePrix ? Number(d.annoncePrix).toLocaleString('fr-FR') : 0) + ' FCFA</p>';
+            html += '<p>👤 Vendeur : ' + escapeHtml(d.vendeurNom || "Vendeur") + '</p>';
+            
+            if (d.statut === "terminee" || d.statut === "TERMINEE") {
+              html += '<p style="color:#34d399; font-weight:700; margin:6px 0;">🎉 Terminée</p>';
+              const tousAvis = getAvis();
+              const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+              const profil = getProfilUtilisateur();
+              const monNom = profil ? (profil.nom ? `${profil.prenom || ''} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
+              const monAvis = tousAvis.find(function(a) {
+                return (d.id && a.transactionId === d.id) || 
+                       (a.vendeurNom === d.vendeurNom && a.acheteurNom === monNom && a.annonceId === d.annonceId) ||
+                       (user && a.acheteurId === user.uid && a.annonceId === d.annonceId);
+              });
+              if (monAvis) {
+                html += '<p style="font-size:12px; color:var(--text-gray); margin:4px 0 8px 0;">Votre avis : ' + monAvis.note + '/5 ★</p>';
+                html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirProfilVendeur(\'' + escapeHtml(d.vendeurNom || '') + '\', \'' + (d.vendeurId || '') + '\')">👤 Voir le profil</button>';
+              } else {
+                html += '<button type="button" class="btn-tx-review" style="font-size:12px; padding:8px 14px; margin-top:4px; cursor:pointer;" onclick="event.stopPropagation(); ouvrirModalAvisDepuisTransaction(\'' + d.id + '\', \'' + escapeHtml(d.vendeurNom || 'Vendeur') + '\', \'' + d.annonceId + '\', \'' + escapeHtml(d.annonceTitre || 'Compte eFootball') + '\', \'' + (d.vendeurId || '') + '\')">⭐ Laisser un avis</button>';
+              }
+              html += ' <button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-left:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
+            } else if (d.statut === "annulee" || d.statut === "ANNULEE") {
+              html += '<p style="color:#f87171; font-weight:600;">❌ Annulée par le vendeur</p>';
+              html += '<p style="color:#888; font-size:12px;">Le vendeur a annulé cette transaction</p>';
+              html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
+            } else if (d.statut === "refusee") {
+              html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
+            } else if (d.statut === "LIVRAISON_CONFIRMEE" && d.confirmationAcheteur === true) {
+              html += '<div style="background:rgba(251,146,60,0.1); border:1px solid rgba(251,146,60,0.3); border-radius:8px; padding:12px; margin:8px 0;">';
+              html += '<p style="color:#fb923c; font-weight:700; margin:0 0 4px 0;">📦 Réception confirmée !</p>';
+              html += '<p style="color:#ccc; font-size:12.5px; margin:0;">Vous avez confirmé la réception. En attente de la clôture définitive par le vendeur.</p>';
+              html += '</div>';
+            } else if (d.statut === "LIVRAISON_CONFIRMEE" || d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
+              html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin:8px 0;">';
+              html += '<p style="color:#FFC107; font-weight:700; margin:0 0 8px 0;">⏳ CONFIRMATION REQUISE</p>';
+              html += '<p style="color:#fff; font-size:13px; margin:0 0 12px 0;">Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?</p>';
+              html += '<button onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 16px; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">✅ Oui, j\'ai reçu</button>';
+              html += '</div>';
+            } else if (d.statut === "LIVRAISON_NON_CONFIRMEE") {
+              html += '<p style="color:#fbbf24; font-weight:600;">⚠️ Réception non confirmée</p>';
+              html += '<p style="color:#888; font-size:12px;">Le vendeur a été notifié et doit vous recontacter.</p>';
+              html += '<button type="button" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px; margin-top:8px;" onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')">✅ Confirmer la réception maintenant</button>';
+            } else if (d.statut === "acceptee") {
+              var telVendeur = d.vendeurTelephone || d.telephoneWhatsAppVendeur || d.vendeurWhatsapp || "";
+              html += '<p style="color:#00C853;">✅ Acceptée !</p>';
+              html += '<p>Vous pouvez désormais contacter le vendeur par WhatsApp pour finaliser la transaction</p>';
+              if (telVendeur) {
+                var numeroClean = String(telVendeur).replace(/[^0-9]/g, "");
+                html += '<button onclick="event.stopPropagation(); contacterWhatsApp(\'' + numeroClean + '\')" class="btn-whatsapp" style="padding:8px 14px; border:none; border-radius:6px; cursor:pointer; margin-top:6px;">📱 Contacter sur WhatsApp</button>';
+              }
+            } else if (d.statut === "en_attente") {
+              html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
+              html += '<button onclick="event.stopPropagation(); retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
             }
-            html += ' <button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-left:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
-          } else if (d.statut === "annulee" || d.statut === "ANNULEE") {
-            html += '<p style="color:#f87171; font-weight:600;">❌ Annulée par le vendeur</p>';
-            html += '<p style="color:#888; font-size:12px;">Le vendeur a annulé cette transaction</p>';
-            html += '<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 12px; margin-top:8px; cursor:pointer;" onclick="event.stopPropagation(); changerPage(\'detail\', { annonceId: \'' + d.annonceId + '\' })">👁️ Voir l\'annonce</button>';
-          } else if (d.statut === "refusee") {
-            html += '<p style="color:#F44336;">❌ Refusée par le vendeur</p>';
-          } else if (d.statut === "LIVRAISON_CONFIRMEE" && d.confirmationAcheteur === true) {
-            html += '<div style="background:rgba(251,146,60,0.1); border:1px solid rgba(251,146,60,0.3); border-radius:8px; padding:12px; margin:8px 0;">';
-            html += '<p style="color:#fb923c; font-weight:700; margin:0 0 4px 0;">📦 Réception confirmée !</p>';
-            html += '<p style="color:#ccc; font-size:12.5px; margin:0;">Vous avez confirmé la réception. En attente de la clôture définitive par le vendeur.</p>';
+            
+            html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
             html += '</div>';
-          } else if (d.statut === "LIVRAISON_CONFIRMEE" || d.statut === "EN_ATTENTE_CONFIRMATION_ACHETEUR") {
-            html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin:8px 0;">';
-            html += '<p style="color:#FFC107; font-weight:700; margin:0 0 8px 0;">⏳ CONFIRMATION REQUISE</p>';
-            html += '<p style="color:#fff; font-size:13px; margin:0 0 12px 0;">Le vendeur a marqué le compte comme VENDU. Confirmez-vous avoir reçu le compte ?</p>';
-            html += '<button onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')" style="background:#00C853; color:white; padding:10px 16px; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">✅ Oui, j\'ai reçu</button>';
-            html += '</div>';
-          } else if (d.statut === "LIVRAISON_NON_CONFIRMEE") {
-            html += '<p style="color:#fbbf24; font-weight:600;">⚠️ Réception non confirmée</p>';
-            html += '<p style="color:#888; font-size:12px;">Le vendeur a été notifié et doit vous recontacter.</p>';
-            html += '<button type="button" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px; margin-top:8px;" onclick="event.stopPropagation(); confirmerReceptionParAcheteur(\'' + d.id + '\')">✅ Confirmer la réception maintenant</button>';
-          } else if (d.statut === "acceptee") {
-            var telVendeur = d.vendeurTelephone || d.telephoneWhatsAppVendeur || d.vendeurWhatsapp || "";
-            html += '<p style="color:#00C853;">✅ Acceptée !</p>';
-            html += '<p>Vous pouvez désormais contacter le vendeur par WhatsApp pour finaliser la transaction</p>';
-            if (telVendeur) {
-              var numeroClean = String(telVendeur).replace(/[^0-9]/g, "");
-              html += '<button onclick="event.stopPropagation(); contacterWhatsApp(\'' + numeroClean + '\')" class="btn-whatsapp" style="padding:8px 14px; border:none; border-radius:6px; cursor:pointer; margin-top:6px;">📱 Contacter sur WhatsApp</button>';
-            }
-          } else if (d.statut === "en_attente") {
-            html += '<p style="color:#FFC107;">🟡 En attente de réponse du vendeur</p>';
-            html += '<button onclick="event.stopPropagation(); retirerDemande(\'' + d.id + '\')" style="background:#555; color:white; padding:8px 14px; border:none; border-radius:6px; margin-top:6px; cursor:pointer; font-size:12px;">Annuler ma demande</button>';
           }
-          
-          html += '<p style="font-size:11px; color:#666; margin-top:8px; text-align:right;">👆 Cliquez pour voir l\'annonce</p>';
-          html += '</div>';
         });
       }
       
@@ -13492,24 +13581,25 @@
 
       var stEscrow = escrowAcheteur ? (escrowAcheteur.statut || '').toLowerCase().trim() : null;
       var msgEscrow = null;
+      var nomAdmin = escrowAcheteur && escrowAcheteur.adminNom ? (" de l'admin " + escapeHtml(escrowAcheteur.adminNom)) : " de l'admin";
       if (stEscrow === 'sollicitation_admin') {
-        msgEscrow = "⏳ En attente de la réponse de l'admin";
+        msgEscrow = "⏳ En attente de la réponse" + nomAdmin;
       } else if (stEscrow === 'admin_en_attente') {
-        msgEscrow = "⏸️ L'admin a mis ta demande en attente";
+        msgEscrow = "⏸️ L'admin a mis ta sollicitation en attente";
       } else if (stEscrow === 'refuse_par_admin') {
-        msgEscrow = "❌ L'admin a refusé ta demande";
+        msgEscrow = "❌ L'admin a refusé ta sollicitation. Choisis un autre admin pour continuer.";
       } else if (stEscrow === 'attente_paiement') {
-        msgEscrow = "⏳ En attente de ton paiement à l'admin";
+        msgEscrow = "🔑 Le vendeur t'a autorisé à payer via un admin. Clique sur 'Acheter avec protection admin' ci-dessus pour sécuriser ton paiement.";
       } else if (stEscrow === 'paiement_envoye') {
-        msgEscrow = "📤 Paiement envoyé - En vérification par l'admin";
+        msgEscrow = "📤 Paiement envoyé à l'admin. Il va vérifier la réception, puis le vendeur pourra te transférer les identifiants.";
       } else if (stEscrow === 'paiement_recu') {
-        msgEscrow = "💰 Argent sécurisé - En attente du transfert des identifiants";
+        msgEscrow = "💰 Argent sécurisé chez l'admin ! Le vendeur peut maintenant te transférer les identifiants Konami ID. Contacte-le sur WhatsApp.";
       } else if (stEscrow === 'identifiants_transferes') {
-        msgEscrow = "📦 Vendeur a transféré les identifiants - Vérifie le compte";
+        msgEscrow = "📦 Le vendeur a transféré les identifiants. Vérifie que tout fonctionne, puis confirme la réception du compte.";
       } else if (stEscrow === 'compte_recu') {
-        msgEscrow = "🎉 Compte reçu - L'admin va payer le vendeur";
+        msgEscrow = "🎉 Tu as confirmé avoir reçu le compte. L'admin va payer le vendeur.";
       } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
-        msgEscrow = "✅ Transaction terminée avec succès";
+        msgEscrow = "✅ Transaction terminée avec succès !";
       }
 
       var stepperAcheteur = '';
@@ -13703,28 +13793,98 @@
           </div>
         `;
       } else if (maTxStatut === 'ACCEPTEE') {
+        var nomAdmin = escrowAcheteur && escrowAcheteur.adminNom ? (" de l'admin " + escapeHtml(escrowAcheteur.adminNom)) : " de l'admin";
+        var telVendeur = (ad.vendeurTelephone || ad.telephoneWhatsApp || (demandeAssociee ? (demandeAssociee.vendeurTelephone || demandeAssociee.telephoneWhatsAppVendeur || "") : "") || "");
+        var telVendeurClean = String(telVendeur).replace(/[^0-9]/g, "");
+
+        var titreBox = "🎉 Le vendeur a accepté votre demande !";
+        var texteMessage = "";
+        var couleurTitre = "#60a5fa";
+        var classeBox = "box-acceptee";
+        var afficherBoutonWhatsApp = false;
+
+        if (stEscrow === 'sollicitation_admin') {
+          titreBox = "⏳ Sollicitation admin en attente";
+          texteMessage = "⏳ En attente de la réponse" + nomAdmin;
+          couleurTitre = "#fbbf24";
+          classeBox = "box-demande";
+          afficherBoutonWhatsApp = false;
+        } else if (stEscrow === 'admin_en_attente') {
+          titreBox = "⏸️ Sollicitation en attente";
+          texteMessage = "⏸️ L'admin a mis ta sollicitation en attente";
+          couleurTitre = "#a1a1aa";
+          classeBox = "box-demande";
+          afficherBoutonWhatsApp = false;
+        } else if (stEscrow === 'refuse_par_admin') {
+          titreBox = "❌ Sollicitation refusée";
+          texteMessage = "❌ L'admin a refusé ta sollicitation. Choisis un autre admin pour continuer.";
+          couleurTitre = "#ef4444";
+          classeBox = "box-litige";
+          afficherBoutonWhatsApp = false;
+        } else if (stEscrow === 'attente_paiement') {
+          titreBox = "🔑 Paiement sécurisé autorisé";
+          texteMessage = "🔑 Le vendeur t'a autorisé à payer via un admin. Clique sur 'Acheter avec protection admin' ci-dessus pour sécuriser ton paiement.";
+          couleurTitre = "#fbbf24";
+          classeBox = "box-demande";
+          afficherBoutonWhatsApp = false;
+        } else if (stEscrow === 'paiement_envoye') {
+          titreBox = "📤 Paiement envoyé à l'admin";
+          texteMessage = "📤 Paiement envoyé à l'admin. Il va vérifier la réception, puis le vendeur pourra te transférer les identifiants.";
+          couleurTitre = "#fbbf24";
+          classeBox = "box-demande";
+          afficherBoutonWhatsApp = false;
+        } else if (stEscrow === 'paiement_recu') {
+          titreBox = "💰 Argent sécurisé chez l'admin !";
+          texteMessage = "💰 Argent sécurisé chez l'admin ! Le vendeur peut maintenant te transférer les identifiants Konami ID. Contacte-le sur WhatsApp.";
+          couleurTitre = "#34d399";
+          classeBox = "box-terminee";
+          afficherBoutonWhatsApp = true;
+        } else if (stEscrow === 'identifiants_transferes') {
+          titreBox = "📦 Identifiants transférés par le vendeur";
+          texteMessage = "📦 Le vendeur a transféré les identifiants. Vérifie que tout fonctionne, puis confirme la réception du compte.";
+          couleurTitre = "#fb923c";
+          classeBox = "box-livraison";
+          afficherBoutonWhatsApp = true;
+        } else if (stEscrow === 'compte_recu') {
+          titreBox = "🎉 Réception du compte confirmée";
+          texteMessage = "🎉 Tu as confirmé avoir reçu le compte. L'admin va payer le vendeur.";
+          couleurTitre = "#34d399";
+          classeBox = "box-terminee";
+          afficherBoutonWhatsApp = false;
+        } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
+          titreBox = "✅ Transaction terminée";
+          texteMessage = "✅ Transaction terminée avec succès !";
+          couleurTitre = "#34d399";
+          classeBox = "box-terminee";
+          afficherBoutonWhatsApp = false;
+        } else if (demandeAutorisee) {
+          titreBox = "🔑 Autorisation de paiement reçue";
+          texteMessage = "🔑 Le vendeur t'a autorisé à payer via un admin. Clique sur 'Acheter avec protection admin' ci-dessus pour sécuriser ton paiement.";
+          couleurTitre = "#34d399";
+          classeBox = "box-acceptee";
+          afficherBoutonWhatsApp = false;
+        } else {
+          // AUCUN escrow (flux normal, maTx.statut === 'ACCEPTEE')
+          titreBox = "🎉 Le vendeur a accepté votre demande !";
+          texteMessage = "💬 <strong>Contactez le vendeur sur WhatsApp</strong> pour recevoir vos identifiants Konami ID.<br><span style=\"font-size: 12px; color: #bbb;\">Une fois le compte reçu, vous pourrez confirmer la réception.</span>";
+          couleurTitre = "#60a5fa";
+          classeBox = "box-acceptee";
+          afficherBoutonWhatsApp = true;
+        }
+
+        var btnWhatsAppHtml = (afficherBoutonWhatsApp && telVendeurClean)
+          ? `<button type="button" onclick="event.stopPropagation(); contacterWhatsApp('${telVendeurClean}')" class="btn-whatsapp" style="padding:10px 16px; border:none; border-radius:8px; cursor:pointer; margin-top:10px; font-weight:700; display:inline-flex; align-items:center; gap:6px; background:#25D366; color:white; font-size:13px;">💬 Contacter sur WhatsApp</button>`
+          : "";
+
         actionBox = `
-          <div class="tx-action-box box-acceptee">
-            <div style="font-weight: 700; color: #60a5fa; margin-bottom: 6px; font-size: 13.5px;">
-              🎉 Le vendeur a accepté votre demande !
+          <div class="tx-action-box ${classeBox}">
+            <div style="font-weight: 700; color: ${couleurTitre}; margin-bottom: 6px; font-size: 13.5px;">
+              ${titreBox}
             </div>
-            <div style="font-size: 13px; color: #fff; margin-bottom: 14px; line-height: 1.5;">
-              💬 <strong>Contactez le vendeur sur WhatsApp</strong> pour recevoir vos identifiants Konami ID.<br>
-              <span style="font-size: 12px; color: #bbb;">Une fois le compte reçu, vous pourrez confirmer la réception.</span>
+            <div style="font-size: 13px; color: #fff; line-height: 1.5;">
+              ${texteMessage}
             </div>
-            ${msgEscrow ? `
-              <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13px; color: #34d399; font-weight: 700; margin-bottom: 12px; text-align: center;">
-                ${msgEscrow}
-              </div>
-            ` : (demandeAutorisee ? `
-              <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 13px; color: #34d399; font-weight: 700; margin-bottom: 12px; text-align: center;">
-                🔑 Le vendeur vous a autorisé à payer ! Procédez au paiement sécurisé via le bouton ci-dessus.
-              </div>
-            ` : `
-              <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 8px; padding: 10px; font-size: 12px; color: #93c5fd; margin-bottom: 12px;">
-                ⏳ En attente de l'autorisation du vendeur pour procéder au paiement.
-              </div>
-            `)}
+            ${btnWhatsAppHtml}
           </div>
         `;
       } else if (maTxStatut === 'LIVRAISON_CONFIRMEE') {
