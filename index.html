@@ -9972,24 +9972,21 @@
           );
 
           if (estEscrowVerrouille) {
-            // Bandeau de statut (lecture seule) :
+            // MODIFICATION 2 : Bandeau lecture seule quand escrow verrouillé
             if (stEscrow === 'paiement_envoye') {
-              html += '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #FF9800; border-radius:8px; padding:14px; text-align:center; color:#FF9800; font-weight:700; font-size:14px;">⏳ L\'acheteur a envoyé l\'argent - En vérification par l\'admin</div>';
+              html += '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #FF9800; border-radius:8px; padding:14px; text-align:center; color:#FF9800; font-weight:700; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - L\'acheteur a envoyé l\'argent à l\'admin. Tu ne peux plus modifier la transaction.</div>';
             } else if (stEscrow === 'paiement_recu') {
-              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:800; font-size:14px;">💰 Argent sécurisé - Transfère les identifiants à l\'acheteur</div>';
+              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:800; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - L\'admin a confirmé la réception. Transfère les identifiants Konami à l\'acheteur.</div>';
               html += '<button type="button" onclick="marquerIdentifiantsTransferes(\'' + escrowActif.id + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:15px; box-shadow:0 4px 12px rgba(0,200,83,0.35);">✅ J\'ai transféré les identifiants</button>';
             } else if (stEscrow === 'identifiants_transferes') {
-              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:8px; padding:14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px;">⏳ En attente que l\'acheteur confirme la réception</div>';
+              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:8px; padding:14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - En attente de confirmation de l\'acheteur.</div>';
             } else if (stEscrow === 'compte_recu') {
-              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:700; font-size:14px;">🎉 Compte reçu - L\'admin va te payer</div>';
+              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:700; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - L\'admin va te payer.</div>';
             } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
-              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:700; font-size:14px;">✅ Transaction terminée</div>';
+              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:700; font-size:14px; line-height:1.4;">✅ Transaction terminée avec succès.</div>';
             }
-            // NE PAS afficher les boutons :
-            // - "🔒 Fermer aux nouvelles offres"
-            // - "🔓 Ouvrir aux offres"
-            // - "🎉 Marquer comme VENDU"
-            // - "❌ Annuler la transaction"
+            // MODIFICATION 3 & 4 : TOUS les boutons vendeur sont cachés.
+            // Seuls le bandeau de statut ci-dessus, le bouton "✅ J'ai transféré les identifiants" si paiement_recu, et "📤 Partager mon annonce" sont affichés.
           } else {
             // Si PAS de transaction escrow OU statut === "attente_paiement" :
             // Comportement actuel (garder tous les boutons)
@@ -10010,8 +10007,8 @@
               return d.autoriseAPayer === true;
             });
 
-            // CAS D : une demande a autoriseAPayer === true
-            if (demandeAutorisee) {
+            // MODIFICATION 1 : CAS D : une demande a autoriseAPayer === true ET l'escrow n'est PAS verrouillé
+            if (demandeAutorisee && !estEscrowVerrouille) {
               var nomAcheteur = escapeHtml(demandeAutorisee.acheteurNom || 'l\'acheteur');
               html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; margin-bottom:12px;">' +
                 '<p style="color:#00E676; font-weight:800; font-size:14px; margin:0 0 8px 0; line-height:1.4;">🔒 ACHETEUR AUTORISÉ : ' + nomAcheteur + ' — Aucun autre acheteur ne peut être autorisé tant que celui-ci n\'a pas payé.</p>' +
@@ -10090,7 +10087,7 @@
         var escrowCache = (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) ? escrowVendeurCache : [];
         var escrowTrouve = escrowCache.find(function(e) {
           return e.annonceId === annonceId;
-        }) || null;
+        }) || ((typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) ? escrowAdminCache.find(function(e) { return e.annonceId === annonceId; }) : null) || ((typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) ? escrowAcheteurCache.find(function(e) { return e.annonceId === annonceId; }) : null) || null;
 
         var demandesCache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
         var demandeEnAttente = demandesCache.find(function(d) {
