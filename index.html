@@ -6292,8 +6292,8 @@
             <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="afficherPageAdminSignalements()">
               🔄 Actualiser
             </button>
-            <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer;" onclick="changerPage('accueil')">
-              ← Accueil
+            <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="changerPage('profil')">
+              ← Retour
             </button>
           </div>
         </div>
@@ -6334,7 +6334,7 @@
             </p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="retournerPagePrecedente()">
+            <button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="changerPage('profil')">
               ← Retour
             </button>
           </div>
@@ -6397,14 +6397,19 @@
           <p style="font-size: 13px; color: #aaa; margin: 0;">
             Crée, modifie et gère les publicités partenaires.
           </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+            <button type="button" class="btn-secondary" 
+              style="font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" 
+              onclick="changerPage('profil')">
+              ← Retour
+            </button>
+            <button type="button" class="btn-primary" 
+              style="background: #7C3AED; color: white; font-size: 12.5px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 8px; font-weight: 700;" 
+              onclick="ouvrirModalEditionPub()">
+              ➕ Créer une nouvelle publicité
+            </button>
+          </div>
         </div>
-
-        <!-- Bouton nouvelle pub -->
-        <button type="button" class="btn-primary" 
-          style="background: #7C3AED; color: white; margin-bottom: 20px; padding: 12px 20px; font-size: 14px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;"
-          onclick="ouvrirModalEditionPub()">
-          ➕ Créer une nouvelle publicité
-        </button>
 
         <!-- Liste des pubs -->
         <div id="liste-pubs-admin" style="display: flex; flex-direction: column; gap: 14px;"></div>
