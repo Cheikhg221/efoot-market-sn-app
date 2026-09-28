@@ -10808,7 +10808,13 @@
       const profil = getProfilUtilisateur();
       const monNom = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
       const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
-      const estMonAnnonce = (ad.vendeur === monNom) || (ad.vendeur === monNomFormate) || (profil && ad.vendeurId && ad.vendeurId === profil.id) || (user && ad.vendeurId && ad.vendeurId === user.uid);
+      // Priorité absolue à l'UID Firebase
+      var estMonAnnonce = Boolean(user && ad.vendeurId && ad.vendeurId === user.uid);
+      
+      // Si l'annonce n'a pas de vendeurId (ancienne annonce), fallback sur l'ID profil
+      if (!estMonAnnonce && !ad.vendeurId && profil && profil.id && ad.vendeur === monNomFormate) {
+        estMonAnnonce = true;
+      }
 
       // Chercher si une transaction existe pour cette annonce avec cet utilisateur (cache Firestore ou local)
       const transactions = getTransactions();
@@ -11068,7 +11074,9 @@
       }
 
       // CAS 2 : VENDEUR
-      if (annonce && user.uid === annonce.vendeurId) {
+      var estVendeurParUid = Boolean(user && annonce && annonce.vendeurId && annonce.vendeurId === user.uid);
+
+      if (estVendeurParUid) {
         function rendreContenuVendeur(escrowActif, demandeEnAttente, demandesAnnonce) {
           var html = '';
 
@@ -12536,8 +12544,11 @@
 
         const monNom = profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "");
         const monNomFormate = formaterNomAffichage(profil.prenom, profil.nom);
-        const estMonAnnonce = (profil.id && ad.vendeurId === profil.id) ||
-                              ad.vendeur === monNom || ad.vendeur === monNomFormate;
+        const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+        var estMonAnnonce = Boolean(user && ad.vendeurId && ad.vendeurId === user.uid);
+        if (!estMonAnnonce && !ad.vendeurId && profil && profil.id && ad.vendeur === monNomFormate) {
+          estMonAnnonce = true;
+        }
 
         if (estMonAnnonce) {
           afficherNotification("Vous ne pouvez pas acheter votre propre compte eFootball.", "ℹ️");
@@ -14463,7 +14474,10 @@
         const annonces = getAnnonces();
         const ad = annonces.find(a => a.id === currentDetailAdId);
         if (ad) {
-          const estMonAnnonce = (user && ad.vendeurId && ad.vendeurId === user.uid) || (ad.vendeur === monNom) || (ad.vendeur === monNomFormate);
+          var estMonAnnonce = Boolean(user && ad.vendeurId && ad.vendeurId === user.uid);
+          if (!estMonAnnonce && !ad.vendeurId && profil && profil.id && ad.vendeur === monNomFormate) {
+            estMonAnnonce = true;
+          }
           const maTx = txsToutes.find(t => t.annonceId === ad.id && t.estAcheteur);
           const txsVendeurAd = txsToutes.filter(t => t.annonceId === ad.id);
           const tousAvis = getAvis();
@@ -19855,13 +19869,17 @@
       // Filtrer les annonces actives ou en cours par le nom/ID du vendeur
       const monNomComplet = profil ? (profil.nom ? `${profil.prenom} ${profil.nom}`.trim() : (profil.prenom || "")) : "";
       const monNomFormate = profil ? formaterNomAffichage(profil.prenom, profil.nom) : "";
-      let mesAnnonces = annonces.filter(a => 
-        (user && a.vendeurId === user.uid) ||
-        (profil && a.vendeurId && profil.id && a.vendeurId === profil.id) || 
-        a.vendeur === monNomComplet || 
-        a.vendeur === monNomFormate ||
-        (profil && profil.prenom && a.vendeurPrenom === profil.prenom)
-      );
+      let mesAnnonces = annonces.filter(a => {
+        // Priorité absolue à l'UID
+        if (user && a.vendeurId) {
+          return a.vendeurId === user.uid;
+        }
+        // Fallback pour anciennes annonces sans vendeurId
+        if (!a.vendeurId && profil && profil.id) {
+          return a.vendeur === monNomFormate;
+        }
+        return false;
+      });
 
       // Intégrer les annonces en attente de confirmation acheteur depuis le cache Firestore
       if (typeof annoncesEnAttenteCache !== 'undefined' && annoncesEnAttenteCache && annoncesEnAttenteCache.length > 0) {
