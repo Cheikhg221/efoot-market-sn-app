@@ -5164,6 +5164,15 @@
     </section>
 
     <!-- --------------------------------------------------------
+         PAGE DÉTAIL D'UNE PUBLICITÉ SPONSORISÉE
+         -------------------------------------------------------- -->
+    <section id="page-detail-pub" class="page-view">
+      <div class="detail-card" id="detail-pub-container">
+        <!-- Rendu dynamique via afficherDetailPub() -->
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------
          PAGE 4 : MESSAGERIE LOCALE
          -------------------------------------------------------- -->
     <section id="page-messages" class="page-view">
@@ -6371,6 +6380,38 @@
       </div>
     </section>
 
+    <!-- --------------------------------------------------------
+         PAGE ADMIN : GESTION DES PUBLICITÉS (SUPER ADMIN UNIQUEMENT)
+         -------------------------------------------------------- -->
+    <section id="page-admin-publicites" class="page-view">
+      <div style="max-width: 960px; margin: 0 auto; padding: 24px 16px 80px 16px;">
+        
+        <!-- En-tête -->
+        <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(20, 20, 20, 0.98) 100%); border: 1px solid rgba(124, 58, 237, 0.35); border-radius: 14px; padding: 22px; margin-bottom: 22px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(124, 58, 237, 0.2); color: #a78bfa; padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700; margin-bottom: 8px;">
+            <span>🛡️</span> ESPACE SÉCURISÉ ADMIN
+          </div>
+          <h1 style="font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
+            📢 Gestion des Publicités
+          </h1>
+          <p style="font-size: 13px; color: #aaa; margin: 0;">
+            Crée, modifie et gère les publicités partenaires.
+          </p>
+        </div>
+
+        <!-- Bouton nouvelle pub -->
+        <button type="button" class="btn-primary" 
+          style="background: #7C3AED; color: white; margin-bottom: 20px; padding: 12px 20px; font-size: 14px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;"
+          onclick="ouvrirModalEditionPub()">
+          ➕ Créer une nouvelle publicité
+        </button>
+
+        <!-- Liste des pubs -->
+        <div id="liste-pubs-admin" style="display: flex; flex-direction: column; gap: 14px;"></div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- ==========================================================
@@ -6403,6 +6444,14 @@
             style="color: #10b981;" 
             onclick="changerPage('admin-escrow')">
             💰 Admin Escrow
+          </button>
+        </span>
+        <span id="admin-link-publicites" style="display: none;">
+          <span class="app-footer-sep">•</span>
+          <button type="button" class="app-footer-link" 
+            style="color: #a78bfa;" 
+            onclick="changerPage('admin-publicites')">
+            📢 Admin Publicités
           </button>
         </span>
       </div>
@@ -6644,6 +6693,113 @@
           ❌ Refuser
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALE : ÉDITION / CRÉATION DE PUBLICITÉ (ADMIN)
+       ========================================================== -->
+  <div class="modal-backdrop" id="modal-edition-pub" style="display: none;" onclick="if(event.target===this) fermerModalEditionPub()">
+    <div class="modal-card" style="max-width: 540px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-title" style="color: #a78bfa; margin-bottom: 8px; font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+        <span id="modal-edition-pub-icon">➕</span>
+        <span id="modal-edition-pub-titre">Créer une nouvelle publicité</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px; line-height: 1.5;">
+        Remplissez les détails du produit ou service partenaire à diffuser sur la plateforme.
+      </p>
+
+      <form id="form-edition-pub" onsubmit="event.preventDefault(); sauvegarderPub();">
+        <input type="hidden" id="pub-form-id" value="">
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="pub-form-nom-produit" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+            Nom du produit / service <span class="required-star" style="color: #ef4444;">*</span>
+          </label>
+          <input type="text" id="pub-form-nom-produit" class="form-control" placeholder="Ex: Pack 1000 Pièces eFootball, Maillot Pro..." required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="pub-form-titre" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+            Titre court <span style="font-size: 11px; color: #888;">(optionnel)</span>
+          </label>
+          <input type="text" id="pub-form-titre" class="form-control" placeholder="Ex: Promo exclusive eFootball">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="pub-form-description" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+            Description détaillée <span class="required-star" style="color: #ef4444;">*</span>
+          </label>
+          <textarea id="pub-form-description" class="form-control" rows="4" placeholder="Détails de l'offre, conditions, livraison..." required style="resize: vertical;"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="pub-form-prix" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+            Prix en FCFA <span style="font-size: 11px; color: #888;">(optionnel)</span>
+          </label>
+          <input type="number" id="pub-form-prix" class="form-control" placeholder="Ex: 5000" min="0">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group">
+            <label for="pub-form-partenaire" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+              Nom du partenaire <span class="required-star" style="color: #ef4444;">*</span>
+            </label>
+            <input type="text" id="pub-form-partenaire" class="form-control" placeholder="Ex: eFoot Store Dakar" required>
+          </div>
+          <div class="form-group">
+            <label for="pub-form-region" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+              Région <span class="required-star" style="color: #ef4444;">*</span>
+            </label>
+            <select id="pub-form-region" class="form-control" required>
+              <option value="Dakar">Dakar</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Mbour">Mbour</option>
+              <option value="Diourbel">Diourbel</option>
+              <option value="Fatick">Fatick</option>
+              <option value="Kaffrine">Kaffrine</option>
+              <option value="Kaolack">Kaolack</option>
+              <option value="Kédougou">Kédougou</option>
+              <option value="Kolda">Kolda</option>
+              <option value="Louga">Louga</option>
+              <option value="Matam">Matam</option>
+              <option value="Sédhiou">Sédhiou</option>
+              <option value="Tambacounda">Tambacounda</option>
+              <option value="Touba">Touba</option>
+              <option value="Ziguinchor">Ziguinchor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="pub-form-telephone" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+            Numéro WhatsApp <span class="required-star" style="color: #ef4444;">*</span>
+          </label>
+          <input type="tel" id="pub-form-telephone" class="form-control" placeholder="Ex: 77 123 45 67 ou 221771234567" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="pub-form-image" style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 4px;">
+            URL de l'image <span class="required-star" style="color: #ef4444;">*</span>
+          </label>
+          <input type="url" id="pub-form-image" class="form-control" placeholder="https://..." required>
+        </div>
+
+        <div style="margin-bottom: 18px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.04); padding: 10px 14px; border-radius: 8px;">
+          <input type="checkbox" id="pub-form-actif" style="width: 18px; height: 18px; accent-color: #00C853; cursor: pointer;" checked>
+          <label for="pub-form-actif" style="font-size: 13.5px; font-weight: 600; color: #fff; cursor: pointer;">
+            Activer cette publicité (visible immédiatement sur l'accueil)
+          </label>
+        </div>
+
+        <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-secondary" onclick="fermerModalEditionPub()">Annuler</button>
+          <button type="submit" id="btn-sauvegarder-pub" class="btn-primary" style="background: #7C3AED; color: white;">
+            💾 Enregistrer la publicité
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -7664,6 +7820,10 @@
               if (adminLink) {
                 adminLink.style.display = 'none';
               }
+              var adminPubLink = document.getElementById('admin-link-publicites');
+              if (adminPubLink) {
+                adminPubLink.style.display = 'none';
+              }
               var adminEscrowLink = document.getElementById('admin-link-escrow');
               if (adminEscrowLink) {
                 adminEscrowLink.style.display = 'none';
@@ -8088,6 +8248,10 @@
       var adminLink = document.getElementById('admin-link-signalements');
       if (adminLink) {
         adminLink.style.display = verifierAdmin() ? 'inline' : 'none';
+      }
+      var adminPubLink = document.getElementById('admin-link-publicites');
+      if (adminPubLink) {
+        adminPubLink.style.display = verifierAdmin() ? 'inline' : 'none';
       }
 
       // Affichage du lien admin escrow réservé aux administrateurs Escrow
@@ -8953,6 +9117,16 @@
         if (typeof afficherPageAdminEscrow === 'function') {
           afficherPageAdminEscrow();
         }
+      } else if (pageId === 'admin-publicites') {
+        nettoyerHashAnnonce();
+        if (verifierAdmin()) {
+          afficherPageAdminPublicites();
+        } else {
+          afficherNotification("Accès refusé", "🚫");
+          changerPage('accueil');
+        }
+      } else if (pageId === 'detail-pub' && params.pubId) {
+        afficherDetailPub(params.pubId);
       }
 
       mettreAJourBadgeTransactions();
@@ -9286,7 +9460,10 @@
     /**
      * Écoute en temps réel la collection Firestore "publicites"
      * et stocke les publicités actives (actif === true) dans publicitesCache
+     * ainsi que toutes les publicités dans toutesPublicitesCache
      */
+    var toutesPublicitesCache = [];
+
     function chargerPublicitesFirestore() {
       if (!db) return;
       if (unsubscribePublicites) return;
@@ -9294,11 +9471,20 @@
       unsubscribePublicites = db.collection("publicites")
         .onSnapshot(function(snapshot) {
           publicitesCache = [];
+          toutesPublicitesCache = [];
           snapshot.forEach(function(doc) {
             var data = doc.data() || {};
+            var item = { id: doc.id, ...data };
+            toutesPublicitesCache.push(item);
             if (data.actif === true) {
-              publicitesCache.push({ id: doc.id, ...data });
+              publicitesCache.push(item);
             }
+          });
+          // Trier par date de création décroissante
+          toutesPublicitesCache.sort(function(a, b) {
+            var tA = a.dateCreation ? (a.dateCreation.seconds || 0) : 0;
+            var tB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
+            return tB - tA;
           });
           console.log("📢 Publicités actives Firestore :", publicitesCache.length);
 
@@ -9306,6 +9492,13 @@
           if (typeof currentPage !== 'undefined' && currentPage === 'accueil' && annoncesChargees) {
             if (typeof appliquerFiltres === 'function') {
               appliquerFiltres();
+            }
+          }
+
+          // Si on est sur admin-publicites, actualiser
+          if (typeof currentPage !== 'undefined' && currentPage === 'admin-publicites') {
+            if (typeof afficherPubsAdmin === 'function') {
+              afficherPubsAdmin();
             }
           }
         }, function(error) {
@@ -9341,6 +9534,7 @@
 
     /**
      * Génère le HTML d'une carte publicitaire sponsorisée
+     * MODIFICATION 2 : Carte pub cliquable vers détail pub, nom produit en titre, stopPropagation sur WhatsApp
      */
     function genererHtmlCartePub(pub) {
       if (!pub) return '';
@@ -9350,7 +9544,7 @@
         rawImage = rawImage.replace(/^http:\/\//i, 'https://');
       }
       var imageSrc = rawImage || 'logo.png';
-      var titre = escapeHtml(pub.titre || pub.title || 'Publicité');
+      var titre = escapeHtml(pub.nomProduit || pub.titre || pub.title || 'Publicité');
       var nomPartenaire = escapeHtml(pub.nomPartenaire || pub.partenaire || pub.nom || 'Partenaire');
       var region = escapeHtml(pub.region || pub.localisation || 'Sénégal');
       var numero = (pub.whatsapp || pub.numero || pub.telephone || '').toString().replace(/'/g, "\\'");
@@ -9359,7 +9553,7 @@
       var prix = (pub.prix !== undefined && pub.prix !== null && !isNaN(Number(pub.prix)) && Number(pub.prix) > 0) ? Number(pub.prix) : 0;
 
       return `
-        <article class="ad-card pub-card">
+        <article class="ad-card pub-card" onclick="ouvrirDetailPub('${pubId}')" style="cursor: pointer;">
           <div class="card-media">
             <img src="${imageSrc}" alt="${titre}" loading="lazy"
               style="width: 100%; height: 180px; object-fit: cover; display: block;"
@@ -9368,7 +9562,8 @@
           </div>
           <div class="card-body">
             <h3 class="card-title">${titre}</h3>
-            ${prix ? '<div class="card-price">' + formaterPrix(prix) + '</div>' : ''}
+            <div style="font-size: 12px; color: #a78bfa; margin-top: 2px; font-weight: 600;">🤝 ${nomPartenaire}</div>
+            ${prix ? '<div class="card-price" style="margin-top: 6px;">' + formaterPrix(prix) + '</div>' : ''}
             <div style="color: #7C3AED; font-size: 13px; font-weight: 700; margin-top: 4px;">⭐ Partenaire officiel</div>
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(124,58,237,0.2);">
               <span>🤝 ${nomPartenaire}</span>
@@ -9384,6 +9579,464 @@
         </article>
       `;
     }
+
+    /* ==========================================================
+       FONCTIONS DU SYSTÈME PUBLICITAIRE ENRICHI (DÉTAILS & ADMIN)
+       ========================================================== */
+    var currentDetailPubId = null;
+
+    /**
+     * Ouvre la page de détail d'une publicité
+     */
+    function ouvrirDetailPub(pubId) {
+      if (!pubId) return;
+      currentDetailPubId = pubId;
+      changerPage('detail-pub', { pubId: pubId });
+    }
+
+    /**
+     * Rendu de la page de détail d'une publicité
+     */
+    function afficherDetailPub(pubId) {
+      currentDetailPubId = pubId;
+      var container = document.getElementById('detail-pub-container');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; color: #aaa; padding: 40px;">Chargement de la publicité...</div>';
+
+      // 1. Chercher dans les caches locaux d'abord
+      var pub = null;
+      if (typeof toutesPublicitesCache !== 'undefined' && Array.isArray(toutesPublicitesCache)) {
+        pub = toutesPublicitesCache.find(function(p) { return p.id === pubId; });
+      }
+      if (!pub && typeof publicitesCache !== 'undefined' && Array.isArray(publicitesCache)) {
+        pub = publicitesCache.find(function(p) { return p.id === pubId; });
+      }
+
+      function rendrePub(data) {
+        if (!data) {
+          container.innerHTML = 
+            '<div style="text-align:center; padding: 50px 20px;">' +
+              '<div style="font-size: 40px; margin-bottom: 12px;">🔍</div>' +
+              '<h2 style="color: #fff; font-size: 18px; margin-bottom: 8px;">Publicité introuvable</h2>' +
+              '<p style="color: #888; font-size: 13px; margin-bottom: 20px;">Cette offre n\'est plus disponible ou a été retirée.</p>' +
+              '<button type="button" class="btn-primary" onclick="changerPage(\'accueil\')">← Retour à l\'accueil</button>' +
+            '</div>';
+          return;
+        }
+
+        var rawImg = (data.image || data.imageUrl || '').trim();
+        if (rawImg.startsWith('http://')) {
+          rawImg = rawImg.replace(/^http:\/\//i, 'https://');
+        }
+        var imgUrl = rawImg || 'logo.png';
+        var nomProd = escapeHtml(data.nomProduit || data.titre || 'Offre Partenaire');
+        var nomPart = escapeHtml(data.nomPartenaire || data.partenaire || 'Partenaire certifié');
+        var reg = escapeHtml(data.region || 'Sénégal');
+        var num = (data.whatsapp || data.numero || data.telephone || '').toString().replace(/'/g, "\\'");
+        var pId = (data.id || pubId).toString().replace(/'/g, "\\'");
+        var px = (data.prix !== undefined && data.prix !== null && !isNaN(Number(data.prix)) && Number(data.prix) > 0) ? Number(data.prix) : 0;
+        var desc = escapeHtml(data.description || data.desc || 'Aucune description détaillée disponible.');
+
+        container.innerHTML = 
+          '<div class="detail-top-nav" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">' +
+            '<button type="button" class="btn-secondary" onclick="changerPage(\'accueil\')">' +
+              '← Retour à l\'accueil' +
+            '</button>' +
+            '<span class="badge-pill" style="color: #fff; background: #7C3AED; font-weight: 800; border: 1px solid rgba(124, 58, 237, 0.4); padding: 5px 12px; border-radius: 12px; font-size: 12px;">' +
+              '📢 PUBLICITÉ' +
+            '</span>' +
+          '</div>' +
+
+          '<div class="detail-image-box" style="margin-bottom: 20px; border-radius: 12px; overflow: hidden; background: #18181b; border: 1px solid #27272a;">' +
+            '<img src="' + imgUrl + '" alt="' + nomProd + '" style="width: 100%; max-height: 440px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src=\'\'; this.parentElement.innerHTML=\'<div style=\\\'height:260px;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#1A1520 0%,#252030 100%);color:#7C3AED;\\\'>🎮</div>\';">' +
+          '</div>' +
+
+          '<div class="detail-content">' +
+            '<div class="detail-badges-row" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">' +
+              '<span class="badge-pill" style="color: #fff; background: #7C3AED; font-weight: 800;">📢 PUBLICITÉ</span>' +
+              '<span class="badge-pill" style="color: #a78bfa; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3);">⭐ Partenaire officiel</span>' +
+              '<span class="badge-pill" style="color: #64b5f6; background: rgba(33, 150, 243, 0.12); border: 1px solid rgba(33, 150, 243, 0.25);">📍 ' + reg + '</span>' +
+            '</div>' +
+
+            '<h1 class="detail-title" style="margin: 0 0 6px 0; font-size: 24px; font-weight: 800; color: #fff;">' + nomProd + '</h1>' +
+            '<div style="font-size: 14px; color: #a78bfa; margin-bottom: 18px; font-weight: 600;">🤝 Partenaire : ' + nomPart + '</div>' +
+
+            (px ? (
+              '<div class="detail-price-box" style="margin-bottom: 20px; background: rgba(124, 58, 237, 0.08); border: 1.5px solid rgba(124, 58, 237, 0.35); border-radius: 10px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">' +
+                '<div>' +
+                  '<div class="detail-price-label" style="font-size: 12px; color: #aaa;">Prix indicatif</div>' +
+                  '<div class="detail-price-value" style="font-size: 22px; font-weight: 800; color: #a78bfa;">' + formaterPrix(px) + '</div>' +
+                '</div>' +
+                '<div style="text-align: right; font-size: 12px; color: #34d399; font-weight: 700;">' +
+                  'Offre partenaire certifiée' +
+                '</div>' +
+              '</div>'
+            ) : '') +
+
+            '<div class="detail-desc-box" style="margin-bottom: 24px; background: #18181b; border: 1px solid #27272a; border-radius: 10px; padding: 18px;">' +
+              '<div class="detail-section-title" style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: gap: 8px;">' +
+                '<span>📝</span> <span>Description complète</span>' +
+              '</div>' +
+              '<p class="detail-desc-text" style="color: #ddd; font-size: 14px; line-height: 1.7; white-space: pre-line; margin: 0;">' + desc + '</p>' +
+            '</div>' +
+
+            '<div style="background: rgba(37, 211, 102, 0.08); border: 1.5px solid rgba(37, 211, 102, 0.35); border-radius: 12px; padding: 22px; text-align: center;">' +
+              '<h3 style="color: #25D366; font-size: 17px; font-weight: 800; margin: 0 0 6px 0;">💬 Intéressé(e) par cette offre ?</h3>' +
+              '<p style="color: #ccc; font-size: 13.5px; margin: 0 0 16px 0; line-height: 1.5;">Contacte directement le partenaire officiel sur WhatsApp pour passer commande ou poser tes questions.</p>' +
+              '<button type="button" onclick="contacterWhatsAppPub(\'' + num + '\', \'' + pId + '\')" style="background: #25D366; color: white; border: none; border-radius: 10px; padding: 16px 24px; font-size: 16px; font-weight: 800; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);">' +
+                '💬 Contacter sur WhatsApp' +
+              '</button>' +
+            '</div>' +
+
+          '</div>';
+      }
+
+      if (pub) {
+        rendrePub(pub);
+      } else if (db) {
+        db.collection("publicites").doc(pubId).get().then(function(doc) {
+          if (doc.exists) {
+            var dataDoc = { id: doc.id, ...doc.data() };
+            toutesPublicitesCache.push(dataDoc);
+            rendrePub(dataDoc);
+          } else {
+            rendrePub(null);
+          }
+        }).catch(function(err) {
+          console.warn("Erreur chargement détail pub :", err);
+          rendrePub(null);
+        });
+      } else {
+        rendrePub(null);
+      }
+    }
+
+    /**
+     * Affiche la page admin des publicités (Super Admin uniquement)
+     */
+    function afficherPageAdminPublicites() {
+      if (!verifierAdmin()) {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Accès refusé : espace réservé au Super Admin", "🚫");
+        }
+        changerPage('accueil');
+        return;
+      }
+      chargerPubsAdmin();
+    }
+
+    /**
+     * Charge toutes les publicités pour l'administration
+     */
+    function chargerPubsAdmin() {
+      var container = document.getElementById('liste-pubs-admin');
+      if (container && (!toutesPublicitesCache || toutesPublicitesCache.length === 0)) {
+        container.innerHTML = '<div style="text-align: center; color: #aaa; padding: 30px;">Chargement des publicités...</div>';
+      }
+
+      if (!db) return;
+      db.collection("publicites").get().then(function(snapshot) {
+        toutesPublicitesCache = [];
+        snapshot.forEach(function(doc) {
+          toutesPublicitesCache.push({ id: doc.id, ...doc.data() });
+        });
+        toutesPublicitesCache.sort(function(a, b) {
+          var tA = a.dateCreation ? (a.dateCreation.seconds || 0) : 0;
+          var tB = b.dateCreation ? (b.dateCreation.seconds || 0) : 0;
+          return tB - tA;
+        });
+        afficherPubsAdmin();
+      }).catch(function(err) {
+        console.warn("Erreur chargement pubs admin :", err);
+      });
+    }
+
+    /**
+     * Rendu HTML de la liste des publicités pour l'administration
+     */
+    function afficherPubsAdmin() {
+      var container = document.getElementById('liste-pubs-admin');
+      if (!container) return;
+
+      if (!toutesPublicitesCache || toutesPublicitesCache.length === 0) {
+        container.innerHTML = 
+          '<div style="text-align: center; color: #888; padding: 48px 20px; background: #18181b; border-radius: 12px; border: 1px dashed #333;">' +
+            '<div style="font-size: 38px; margin-bottom: 12px;">📢</div>' +
+            '<h3 style="color: #eee; font-size: 16px; margin: 0 0 6px 0;">Aucune publicité enregistrée</h3>' +
+            '<p style="color: #71717a; font-size: 13px; margin: 0;">Cliquez sur « ➕ Créer une nouvelle publicité » pour diffuser votre première annonce partenaire.</p>' +
+          '</div>';
+        return;
+      }
+
+      var html = '';
+      toutesPublicitesCache.forEach(function(pub) {
+        var rawImg = (pub.image || pub.imageUrl || '').trim();
+        if (rawImg.startsWith('http://')) {
+          rawImg = rawImg.replace(/^http:\/\//i, 'https://');
+        }
+        var imgUrl = rawImg || 'logo.png';
+        var nomProd = escapeHtml(pub.nomProduit || pub.titre || 'Publicité');
+        var nomPart = escapeHtml(pub.nomPartenaire || pub.partenaire || 'Partenaire');
+        var reg = escapeHtml(pub.region || 'Sénégal');
+        var px = (pub.prix !== undefined && pub.prix !== null && !isNaN(Number(pub.prix)) && Number(pub.prix) > 0) ? Number(pub.prix) : 0;
+        var clics = Number(pub.clics || 0);
+        var estActif = Boolean(pub.actif === true);
+        var pubId = escapeHtml(pub.id);
+
+        html += 
+          '<div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;">' +
+            '<div style="display: flex; gap: 14px; align-items: center; flex: 1; min-width: 260px;">' +
+              '<img src="' + imgUrl + '" alt="' + nomProd + '" style="width: 72px; height: 72px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #27272a;" onerror="this.onerror=null; this.src=\'\'; this.parentElement.innerHTML += \'<div style=\\\'width:72px;height:72px;border-radius:8px;background:#27272a;display:flex;align-items:center;justify-content:center;font-size:26px;\\\'>🎮</div>\';">' +
+              '<div style="flex: 1;">' +
+                '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">' +
+                  '<strong style="color: #fff; font-size: 15px;">' + nomProd + '</strong>' +
+                  (estActif 
+                    ? '<span style="background: rgba(0, 200, 83, 0.15); color: #00E676; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(0, 200, 83, 0.3);">✅ Actif</span>'
+                    : '<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);">⏸️ Inactif</span>') +
+                '</div>' +
+                '<div style="font-size: 12.5px; color: #a1a1aa; line-height: 1.4;">' +
+                  '<span>🤝 ' + nomPart + '</span> • <span>📍 ' + reg + '</span>' +
+                '</div>' +
+                '<div style="display: flex; gap: 12px; font-size: 12px; margin-top: 4px; flex-wrap: wrap;">' +
+                  '<span style="color: #a78bfa; font-weight: 600;">💰 ' + (px ? formaterPrix(px) : 'Prix libre') + '</span>' +
+                  '<span style="color: #38bdf8;">🖱️ ' + clics + ' clic' + (clics > 1 ? 's' : '') + '</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+
+            '<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">' +
+              '<button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 12px;" onclick="ouvrirDetailPub(\'' + pubId + '\')">' +
+                '👁️ Voir' +
+              '</button>' +
+              '<button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 12px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.35); color: #a78bfa;" onclick="ouvrirModalEditionPub(\'' + pubId + '\')">' +
+                '✏️ Modifier' +
+              '</button>' +
+              '<button type="button" class="btn-secondary" style="font-size: 12.5px; padding: 8px 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #ef4444;" onclick="supprimerPub(\'' + pubId + '\')">' +
+                '🗑️ Supprimer' +
+              '</button>' +
+            '</div>' +
+          '</div>';
+      });
+
+      container.innerHTML = html;
+    }
+
+    /**
+     * Ouvre la modale d'édition ou de création de publicité
+     */
+    function ouvrirModalEditionPub(pubId) {
+      if (!verifierAdmin()) {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Action réservée au Super Admin", "🚫");
+        }
+        return;
+      }
+
+      var modal = document.getElementById('modal-edition-pub');
+      var icon = document.getElementById('modal-edition-pub-icon');
+      var titre = document.getElementById('modal-edition-pub-titre');
+      if (!modal) return;
+
+      var hiddenId = document.getElementById('pub-form-id');
+      var inNom = document.getElementById('pub-form-nom-produit');
+      var inTitre = document.getElementById('pub-form-titre');
+      var inDesc = document.getElementById('pub-form-description');
+      var inPrix = document.getElementById('pub-form-prix');
+      var inPart = document.getElementById('pub-form-partenaire');
+      var inReg = document.getElementById('pub-form-region');
+      var inTel = document.getElementById('pub-form-telephone');
+      var inImg = document.getElementById('pub-form-image');
+      var inActif = document.getElementById('pub-form-actif');
+
+      if (pubId) {
+        var pub = (toutesPublicitesCache || []).find(function(p) { return p.id === pubId; });
+        if (!pub && typeof publicitesCache !== 'undefined') {
+          pub = publicitesCache.find(function(p) { return p.id === pubId; });
+        }
+        if (icon) icon.textContent = '✏️';
+        if (titre) titre.textContent = 'Modifier la publicité';
+        if (hiddenId) hiddenId.value = pubId;
+        if (inNom) inNom.value = pub ? (pub.nomProduit || pub.titre || '') : '';
+        if (inTitre) inTitre.value = pub ? (pub.titre || '') : '';
+        if (inDesc) inDesc.value = pub ? (pub.description || pub.desc || '') : '';
+        if (inPrix) inPrix.value = (pub && pub.prix !== undefined && pub.prix !== null) ? pub.prix : '';
+        if (inPart) inPart.value = pub ? (pub.nomPartenaire || pub.partenaire || '') : '';
+        if (inReg && pub && pub.region) inReg.value = pub.region;
+        if (inTel) inTel.value = pub ? (pub.whatsapp || pub.telephone || pub.numero || '') : '';
+        if (inImg) inImg.value = pub ? (pub.image || pub.imageUrl || '') : '';
+        if (inActif) inActif.checked = pub ? (pub.actif !== false) : true;
+      } else {
+        if (icon) icon.textContent = '➕';
+        if (titre) titre.textContent = 'Créer une nouvelle publicité';
+        if (hiddenId) hiddenId.value = '';
+        if (inNom) inNom.value = '';
+        if (inTitre) inTitre.value = '';
+        if (inDesc) inDesc.value = '';
+        if (inPrix) inPrix.value = '';
+        if (inPart) inPart.value = '';
+        if (inReg) inReg.value = 'Dakar';
+        if (inTel) inTel.value = '';
+        if (inImg) inImg.value = '';
+        if (inActif) inActif.checked = true;
+      }
+
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
+
+    /**
+     * Ferme la modale d'édition de publicité
+     */
+    function fermerModalEditionPub() {
+      var modal = document.getElementById('modal-edition-pub');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+      }
+    }
+
+    /**
+     * Sauvegarde (création ou modification) d'une publicité dans Firestore
+     */
+    function sauvegarderPub() {
+      if (!verifierAdmin()) {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Action réservée au Super Admin", "🚫");
+        }
+        return;
+      }
+      var hiddenId = document.getElementById('pub-form-id');
+      var pubId = hiddenId ? hiddenId.value.trim() : '';
+
+      var nomProduit = (document.getElementById('pub-form-nom-produit').value || '').trim();
+      var titre = (document.getElementById('pub-form-titre').value || '').trim();
+      var description = (document.getElementById('pub-form-description').value || '').trim();
+      var prixVal = (document.getElementById('pub-form-prix').value || '').trim();
+      var nomPartenaire = (document.getElementById('pub-form-partenaire').value || '').trim();
+      var region = (document.getElementById('pub-form-region').value || '').trim();
+      var telephone = (document.getElementById('pub-form-telephone').value || '').trim();
+      var image = (document.getElementById('pub-form-image').value || '').trim();
+      var actif = document.getElementById('pub-form-actif').checked;
+
+      if (!nomProduit) {
+        alert("Le nom du produit/service est obligatoire.");
+        return;
+      }
+      if (!description) {
+        alert("La description détaillée est obligatoire.");
+        return;
+      }
+      if (!nomPartenaire) {
+        alert("Le nom du partenaire est obligatoire.");
+        return;
+      }
+      if (!region) {
+        alert("La région est obligatoire.");
+        return;
+      }
+      if (!telephone) {
+        alert("Le numéro WhatsApp est obligatoire.");
+        return;
+      }
+      if (!image) {
+        alert("L'URL de l'image est obligatoire.");
+        return;
+      }
+
+      var prixNum = prixVal ? Number(prixVal) : null;
+      if (prixNum !== null && (isNaN(prixNum) || prixNum < 0)) {
+        prixNum = null;
+      }
+
+      var rawImage = image;
+      if (rawImage.startsWith('http://')) {
+        rawImage = rawImage.replace(/^http:\/\//i, 'https://');
+      }
+
+      var data = {
+        nomProduit: nomProduit,
+        titre: titre || nomProduit,
+        description: description,
+        prix: prixNum,
+        nomPartenaire: nomPartenaire,
+        partenaire: nomPartenaire,
+        region: region,
+        whatsapp: telephone,
+        telephone: telephone,
+        numero: telephone,
+        image: rawImage,
+        imageUrl: rawImage,
+        actif: actif,
+        dateModification: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      var btn = document.getElementById('btn-sauvegarder-pub');
+      if (btn) btn.disabled = true;
+
+      var promise;
+      if (pubId) {
+        promise = db.collection("publicites").doc(pubId).update(data);
+      } else {
+        data.clics = 0;
+        data.dateCreation = firebase.firestore.FieldValue.serverTimestamp();
+        promise = db.collection("publicites").add(data);
+      }
+
+      promise.then(function() {
+        fermerModalEditionPub();
+        if (typeof afficherNotification === 'function') {
+          afficherNotification(pubId ? "Publicité modifiée avec succès" : "Publicité créée avec succès", "✅");
+        }
+        if (btn) btn.disabled = false;
+        if (typeof chargerPubsAdmin === 'function') {
+          chargerPubsAdmin();
+        }
+      }).catch(function(err) {
+        console.error("Erreur sauvegarde pub :", err);
+        alert("Erreur lors de la sauvegarde : " + (err.message || err));
+        if (btn) btn.disabled = false;
+      });
+    }
+
+    /**
+     * Supprime définitivement une publicité dans Firestore
+     */
+    function supprimerPub(pubId) {
+      if (!verifierAdmin()) {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Action réservée au Super Admin", "🚫");
+        }
+        return;
+      }
+      if (!confirm("Voulez-vous vraiment supprimer définitivement cette publicité ?")) {
+        return;
+      }
+      if (!db || !pubId) return;
+
+      db.collection("publicites").doc(pubId).delete().then(function() {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Publicité supprimée avec succès", "🗑️");
+        }
+        if (typeof chargerPubsAdmin === 'function') {
+          chargerPubsAdmin();
+        }
+      }).catch(function(err) {
+        console.error("Erreur suppression pub :", err);
+        alert("Erreur lors de la suppression : " + (err.message || err));
+      });
+    }
+
+    // Exposer sur window
+    window.ouvrirDetailPub = ouvrirDetailPub;
+    window.afficherDetailPub = afficherDetailPub;
+    window.afficherPageAdminPublicites = afficherPageAdminPublicites;
+    window.chargerPubsAdmin = chargerPubsAdmin;
+    window.afficherPubsAdmin = afficherPubsAdmin;
+    window.ouvrirModalEditionPub = ouvrirModalEditionPub;
+    window.fermerModalEditionPub = fermerModalEditionPub;
+    window.sauvegarderPub = sauvegarderPub;
+    window.supprimerPub = supprimerPub;
 
     /**
      * Génère le rendu HTML des cartes dans la grille d'accueil
