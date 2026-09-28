@@ -6430,30 +6430,6 @@
         <button type="button" class="app-footer-link" onclick="changerPage('comment-ca-marche')">Comment ça marche</button>
         <span class="app-footer-sep">•</span>
         <a href="mailto:efootmarketcontact@gmail.com" class="app-footer-link">Contact</a>
-        <span id="admin-link-signalements" style="display: none;">
-          <span class="app-footer-sep">•</span>
-          <button type="button" class="app-footer-link" 
-            style="color: #ef4444;" 
-            onclick="changerPage('admin-signalements')">
-            🚨 Admin Signalements
-          </button>
-        </span>
-        <span id="admin-link-escrow" style="display: none;">
-          <span class="app-footer-sep">•</span>
-          <button type="button" class="app-footer-link" 
-            style="color: #10b981;" 
-            onclick="changerPage('admin-escrow')">
-            💰 Admin Escrow
-          </button>
-        </span>
-        <span id="admin-link-publicites" style="display: none;">
-          <span class="app-footer-sep">•</span>
-          <button type="button" class="app-footer-link" 
-            style="color: #a78bfa;" 
-            onclick="changerPage('admin-publicites')">
-            📢 Admin Publicités
-          </button>
-        </span>
       </div>
     </div>
   </footer>
@@ -7816,18 +7792,6 @@
                 var adCurLogout = typeof getAnnonces === 'function' ? getAnnonces().find(function(item) { return item.id === currentDetailAdId; }) : null;
                 if (adCurLogout) afficherBoutonsAnnonce(adCurLogout.id, adCurLogout);
               }
-              var adminLink = document.getElementById('admin-link-signalements');
-              if (adminLink) {
-                adminLink.style.display = 'none';
-              }
-              var adminPubLink = document.getElementById('admin-link-publicites');
-              if (adminPubLink) {
-                adminPubLink.style.display = 'none';
-              }
-              var adminEscrowLink = document.getElementById('admin-link-escrow');
-              if (adminEscrowLink) {
-                adminEscrowLink.style.display = 'none';
-              }
               if (typeof estAdminEscrowCache !== 'undefined') {
                 estAdminEscrowCache = false;
               }
@@ -8244,17 +8208,7 @@
         userElem.innerHTML = `👤 Compléter mon profil`;
       }
 
-      // Affichage du lien admin réservé au compte administrateur
-      var adminLink = document.getElementById('admin-link-signalements');
-      if (adminLink) {
-        adminLink.style.display = verifierAdmin() ? 'inline' : 'none';
-      }
-      var adminPubLink = document.getElementById('admin-link-publicites');
-      if (adminPubLink) {
-        adminPubLink.style.display = verifierAdmin() ? 'inline' : 'none';
-      }
-
-      // Affichage du lien admin escrow réservé aux administrateurs Escrow
+      // Vérification des droits administrateur Escrow en arrière-plan
       if (typeof verifierAdminEscrow === 'function') {
         verifierAdminEscrow();
       }
@@ -8772,7 +8726,99 @@
             <span>🚪</span> Se déconnecter
           </button>
         </div>
+
+        <!-- Section Accès administrateur -->
+        <div id="profil-admin-section" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px; display: none;">
+          <h3 style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+            <span>🛡️</span>
+            <span>Accès administrateur</span>
+          </h3>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            
+            <!-- Admin Signalements (Super Admin uniquement) -->
+            <button type="button" 
+              id="profil-btn-admin-signalements"
+              class="btn-secondary" 
+              style="display: none; justify-content: flex-start; text-align: left; padding: 14px 16px; border-color: rgba(239, 68, 68, 0.4); color: #f87171;"
+              onclick="changerPage('admin-signalements')">
+              <span style="font-size: 18px; margin-right: 8px;">🚨</span>
+              <span style="flex: 1;">Admin Signalements</span>
+              <span style="color: #666;">→</span>
+            </button>
+
+            <!-- Admin Escrow (Super Admin + Admins Escrow) -->
+            <button type="button" 
+              id="profil-btn-admin-escrow"
+              class="btn-secondary" 
+              style="display: none; justify-content: flex-start; text-align: left; padding: 14px 16px; border-color: rgba(16, 185, 129, 0.4); color: #34d399;"
+              onclick="changerPage('admin-escrow')">
+              <span style="font-size: 18px; margin-right: 8px;">💰</span>
+              <span style="flex: 1;">Admin Escrow</span>
+              <span style="color: #666;">→</span>
+            </button>
+
+            <!-- Admin Publicités (Super Admin uniquement) -->
+            <button type="button" 
+              id="profil-btn-admin-publicites"
+              class="btn-secondary" 
+              style="display: none; justify-content: flex-start; text-align: left; padding: 14px 16px; border-color: rgba(124, 58, 237, 0.4); color: #a78bfa;"
+              onclick="changerPage('admin-publicites')">
+              <span style="font-size: 18px; margin-right: 8px;">📢</span>
+              <span style="flex: 1;">Admin Publicités</span>
+              <span style="color: #666;">→</span>
+            </button>
+
+          </div>
+        </div>
       `;
+
+      // MODIFICATION 3 : Logique d'affichage des boutons admin
+      var sectionAdmin = document.getElementById('profil-admin-section');
+      var btnSignalements = document.getElementById('profil-btn-admin-signalements');
+      var btnEscrow = document.getElementById('profil-btn-admin-escrow');
+      var btnPublicites = document.getElementById('profil-btn-admin-publicites');
+
+      if (user && sectionAdmin) {
+        // Super Admin : Signalements + Publicités
+        if (typeof verifierAdmin === 'function' && verifierAdmin()) {
+          if (btnSignalements) btnSignalements.style.display = 'flex';
+          if (btnPublicites) btnPublicites.style.display = 'flex';
+        }
+        
+        // Admin Escrow : Escrow (accessible aussi au Super Admin)
+        if ((typeof estAdminEscrowCache !== 'undefined' && estAdminEscrowCache === true) || (typeof verifierAdmin === 'function' && verifierAdmin())) {
+          if (btnEscrow) btnEscrow.style.display = 'flex';
+        }
+        
+        // Si au moins 1 bouton est visible, afficher la section
+        var auMoinsUnVisible = 
+          (btnSignalements && btnSignalements.style.display === 'flex') ||
+          (btnEscrow && btnEscrow.style.display === 'flex') ||
+          (btnPublicites && btnPublicites.style.display === 'flex');
+        
+        if (auMoinsUnVisible) {
+          sectionAdmin.style.display = 'block';
+        }
+      }
+
+      // MODIFICATION 4 : Rafraîchir après vérification escrow
+      if (typeof verifierAdminEscrow === 'function' && !estAdminEscrowCache) {
+        var pEscrow = verifierAdminEscrow();
+        if (pEscrow && typeof pEscrow.then === 'function') {
+          pEscrow.then(function() {
+            setTimeout(function() {
+              // Ré-appliquer la logique d'affichage
+              var btnE = document.getElementById('profil-btn-admin-escrow');
+              if (btnE && ((typeof estAdminEscrowCache !== 'undefined' && estAdminEscrowCache === true) || (typeof verifierAdmin === 'function' && verifierAdmin()))) {
+                btnE.style.display = 'flex';
+                var s = document.getElementById('profil-admin-section');
+                if (s) s.style.display = 'block';
+              }
+            }, 500);
+          });
+        }
+      }
 
       setTimeout(function() {
         if (typeof chargerMesAvis === 'function') {
@@ -17030,50 +17076,34 @@
      */
     function verifierAdminEscrow() {
       var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-      var adminEscrowLink = document.getElementById('admin-link-escrow');
 
       if (!user || !user.uid) {
         estAdminEscrowCache = false;
-        if (adminEscrowLink) {
-          adminEscrowLink.style.display = 'none';
-        }
-        return false;
+        return Promise.resolve(false);
       }
 
       var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
       if (!firestoreDb) {
-        if (adminEscrowLink) {
-          adminEscrowLink.style.display = estAdminEscrowCache ? 'inline' : 'none';
-        }
-        return estAdminEscrowCache;
+        return Promise.resolve(estAdminEscrowCache);
       }
 
-      firestoreDb.collection('admins').doc(user.uid).get()
+      return firestoreDb.collection('admins').doc(user.uid).get()
         .then(function(docSnap) {
           if (docSnap.exists && docSnap.data() && docSnap.data().actif === true) {
             estAdminEscrowCache = true;
-            if (adminEscrowLink) {
-              adminEscrowLink.style.display = 'inline';
-            }
             if (typeof chargerEscrowAdmin === 'function') {
               chargerEscrowAdmin();
             }
           } else {
             estAdminEscrowCache = false;
-            if (adminEscrowLink) {
-              adminEscrowLink.style.display = 'none';
-            }
           }
+          return estAdminEscrowCache;
         })
         .catch(function(err) {
           console.warn("Erreur vérification admin escrow :", err);
           estAdminEscrowCache = false;
-          if (adminEscrowLink) {
-            adminEscrowLink.style.display = 'none';
-          }
+          return false;
         });
-
-      return estAdminEscrowCache;
     }
 
     /**
