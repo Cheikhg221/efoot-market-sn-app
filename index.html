@@ -13514,15 +13514,37 @@
         }
       }
 
-      if (elDesc) {
+      var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+      var demandesAnnonce = cache.filter(function(d) { return d.annonceId === annonceId; });
+      var nbAcceptees = demandesAnnonce.filter(function(d) {
+        return (d.statut || '').toLowerCase() === 'acceptee';
+      }).length;
+
+      function mettreAJourDescription(nbAcc) {
+        if (!elDesc) return;
         if (action === 'accepter') {
-          elDesc.innerHTML = 'Sélectionne la demande que tu souhaites accepter pour cette annonce.<br><span style="color:#FFC107; font-weight:600;">⚠️ Les autres demandes en attente seront automatiquement refusées.</span>';
+          if (nbAcc >= 1) {
+            // C'est la 2ᵉ acceptation → avertissement
+            elDesc.innerHTML = 
+              'Sélectionne la demande que tu souhaites accepter.<br>' +
+              '<span style="color:#FFC107; font-weight:600;">⚠️ Tu as déjà accepté 1 demande. ' +
+              'En acceptant cette 2ᵉ demande, l\'annonce sera retirée du catalogue ' +
+              'et les autres demandes en attente seront automatiquement refusées.</span>';
+          } else {
+            // Première acceptation → pas d'avertissement
+            elDesc.innerHTML = 
+              'Sélectionne la demande que tu souhaites accepter.<br>' +
+              '<span style="color:#888; font-size:12.5px;">' +
+              'Tu peux accepter jusqu\'à 2 demandes. L\'annonce sera retirée ' +
+              'du catalogue seulement à la 2ᵉ acceptation.</span>';
+          }
         } else {
           elDesc.innerHTML = 'Sélectionne la demande que tu souhaites refuser pour cette annonce.';
         }
       }
 
-      var cache = (typeof demandesVendeurCache !== 'undefined' && Array.isArray(demandesVendeurCache)) ? demandesVendeurCache : [];
+      mettreAJourDescription(nbAcceptees);
+
       var demandes = cache.filter(function(d) {
         var s = (d.statut || '').toLowerCase();
         return d.annonceId === annonceId && (s === "en_attente" || s === "attente" || s === "demande_envoyee");
@@ -13583,6 +13605,7 @@
           .get()
           .then(function(snap) {
             var docs = [];
+            var countAccFirestore = 0;
             snap.forEach(function(doc) {
               var data = doc.data() || {};
               if (user && data.vendeurId && data.vendeurId !== user.uid) {
@@ -13590,10 +13613,16 @@
               }
               data.id = doc.id;
               var s = (data.statut || '').toLowerCase();
+              if (s === 'acceptee') {
+                countAccFirestore++;
+              }
               if (s === 'en_attente' || s === 'attente' || s === 'demande_envoyee') {
                 docs.push(data);
               }
             });
+            if (countAccFirestore > 0 && countAccFirestore !== nbAcceptees) {
+              mettreAJourDescription(countAccFirestore);
+            }
             afficherListe(docs);
           })
           .catch(function(err) {
