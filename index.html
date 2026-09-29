@@ -17516,6 +17516,45 @@ function payerAvecWave(escrowId) {
 }
 window.payerAvecWave = payerAvecWave;
 
+function notifierAdminParEmail(escrowId) {
+  var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+  if (!firestoreDb || !escrowId) return;
+  if (typeof envoyerEmail !== 'function') return;
+
+  firestoreDb.collection("escrow").doc(escrowId).get().then(function(snap) {
+    if (!snap.exists) return;
+    var d = snap.data() || {};
+    var montant = Number(d.montant || d.prix || 0).toLocaleString('fr-FR');
+    var message =
+      "🔔 NOUVEAU PAIEMENT ESCROW À VÉRIFIER\n\n" +
+      "Un acheteur a envoyé son paiement à l'admin.\n\n" +
+      "📦 Annonce : " + (d.annonceTitre || "Compte eFootball") + "\n" +
+      "💰 Montant : " + montant + " FCFA\n" +
+      "👤 Acheteur : " + (d.acheteurNom || "Non renseigné") + "\n" +
+      "📞 Téléphone acheteur : " + (d.acheteurTelephone || "Non renseigné") + "\n" +
+      "🛡️ Admin assigné : " + (d.adminNom || "Non renseigné") + "\n" +
+      "📱 Téléphone admin : " + (d.adminTelephone || "Non renseigné") + "\n" +
+      "💳 Moyen de paiement : " + (d.moyenPaiement || "Wave / Orange Money") + "\n" +
+      (d.nabooOrderId ? ("🧾 Order NabooPay : " + d.nabooOrderId + "\n") : "") +
+      (d.checkoutUrl ? ("🔗 Lien checkout : " + d.checkoutUrl + "\n") : "") +
+      "\n📅 Date : " + new Date().toLocaleString('fr-FR') + "\n\n" +
+      "➡️ Connecte-toi à efootmarketsn.store pour vérifier et confirmer la réception.";
+
+    envoyerEmail(
+      "efootmarketcontact@gmail.com",
+      "🔔 Nouveau paiement escrow à vérifier - EFoot Market SN",
+      message
+    ).then(function(ok) {
+      if (ok) console.log("✅ Email admin envoyé pour escrow " + escrowId);
+    }).catch(function(e) {
+      console.warn("Erreur email admin :", e);
+    });
+  }).catch(function(e) {
+    console.warn("Erreur récupération escrow pour email admin :", e);
+  });
+}
+window.notifierAdminParEmail = notifierAdminParEmail;
+
     function marquerArgentEnvoye(escrowId) {
       if (!escrowId) return;
       var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
@@ -17530,6 +17569,7 @@ window.payerAvecWave = payerAvecWave;
         dateEnvoiPaiement: serverTimestamp,
         dateMiseAJour: serverTimestamp
       }).then(function() {
+        notifierAdminParEmail(escrowId);
         // Récupérer l'annonceId depuis le document escrow et mettre à jour l'annonce Firestore : statut: "escrow_en_cours"
         firestoreDb.collection("escrow").doc(escrowId).get().then(function(docSnap) {
           if (docSnap.exists) {
@@ -21234,6 +21274,7 @@ window.payerAvecWave = payerAvecWave;
                 dateEnvoiPaiement: firebase.firestore.FieldValue.serverTimestamp(),
                 dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
               }).then(function() {
+                notifierAdminParEmail(escrowRetour);
                 afficherNotification("✅ Paiement confirmé ! L'admin va vérifier.", "📤");
                 changerPage('transactions');
               }).catch(function(err) {
