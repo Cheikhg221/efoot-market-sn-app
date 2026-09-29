@@ -11397,6 +11397,15 @@
           // CAS 3c : Demande ACCEPTÉE (PRIORITÉ ABSOLUE)
           if (demande.statut === "acceptee") {
             function rendreBoutonsAcheteur(escrow) {
+              if (demande && demande.autoriseAPayer !== true) {
+                conteneur.innerHTML =
+                  '<div style="background:#27272a; border:1.5px solid #52525b; border-radius:10px; padding:15px; text-align:center; margin-bottom:15px;">' +
+                    '<p style="color:#e4e4e7; font-weight:700; font-size:15px; margin:0 0 4px 0;">⏸️ Autorisation retirée par le vendeur</p>' +
+                    '<p style="color:#a1a1aa; font-size:13px; margin:0;">En attente d\'une nouvelle autorisation.</p>' +
+                  '</div>';
+                return;
+              }
+
               if (escrow) {
                 var stEscrow = (escrow.statut || '').toLowerCase().trim();
                 var htmlEscrow = '';
@@ -18919,6 +18928,31 @@ window.payerAvecWave = payerAvecWave;
         autoriseAPayer: false,
         dateAutorisation: null
       }).then(function() {
+        var demandeActuelle = (demandesVendeurCache || []).find(function(x) { return x.id === demandeId; });
+        var annonceIdE = demandeActuelle ? demandeActuelle.annonceId : null;
+        if (annonceIdE && db) {
+          db.collection("escrow")
+            .where("annonceId", "==", annonceIdE)
+            .get()
+            .then(function(snap) {
+              snap.forEach(function(docE) {
+                var st = ((docE.data() || {}).statut || '').toLowerCase().trim();
+                if (st === 'sollicitation_admin' || st === 'admin_en_attente' || st === 'attente_paiement') {
+                  db.collection("escrow").doc(docE.id).delete().then(function() {
+                    console.log("🗑️ Escrow supprimé après retrait autorisation :", docE.id);
+                    if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
+                      escrowAcheteurCache = escrowAcheteurCache.filter(function(e) { return e.id !== docE.id; });
+                      window.escrowAcheteurCache = escrowAcheteurCache;
+                    }
+                    if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+                      escrowVendeurCache = escrowVendeurCache.filter(function(e) { return e.id !== docE.id; });
+                      window.escrowVendeurCache = escrowVendeurCache;
+                    }
+                  }).catch(function(e) { console.warn("Erreur suppression escrow :", e); });
+                }
+              });
+            }).catch(function(e) { console.warn("Erreur recherche escrow :", e); });
+        }
         finaliserRetrait();
       }).catch(function(err) {
         console.error("Erreur retirerAutorisationPaiement :", err);
