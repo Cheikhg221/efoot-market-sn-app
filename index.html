@@ -11404,7 +11404,7 @@
           // CAS 3c : Demande ACCEPTÉE (PRIORITÉ ABSOLUE)
           if (demande.statut === "acceptee") {
             function rendreBoutonsAcheteur(escrow) {
-              if (demande && demande.autoriseAPayer !== true) {
+              if (demande && demande.autoriseAPayer !== true && demande.aEteAutorise === true) {
                 conteneur.innerHTML =
                   '<div style="background:#27272a; border:1.5px solid #52525b; border-radius:10px; padding:15px; text-align:center; margin-bottom:15px;">' +
                     '<p style="color:#e4e4e7; font-weight:700; font-size:15px; margin:0 0 4px 0;">⏸️ Autorisation retirée par le vendeur</p>' +
@@ -18855,6 +18855,7 @@ window.payerAvecWave = payerAvecWave;
       // Procéder à l'update
       db.collection("demandes").doc(demandeId).update({
         autoriseAPayer: true,
+        aEteAutorise: true,
         dateAutorisation: firebase.firestore.FieldValue.serverTimestamp()
       }).then(function() {
         clearTimeout(securiteFermeture);
@@ -18933,6 +18934,7 @@ window.payerAvecWave = payerAvecWave;
 
       db.collection("demandes").doc(demandeId).update({
         autoriseAPayer: false,
+        aEteAutorise: true,
         dateAutorisation: null
       }).then(function() {
         var demandeActuelle = (demandesVendeurCache || []).find(function(x) { return x.id === demandeId; });
