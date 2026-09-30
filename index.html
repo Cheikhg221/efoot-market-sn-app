@@ -11341,26 +11341,35 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
               '</div>';
             }
 
-            // Si annonce.statut === "en_cours" :
+            // Afficher les boutons pour les statuts "en_cours" ET "fermee"
             var stAnnonce = (annonce.statut || '').toLowerCase();
-            if (stAnnonce === 'en_cours') {
-              if (annonce.accepteAutresOffres !== false) {
-                html += '<button type="button" onclick="fermerAuxOffres(\'' + annonce.id + '\')" style="background:#FFC107; color:#111; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔒 Fermer aux nouvelles offres</button>';
-              } else {
-                html += '<button type="button" onclick="laisserOuverte(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔓 Ouvrir aux offres</button>';
+            if (stAnnonce === 'en_cours' || stAnnonce === 'fermee') {
+              // Bouton fermer/ouvrir aux offres : uniquement en "en_cours"
+              if (stAnnonce === 'en_cours') {
+                if (annonce.accepteAutresOffres !== false) {
+                  html += '<button type="button" onclick="fermerAuxOffres(\'' + annonce.id + '\')" style="background:#FFC107; color:#111; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔒 Fermer aux nouvelles offres</button>';
+                } else {
+                  html += '<button type="button" onclick="laisserOuverte(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔓 Ouvrir aux offres</button>';
+                }
               }
 
-              html += '<button type="button" onclick="marquerVendue(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🎉 Marquer comme VENDU</button>';
+              // Bouton "Marquer comme VENDU" : toujours visible dès qu'au moins 1 demande est acceptée
+              if (demandesAcceptees.length > 0) {
+                html += '<button type="button" onclick="marquerVendue(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🎉 Marquer comme VENDU</button>';
+              }
 
-              var dAssociee = (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
-                var s = (d.statut || '').toLowerCase();
-                return d.annonceId === annonce.id && (s === 'acceptee' || s === 'en_cours' || s === 'en_attente_confirmation_acheteur');
-              }) || (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
-                return d.annonceId === annonce.id;
-              }) || {};
-              var demandeId = dAssociee.id || (escrowActif ? (escrowActif.demandeId || '') : '') || '';
+              // Bouton "Annuler la transaction" : toujours visible dès qu'au moins 1 demande est acceptée
+              if (demandesAcceptees.length > 0) {
+                var dAssociee = (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
+                  var s = (d.statut || '').toLowerCase();
+                  return d.annonceId === annonce.id && (s === 'acceptee' || s === 'en_cours' || s === 'en_attente_confirmation_acheteur');
+                }) || (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
+                  return d.annonceId === annonce.id;
+                }) || {};
+                var demandeId = dAssociee.id || (escrowActif ? (escrowActif.demandeId || '') : '') || '';
 
-              html += '<button type="button" onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Annuler la transaction</button>';
+                html += '<button type="button" onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Annuler la transaction</button>';
+              }
             }
           }
 
@@ -11849,6 +11858,18 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
 
           // CAS 3d : Demande REFUSÉE
           if (demande.statut === "refusee") {
+            // Cas spécial : la demande a été refusée car le compte a été vendu à un autre acheteur
+            if (demande.motifRefus && demande.motifRefus.indexOf("vendu") !== -1) {
+              conteneur.innerHTML = 
+                '<div style="background: #1E1E1E; padding: 20px; border-radius: 10px; text-align: center; border: 1.5px solid rgba(244,67,54,0.4);">' +
+                  '<div style="font-size: 40px; margin-bottom: 10px;">💔</div>' +
+                  '<p style="color: #F44336; font-weight: 800; font-size: 16px; margin: 0 0 8px 0;">Le compte a été vendu à un autre acheteur</p>' +
+                  '<p style="color: #ccc; font-size: 13px; margin: 0 0 12px 0; line-height: 1.5;">Le vendeur a finalisé la vente avec un autre acheteur. Cette transaction est fermée.</p>' +
+                  '<button type="button" class="btn-primary" style="padding: 10px 18px; font-size: 13.5px; cursor: pointer;" onclick="changerPage(\'accueil\')">🔍 Chercher un autre compte</button>' +
+                '</div>';
+              return;
+            }
+
             if (demande.bloqueDefinitif === true) {
               conteneur.innerHTML = '<div style="background:#1E1E1E; padding:20px; border-radius:10px; text-align:center;"><p style="color:#F44336; font-weight:bold; font-size:16px;">❌ Demande refusée</p><p style="color:#888; font-size:13px; margin-top:10px;">Vous ne pouvez plus faire de demande sur cette annonce</p></div>';
               return;
@@ -21045,47 +21066,44 @@ function retirerAutorisationPaiement(demandeId) {
     /**
      * Annule la transaction en cours et remet l'annonce en vente
      */
-    function annulerTransaction(demandeId, annonceId) {
-      if (!annonceId) return;
-      
-      // 1. Récupérer toutes les demandes actives sur cette annonce
-      var demandesActives = (demandesVendeurCache || []).filter(function(d) {
-        var s = (d.statut || '').toLowerCase();
-        return d.annonceId === annonceId && 
-               (s === 'acceptee' || s === 'en_attente' || s === 'demande_envoyee');
-      });
-      
-      // 2. Si aucune demande active
-      if (demandesActives.length === 0) {
-        if (!confirm("Aucune demande active sur cette annonce.\n\nVoulez-vous quand même la remettre en vente ?")) {
-          return;
-        }
-        executerAnnulationTransaction(null, annonceId, null);
-        return;
-      }
-      
-      // 3. Si UNE SEULE demande : confirmation simple
-      if (demandesActives.length === 1) {
-        var d = demandesActives[0];
-        var nomAcheteur = d.acheteurNom || d.acheteur || "cet acheteur";
-        
-        var message = "⚠️ ANNULATION DE TRANSACTION\n\n" +
-                      "Voulez-vous vraiment annuler la transaction avec :\n\n" +
-                      "👤 " + nomAcheteur + "\n\n" +
-                      "Cette action va :\n" +
-                      "• Annuler la demande de l'acheteur\n" +
-                      "• Remettre l'annonce en vente\n\n" +
-                      "Cliquez sur OK pour confirmer.";
-        
-        if (confirm(message)) {
-          executerAnnulationTransaction(d.id, annonceId, nomAcheteur);
-        }
-        return;
-      }
-      
-      // 4. Si PLUSIEURS demandes : modale de choix
-      ouvrirModalChoixAnnulation(annonceId, demandesActives);
+function annulerTransaction(demandeId, annonceId) {
+  if (!annonceId) return;
+
+  // Récupérer TOUTES les demandes acceptées sur cette annonce
+  var demandesAcceptees = (demandesVendeurCache || []).filter(function(d) {
+    var s = (d.statut || '').toLowerCase();
+    return d.annonceId === annonceId && s === 'acceptee';
+  });
+
+  // Si 0 acceptée → demander confirmation simple
+  if (demandesAcceptees.length === 0) {
+    if (!confirm("Aucune demande acceptée sur cette annonce.\n\nVoulez-vous quand même annuler la transaction en cours ?")) {
+      return;
     }
+    executerAnnulationTransaction(null, annonceId, null);
+    return;
+  }
+
+  // Si 1 seule acceptée → confirmation simple
+  if (demandesAcceptees.length === 1) {
+    var d = demandesAcceptees[0];
+    var nomAcheteur = d.acheteurNom || d.acheteur || "cet acheteur";
+    var message = "⚠️ ANNULATION DE TRANSACTION\n\n" +
+                  "Voulez-vous vraiment annuler la transaction avec :\n\n" +
+                  "👤 " + nomAcheteur + "\n\n" +
+                  "Cette action va :\n" +
+                  "• Annuler l'acceptation de cet acheteur\n" +
+                  "• Remettre l'annonce en vente\n\n" +
+                  "Cliquez sur OK pour confirmer.";
+    if (confirm(message)) {
+      executerAnnulationTransaction(d.id, annonceId, nomAcheteur);
+    }
+    return;
+  }
+
+  // Si 2+ acceptées → ouvrir la modale de choix
+  ouvrirModalChoixAnnulation(annonceId, demandesAcceptees);
+}
 
     function executerAnnulationTransaction(demandeId, annonceId, nomAcheteur) {
       if (!annonceId) return;
