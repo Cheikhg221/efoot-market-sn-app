@@ -18684,6 +18684,38 @@ window.notifierAdminParEmailSollicitation = notifierAdminParEmailSollicitation;
           afficherNotification("Paiement validé ! Vendeur notifié.", "✅");
         }
 
+        // 📧 Notifier l'acheteur que l'admin a confirmé avoir reçu son argent
+        var acheteurIdConf = tx ? (tx.acheteurId || "") : "";
+        var acheteurNomConf = tx ? (tx.acheteurNom || "Acheteur") : "Acheteur";
+        var annonceTitreConf = tx ? (tx.annonceTitre || "Compte eFootball") : "Compte eFootball";
+        var vendeurNomConf = tx ? (tx.vendeurNom || "Vendeur") : "Vendeur";
+
+        if (acheteurIdConf && typeof recupererEmailUtilisateur === 'function' && typeof envoyerEmail === 'function') {
+          recupererEmailUtilisateur(acheteurIdConf).then(function(emailAcheteur) {
+            if (emailAcheteur) {
+              var messageAcheteur =
+                "Bonjour " + acheteurNomConf + ",\n\n" +
+                "💰 L'admin a confirmé avoir reçu ton paiement pour :\n\n" +
+                "📦 Annonce : " + annonceTitreConf + "\n\n" +
+                "➡️ Le vendeur peut maintenant te transférer les identifiants Konami ID.\n" +
+                "Contacte-le sur WhatsApp pour recevoir tes identifiants.\n\n" +
+                "🎮 Une fois le compte reçu et testé, connecte-toi sur efootmarketsn.store " +
+                "pour confirmer la réception et clôturer la transaction.\n\n" +
+                "💡 Ton argent reste sécurisé chez l'admin jusqu'à ta confirmation.";
+
+              envoyerEmail(
+                emailAcheteur,
+                "💰 L'admin a reçu ton paiement - EFoot Market SN",
+                messageAcheteur
+              ).catch(function(e) {
+                console.warn("Erreur email acheteur (paiement reçu) :", e);
+              });
+            }
+          }).catch(function(e) {
+            console.warn("Erreur recupererEmailUtilisateur acheteur :", e);
+          });
+        }
+
         var vendeurId = tx ? (tx.vendeurId || "") : "";
         var emailPromise = (vendeurId && typeof recupererEmailUtilisateur === 'function')
           ? recupererEmailUtilisateur(vendeurId)
@@ -19354,6 +19386,39 @@ window.forcerStatutPaiementRecu = forcerStatutPaiementRecu;
         // FERMER LA MODALE IMMÉDIATEMENT
         fermerModalAutoriserPaiement();
         
+        // 📧 Notifier l'acheteur par email qu'il est autorisé à payer
+        var demandeLocale = (demandesVendeurCache || []).find(function(d) { return d.id === demandeId; });
+        var acheteurIdNotif = acheteurId || (demandeLocale ? demandeLocale.acheteurId : null);
+        var acheteurNomNotif = demandeLocale ? (demandeLocale.acheteurNom || "Acheteur") : "Acheteur";
+        var annonceTitreNotif = demandeLocale ? (demandeLocale.annonceTitre || "Compte eFootball") : "Compte eFootball";
+        var annoncePrixNotif = demandeLocale ? (demandeLocale.annoncePrix || 0) : 0;
+
+        if (acheteurIdNotif && typeof recupererEmailUtilisateur === 'function' && typeof envoyerEmail === 'function') {
+          recupererEmailUtilisateur(acheteurIdNotif).then(function(emailAcheteur) {
+            if (emailAcheteur) {
+              var messageAcheteur =
+                "Bonjour " + acheteurNomNotif + ",\n\n" +
+                "🔑 Bonne nouvelle ! Le vendeur t'a autorisé à payer pour le compte eFootball :\n\n" +
+                "📦 Annonce : " + annonceTitreNotif + "\n" +
+                "💰 Montant : " + Number(annoncePrixNotif).toLocaleString('fr-FR') + " FCFA\n\n" +
+                "➡️ Connecte-toi sur efootmarketsn.store pour procéder au paiement sécurisé " +
+                "via Wave / Orange Money.\n\n" +
+                "💡 Clique sur « 💳 Envoyer l'argent » dans le suivi de transaction pour " +
+                "être redirigé vers la page de paiement.";
+
+              envoyerEmail(
+                emailAcheteur,
+                "🔑 Tu es autorisé à payer sur EFoot Market SN",
+                messageAcheteur
+              ).catch(function(e) {
+                console.warn("Erreur email acheteur (autorisation paiement) :", e);
+              });
+            }
+          }).catch(function(e) {
+            console.warn("Erreur recupererEmailUtilisateur acheteur :", e);
+          });
+        }
+
         afficherNotification("Tu as autorisé cet acheteur à payer.", "✅");
         
         // Rafraîchir les vues
