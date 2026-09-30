@@ -19202,6 +19202,16 @@ function retirerAutorisationPaiement(demandeId) {
     return;
   }
 
+  // ⚠️ Confirmation avant retrait (évite les clics par inadvertance)
+  if (!confirm("⚠️ RETIRER L'AUTORISATION\n\n" +
+               "Confirme-tu vouloir retirer l'autorisation de paiement de cet acheteur ?\n\n" +
+               "➤ L'acheteur ne pourra plus payer tant que tu ne l'autorises pas à nouveau.\n" +
+               "➤ S'il a déjà choisi un admin, sa sollicitation sera annulée.\n" +
+               "➤ Aucun autre acheteur ne peut être autorisé tant que tu n'as pas confirmé ce retrait.\n\n" +
+               "Clique sur OK pour confirmer.")) {
+    return;
+  }
+
   // 1. Récupérer la demande pour avoir son annonceId
   db.collection("demandes").doc(demandeId).get().then(function(demandeDoc) {
     if (!demandeDoc.exists) {
