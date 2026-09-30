@@ -93,7 +93,6 @@
       } catch (_) {}
     }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
   <!-- Charset et viewport -->
   <meta charset="UTF-8">
@@ -7228,10 +7227,6 @@
     /* ==========================================================
        SECTION 1 : ÉTAT GLOBAL DE L'APPLICATION & CONSTANTES
        ========================================================== */
-    var EMAILJS_PUBLIC_KEY = "aguuo0HEwXN1MODGC";
-    var EMAILJS_SERVICE_ID = "service_1b1i1wc";
-    var EMAILJS_TEMPLATE_ID = "template_2okbv8r";
-
     var currentPage = 'accueil';
     var currentDetailAdId = null;
     var activeConversationId = null;
@@ -8308,7 +8303,7 @@
        ========================================================== */
 
     /**
-     * Envoie un email de notification via EmailJS
+     * Envoie un email de notification via Brevo / Worker Cloudflare
      */
     function envoyerEmail(destinataire, sujet, message) {
       if (!destinataire || destinataire.indexOf('@') === -1) {
@@ -18632,7 +18627,7 @@ window.notifierAdminParEmailSollicitation = notifierAdminParEmailSollicitation;
 
     /**
      * 6. Confirme la réception de l'argent par l'admin, met à jour statut "paiement_recu"
-     * et envoie une notification EmailJS au vendeur
+     * et envoie une notification email au vendeur
      */
     function confirmerReceptionArgent(escrowId) {
       if (!escrowId) return;
@@ -18699,7 +18694,7 @@ window.notifierAdminParEmailSollicitation = notifierAdminParEmailSollicitation;
             var sujet = "💰 L'argent est sécurisé sur EFoot Market SN";
             var message = "Bonjour, l'acheteur a envoyé son paiement à l'admin. Tu peux maintenant transférer les identifiants Konami à l'acheteur en toute sécurité.";
             envoyerEmail(emailVendeur, sujet, message).catch(function(e) {
-              console.warn("Erreur notification EmailJS vendeur :", e);
+              console.warn("Erreur notification email vendeur :", e);
             });
           }
         }).catch(function(e) {
@@ -21976,16 +21971,6 @@ setTimeout(function() {
           afficherErreurChargement();
         }
       }, 15000);
-
-      // Initialiser EmailJS
-      try {
-        if (typeof emailjs !== 'undefined' && emailjs.init) {
-          emailjs.init(EMAILJS_PUBLIC_KEY);
-          console.log("✅ EmailJS initialisé");
-        }
-      } catch (e) {
-        console.warn("Erreur initialisation EmailJS :", e);
-      }
 
       try {
         // Démarrer l'écoute temps réel de la collection Firestore "annonces"
