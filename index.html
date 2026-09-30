@@ -5705,7 +5705,7 @@
                     <div style="font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px;">💸 L'acheteur envoie l'argent à l'admin</div>
                     <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
                       Une fois l'admin validé, l'acheteur envoie le <strong style="color: #00E676;">montant exact</strong> à l'admin via Wave ou Orange Money. 
-                      Puis il clique sur <strong style="color: #00E676;">« J'ai envoyé l'argent »</strong>. 
+                      Puis il clique sur <strong style="color: #00E676;">« Envoyer l'argent »</strong>. 
                       À cet instant, l'annonce est <strong>retirée du catalogue</strong> et toutes les autres demandes sont automatiquement refusées.
                     </div>
                   </div>
@@ -11610,8 +11610,15 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
                     '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #ff9800; border-radius:10px; padding:14px; text-align:center; color:#ff9800; font-weight:700; font-size:15px; margin-bottom:12px;">' +
                       '⏳ En attente de ton paiement à l\'admin' +
                     '</div>' +
-                    '<button type="button" onclick="ouvrirModalConfirmationPaiement(\'' + escrow.id + '\')" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:white; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:700; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(245,158,11,0.3);">' +
-                      '💸 J\'ai envoyé l\'argent' +
+                    '<div style="background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.4); border-radius:10px; padding:12px; margin-bottom:12px; display:flex; align-items:flex-start; gap:10px;">' +
+                      '<span style="font-size:20px; flex-shrink:0;">💡</span>' +
+                      '<div style="font-size:12.5px; color:#bfdbfe; line-height:1.5; text-align:left;">' +
+                        '<strong style="color:#60a5fa;">Paiement en ligne sécurisé</strong><br>' +
+                        'Clique sur <strong>« 💳 Envoyer l\'argent »</strong> ci-dessous, puis choisis <strong>« Payer avec Wave / Orange Money »</strong> pour payer en toute sécurité.' +
+                      '</div>' +
+                    '</div>' +
+                    '<button type="button" onclick="ouvrirModalConfirmationPaiement(\'' + escrow.id + '\')" style="background:linear-gradient(135deg, #10b981, #059669); color:white; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:800; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(16,185,129,0.35);">' +
+                      '💳 Envoyer l\'argent' +
                     '</button>';
                 }
                 // b) Si escrow.statut === "paiement_envoye" :
@@ -13663,7 +13670,7 @@ window.mettreAJourBadgeNavAdminEscrow = mettreAJourBadgeNavAdminEscrow;
 
             if (stEscrow === 'attente_paiement') {
               html += '<div style="margin-top: 10px;">';
-              html += '<button type="button" class="btn-primary" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;" onclick="event.stopPropagation(); ouvrirModalConfirmationEnvoi(\'' + e.id + '\', ' + prixEscrow + ', \'' + escapeHtml(e.adminNom || '').replace(/'/g, "\\'") + '\', \'' + escapeHtml(e.moyenPaiement || '').replace(/'/g, "\\'") + '\', \'' + escapeHtml(e.adminTelephone || '').replace(/'/g, "\\'") + '\')">📤 Envoyer le paiement / J\'ai envoyé l\'argent</button>';
+              html += '<button type="button" class="btn-primary" style="background:#00C853; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;" onclick="event.stopPropagation(); ouvrirModalConfirmationEnvoi(\'' + e.id + '\', ' + prixEscrow + ', \'' + escapeHtml(e.adminNom || '').replace(/'/g, "\\'") + '\', \'' + escapeHtml(e.moyenPaiement || '').replace(/'/g, "\\'") + '\', \'' + escapeHtml(e.adminTelephone || '').replace(/'/g, "\\'") + '\')">💳 Envoyer l\'argent</button>';
               html += '</div>';
             }
 
@@ -15026,7 +15033,7 @@ window.mettreAJourBadgeNavAdminEscrow = mettreAJourBadgeNavAdminEscrow;
       } else if (stEscrow === 'refuse_par_admin') {
         msgEscrow = "❌ L'admin a refusé ta sollicitation. Clique sur '🔒 Choisir un autre admin' ci-dessus pour continuer.";
       } else if (stEscrow === 'attente_paiement') {
-        msgEscrow = "💡 Rappel : Envoie le montant à l'admin, puis clique sur '💸 J'ai envoyé l'argent' ci-dessus pour confirmer.";
+        msgEscrow = "💡 Rappel : Clique sur '💳 Envoyer l'argent' ci-dessus pour payer via Wave / Orange Money.";
       } else if (stEscrow === 'paiement_envoye') {
         msgEscrow = "📤 Paiement envoyé à l'admin. Il va vérifier la réception, puis le vendeur pourra te transférer les identifiants.";
       } else if (stEscrow === 'paiement_recu') {
@@ -15260,7 +15267,11 @@ window.mettreAJourBadgeNavAdminEscrow = mettreAJourBadgeNavAdminEscrow;
           afficherBoutonWhatsApp = false;
         } else if (stEscrow === 'attente_paiement') {
           titreBox = "🔑 Paiement sécurisé autorisé";
-          texteMessage = "Le vendeur t'a autorisé à payer. Envoie le montant exact à l'admin via Wave / Orange Money, puis clique sur '💸 J'ai envoyé l'argent' ci-dessus pour confirmer.<div style=\"font-size: 12px; color: #fbbf24; margin-top: 6px; font-weight: 600;\">💡 Rappel : Envoie le montant à l'admin, puis clique sur 'J'ai envoyé l'argent'.</div>";
+          texteMessage = 
+            "Le vendeur t'a autorisé à payer. Clique sur le bouton <strong>« 💳 Envoyer l'argent »</strong> pour être redirigé vers la page de paiement sécurisée Wave / Orange Money.<br><br>" +
+            "<div style=\"background: rgba(0,200,83,0.1); border-left: 3px solid #00C853; border-radius: 6px; padding: 10px 12px; margin-top: 6px; font-size: 12.5px; color: #B9F6CA; line-height: 1.5;\">" +
+              "💰 Le paiement se fait directement en ligne via Wave ou Orange Money. L'admin vérifiera la réception ensuite." +
+            "</div>";
           couleurTitre = "#fbbf24";
           classeBox = "box-demande";
           afficherBoutonWhatsApp = false;
