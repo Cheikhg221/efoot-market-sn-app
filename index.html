@@ -9612,7 +9612,7 @@
       }
 
       // Nettoyer le numéro
-      var numeroClean = (numero || "").replace(/[^0-9]/g, "");
+      var numeroClean = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(numero) : (numero || "").replace(/[^0-9]/g, "");
       if (!numeroClean) {
         if (typeof afficherNotification === 'function') {
           afficherNotification("Numéro WhatsApp non disponible", "⚠️");
@@ -9671,7 +9671,8 @@
       var titre = escapeHtml(pub.nomProduit || pub.titre || pub.title || 'Publicité');
       var nomPartenaire = escapeHtml(pub.nomPartenaire || pub.partenaire || pub.nom || 'Partenaire');
       var region = escapeHtml(pub.region || pub.localisation || 'Sénégal');
-      var numero = (pub.whatsapp || pub.numero || pub.telephone || '').toString().replace(/'/g, "\\'");
+      var numeroBrut = (pub.whatsapp || pub.numero || pub.telephone || '').toString();
+      var numero = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(numeroBrut) : numeroBrut;
       var pubId = (pub.id || '').toString().replace(/'/g, "\\'");
       // Prix de la publicité (en FCFA) : affiché uniquement si présent et supérieur à 0
       var prix = (pub.prix !== undefined && pub.prix !== null && !isNaN(Number(pub.prix)) && Number(pub.prix) > 0) ? Number(pub.prix) : 0;
@@ -9758,7 +9759,8 @@
         var nomProd = escapeHtml(data.nomProduit || data.titre || 'Offre Partenaire');
         var nomPart = escapeHtml(data.nomPartenaire || data.partenaire || 'Partenaire certifié');
         var reg = escapeHtml(data.region || 'Sénégal');
-        var num = (data.whatsapp || data.numero || data.telephone || '').toString().replace(/'/g, "\\'");
+        var numBrut = (data.whatsapp || data.numero || data.telephone || '').toString();
+        var num = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(numBrut) : numBrut;
         var pId = (data.id || pubId).toString().replace(/'/g, "\\'");
         var px = (data.prix !== undefined && data.prix !== null && !isNaN(Number(data.prix)) && Number(data.prix) > 0) ? Number(data.prix) : 0;
         var desc = escapeHtml(data.description || data.desc || 'Aucune description détaillée disponible.');
@@ -10470,6 +10472,26 @@
       return nettoye;
     }
 
+function normaliserNumeroWa(numero) {
+  if (!numero) return "";
+  var nettoye = String(numero).replace(/[^0-9]/g, "");
+  // Retirer un éventuel 00 initial (au cas où c'est 00221...)
+  if (nettoye.startsWith("00")) {
+    nettoye = nettoye.substring(2);
+  }
+  // Si ça commence déjà par 221, on garde
+  if (nettoye.startsWith("221")) {
+    return nettoye;
+  }
+  // Si le numéro a 9 chiffres (format sénégalais sans indicatif), on ajoute 221
+  if (nettoye.length === 9) {
+    return "221" + nettoye;
+  }
+  // Sinon on préfixe aussi par 221 par défaut
+  return "221" + nettoye;
+}
+window.normaliserNumeroWa = normaliserNumeroWa;
+
     /**
      * Valide individuellement un champ du formulaire de publication
      */
@@ -11158,7 +11180,7 @@ function contacterAcheteurWhatsApp(telephone, nomAcheteur, annonceTitre) {
     }
     return;
   }
-  var numeroClean = String(telephone).replace(/[^0-9]/g, "");
+  var numeroClean = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(telephone) : String(telephone).replace(/[^0-9]/g, "");
   if (!numeroClean) {
     if (typeof afficherNotification === 'function') {
       afficherNotification("Numéro invalide", "⚠️");
@@ -11987,7 +12009,7 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
      * Ouvre directement une discussion WhatsApp avec le vendeur
      */
     function contacterWhatsApp(numero) {
-      var numeroClean = (numero || "").replace(/[^0-9]/g, "");
+      var numeroClean = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(numero) : (numero || "").replace(/[^0-9]/g, "");
       if (!numeroClean) {
         alert("Numéro WhatsApp non disponible.");
         return;
@@ -15655,7 +15677,8 @@ window.mettreAJourBadgeNavAdminEscrow = mettreAJourBadgeNavAdminEscrow;
             `<div style="width: 70px; height: 70px; background: #242424; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 26px; border: 1px solid var(--border-color);">⚽</div>`;
 
           // WhatsApp link
-          const waNum = estVendeurEffectif ? (d.acheteurTelephone || "") : (d.vendeurTelephone || d.telephoneWhatsAppVendeur || "");
+          const waNumRaw = estVendeurEffectif ? (d.acheteurTelephone || "") : (d.vendeurTelephone || d.telephoneWhatsAppVendeur || "");
+          const waNum = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(waNumRaw) : waNumRaw;
           const msgWa = encodeURIComponent(`Bonjour, je vous contacte sur EFoot Market SN à propos de la transaction pour "${titre}".`);
           const waLink = waNum ? `https://wa.me/${waNum}?text=${msgWa}` : null;
 
