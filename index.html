@@ -21041,11 +21041,18 @@ function retirerAutorisationPaiement(demandeId) {
         
         afficherNotification(messageNotif, "ℹ️");
         
+        // Forcer le rafraîchissement de TOUTES les vues
         if (currentPage === 'mes-annonces') afficherMesAnnonces();
         if (currentPage === 'detail' && currentDetailAdId === annonceId) {
-          afficherDetailAnnonce(annonceId);
+          // Relancer le rendu du détail
+          setTimeout(function() {
+            afficherDetailAnnonce(annonceId);
+          }, 300);
         }
         if (currentPage === 'transactions') afficherMesTransactions();
+        if (typeof afficherSectionDemandesRecues === 'function') {
+          afficherSectionDemandesRecues(demandesVendeurCache);
+        }
       }
       
       // Exécution séquentielle
@@ -21055,6 +21062,40 @@ function retirerAutorisationPaiement(demandeId) {
         })
         .then(function(demandesRestantes) {
           return mettreAJourAnnonce(demandesRestantes);
+        })
+        .then(function() {
+          // NOUVEAU : supprimer TOUS les escrows liés à cette annonce
+          if (!db || !annonceId) return Promise.resolve();
+          return db.collection("escrow")
+            .where("annonceId", "==", annonceId)
+            .get()
+            .then(function(snap) {
+              if (snap.empty) {
+                console.log("ℹ️ Aucun escrow à supprimer");
+                return Promise.resolve();
+              }
+              var promesses = [];
+              snap.forEach(function(docE) {
+                console.log("🗑️ Suppression escrow :", docE.id, "statut:", docE.data().statut);
+                promesses.push(db.collection("escrow").doc(docE.id).delete());
+              });
+              return Promise.all(promesses).then(function() {
+                // Nettoyer tous les caches
+                if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+                  escrowVendeurCache = escrowVendeurCache.filter(function(e) { return e.annonceId !== annonceId; });
+                  window.escrowVendeurCache = escrowVendeurCache;
+                }
+                if (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache)) {
+                  escrowAcheteurCache = escrowAcheteurCache.filter(function(e) { return e.annonceId !== annonceId; });
+                  window.escrowAcheteurCache = escrowAcheteurCache;
+                }
+                if (typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) {
+                  escrowAdminCache = escrowAdminCache.filter(function(e) { return e.annonceId !== annonceId; });
+                  window.escrowAdminCache = escrowAdminCache;
+                }
+                console.log("✅ " + snap.size + " escrow(s) supprimé(s)");
+              });
+            });
         })
         .then(function() {
           finaliser();
@@ -21364,6 +21405,61 @@ function retirerAutorisationPaiement(demandeId) {
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
     function initialiserApplication() {
+// Nettoyage de sécurité : à chaque chargement, vérifier qu'il n'y a pas 
+// d'escrow orphelin dont la demande est annulée
+setTimeout(function() {
+  var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!user || !db) return;
+  
+  // Chercher les escrows du vendeur avec statut "attente_paiement" ou "sollicitation_admin"
+  // et vérifier que la demande liée n'est pas annulée
+  db.collection("escrow")
+    .where("vendeurId", "==", user.uid)
+    .get()
+    .then(function(snapEsc) {
+      if (snapEsc.empty) return;
+      var promesses = [];
+      snapEsc.forEach(function(docE) {
+        var dataE = docE.data() || {};
+        var st = (dataE.statut || '').toLowerCase().trim();
+        // Ne vérifier que les escrows "en attente"
+        if (st !== 'attente_paiement' && st !== 'sollicitation_admin' && st !== 'admin_en_attente') return;
+        
+        var demandeId = dataE.demandeId;
+        if (!demandeId) return;
+        
+        promesses.push(
+          db.collection("demandes").doc(demandeId).get().then(function(demDoc) {
+            if (!demDoc.exists) {
+              // Demande supprimée → escrow orphelin → supprimer
+              console.log("🗑️ Escrow orphelin (demande supprimée) :", docE.id);
+              return db.collection("escrow").doc(docE.id).delete();
+            }
+            var stDem = ((demDoc.data() || {}).statut || '').toLowerCase().trim();
+            if (stDem === 'annulee' || stDem === 'refusee') {
+              // Demande annulée/refusée → supprimer l'escrow
+              console.log("🗑️ Escrow orphelin (demande " + stDem + ") :", docE.id);
+              return db.collection("escrow").doc(docE.id).delete();
+            }
+          }).catch(function(e) { console.warn("Erreur vérif escrow orphelin :", e); })
+        );
+      });
+      if (promesses.length > 0) {
+        Promise.all(promesses).then(function() {
+          console.log("✅ Nettoyage des escrows orphelins terminé");
+          if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+            escrowVendeurCache = escrowVendeurCache.filter(function(e) {
+              var st = (e.statut || '').toLowerCase().trim();
+              return st !== 'attente_paiement' && st !== 'sollicitation_admin' && st !== 'admin_en_attente';
+            });
+            window.escrowVendeurCache = escrowVendeurCache;
+          }
+        });
+      }
+    })
+    .catch(function(e) { console.warn("Erreur nettoyage escrows orphelins :", e); });
+}, 3000);
+
       setTimeout(function() {
         var params = new URLSearchParams(window.location.search);
         var escrowRetour = params.get('escrow_success');
