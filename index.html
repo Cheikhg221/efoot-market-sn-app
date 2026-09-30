@@ -14248,7 +14248,7 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
                     nbAccepteesRestantes++;
                   }
                 });
-                if (nbAccepteesRestantes < 2) {
+                if (nbAccepteesRestantes === 0) {
                   db.collection("annonces").doc(annonceId).update({
                     statut: "active",
                     accepteAutresOffres: true
@@ -14262,6 +14262,20 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
                     setAnnonces(annonces);
                   }
                   afficherNotification("🔓 L'annonce est de nouveau ouverte au catalogue.", "🔓");
+                } else if (nbAccepteesRestantes === 1) {
+                  db.collection("annonces").doc(annonceId).update({
+                    statut: "en_cours",
+                    accepteAutresOffres: true
+                  }).catch(function(e) { console.warn("Erreur mise à jour annonce en_cours :", e); });
+
+                  var annonces2 = getAnnonces();
+                  var ad2 = annonces2.find(function(a) { return a.id === annonceId; });
+                  if (ad2) {
+                    ad2.statut = "en_cours";
+                    ad2.accepteAutresOffres = true;
+                    setAnnonces(annonces2);
+                  }
+                  afficherNotification("🔵 Une demande acceptée reste active. L'annonce est en cours.", "🔵");
                 }
                 return nombreRefus;
               });
@@ -21155,53 +21169,86 @@ function annulerTransaction(demandeId, annonceId) {
       
       // 3. Mettre à jour l'annonce selon le résultat
       function mettreAJourAnnonce(demandesRestantes) {
-        if (!db) {
-          // Mode local
+        // Compter les demandes acceptées restantes (hors demandeId en cours d'annulation)
+        function compterAccepteesRestantes(callback) {
+          if (!db) {
+            var restantes = (demandesVendeurCache || []).filter(function(d) {
+              var s = (d.statut || '').toLowerCase();
+              return d.annonceId === annonceId 
+                  && d.id !== demandeId 
+                  && s === 'acceptee';
+            });
+            callback(restantes.length);
+            return;
+          }
+          db.collection("demandes")
+            .where("annonceId", "==", annonceId)
+            .get()
+            .then(function(snapshot) {
+              var count = 0;
+              snapshot.forEach(function(doc) {
+                var s = ((doc.data() || {}).statut || '').toLowerCase();
+                if (doc.id !== demandeId && s === 'acceptee') {
+                  count++;
+                }
+              });
+              callback(count);
+            })
+            .catch(function(e) {
+              console.warn("Erreur comptage demandes :", e);
+              callback(0);
+            });
+        }
+
+        function appliquerStatut(nbAccepteesRestantes) {
+          var updateData = {};
+          var message = "";
+          var icone = "";
+
+          if (nbAccepteesRestantes === 0) {
+            // Plus aucune demande acceptée → annonce libre
+            updateData.statut = "active";
+            updateData.accepteAutresOffres = true;
+            message = "🔓 L'annonce est de nouveau ouverte au catalogue.";
+            icone = "🔓";
+          } else if (nbAccepteesRestantes === 1) {
+            // 1 seule demande acceptée → vente en cours
+            updateData.statut = "en_cours";
+            updateData.accepteAutresOffres = true;
+            message = "🔵 Une demande acceptée reste active. L'annonce est en cours.";
+            icone = "🔵";
+          } else {
+            // 2+ demandes acceptées → fermée
+            updateData.statut = "fermee";
+            updateData.accepteAutresOffres = false;
+            message = "🔒 2 demandes acceptées. L'annonce est fermée aux nouvelles offres.";
+            icone = "🔒";
+          }
+
+          // Mise à jour du cache local
           var annonces = getAnnonces();
           var ad = annonces.find(function(a) { return a.id === annonceId; });
           if (ad) {
-            ad.statut = "active";
-            ad.accepteAutresOffres = true;
+            ad.statut = updateData.statut;
+            ad.accepteAutresOffres = updateData.accepteAutresOffres;
             setAnnonces(annonces);
           }
-          afficherNotification("🔓 L'annonce est de nouveau ouverte au catalogue.", "🔓");
+
+          if (typeof afficherNotification === 'function') {
+            afficherNotification(message, icone);
+          }
+
+          if (db) {
+            return db.collection("annonces").doc(annonceId).update(updateData);
+          }
           return Promise.resolve();
         }
-        
-        // MODIFICATION 5 : compter les demandes restantes avec 1 seul .where() + filtrage JS
-        return db.collection("demandes")
-          .where("annonceId", "==", annonceId)
-          .get()
-          .then(function(snapshot) {
-            var nbAccepteesRestantes = 0;
-            snapshot.forEach(function(doc) {
-              var s = ((doc.data() || {}).statut || '').toLowerCase();
-              if (doc.id !== demandeId && s === 'acceptee') {
-                nbAccepteesRestantes++;
-              }
-            });
 
-            var updateData = {};
-            if (nbAccepteesRestantes < 2) {
-              updateData.statut = "active";
-              updateData.accepteAutresOffres = true;
-              afficherNotification("🔓 L'annonce est de nouveau ouverte au catalogue.", "🔓");
-              console.log("🔓 Annulation : moins de 2 demandes acceptées. Annonce remise en 'active'.");
-            } else {
-              updateData.statut = "fermee";
-              console.log("🔒 Annulation : 2 demandes restent acceptées. Annonce maintenue 'fermee'.");
-            }
-
-            var annonces = getAnnonces();
-            var ad = annonces.find(function(a) { return a.id === annonceId; });
-            if (ad) {
-              ad.statut = updateData.statut;
-              ad.accepteAutresOffres = updateData.accepteAutresOffres !== false;
-              setAnnonces(annonces);
-            }
-
-            return db.collection("annonces").doc(annonceId).update(updateData);
+        return new Promise(function(resolve) {
+          compterAccepteesRestantes(function(nb) {
+            resolve(appliquerStatut(nb));
           });
+        });
       }
       
       // 4. Notification et rafraîchissement
