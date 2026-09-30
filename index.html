@@ -6608,21 +6608,12 @@
         ⚠️ Envoie EXACTEMENT le montant indiqué. Une fois envoyé, reviens sur cette page et clique sur 'J'ai envoyé l'argent'.
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div style="background: rgba(245, 158, 11, 0.12); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
-          <span style="font-size: 20px; flex-shrink: 0;">⚠️</span>
-          <div style="font-size: 12.5px; color: #fbbf24; line-height: 1.5;">
-            <strong style="color: #FFC107; display: block; margin-bottom: 3px;">Fonctionnalité en cours de test</strong>
-            N'utilise PAS encore le bouton « 💳 Payer avec Wave / Orange Money » pour le moment. Envoie ton paiement manuellement à l'admin et clique sur « J'ai envoyé manuellement ».
-          </div>
-        </div>
-        <button type="button" id="btn-payer-avec-wave" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button type="button" id="btn-payer-avec-wave" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 15.5px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
           💳 Payer avec Wave / Orange Money
         </button>
-        <div style="text-align: center; font-size: 11.5px; color: #888; margin: 4px 0;">— OU —</div>
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <div style="display: flex; justify-content: flex-end;">
           <button type="button" class="btn-secondary" style="background: #333; color: white; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13.5px;" onclick="fermerModalConfirmationEnvoi()">Annuler</button>
-          <button type="button" id="btn-confirmer-argent-envoye" class="btn-primary" style="background: #00C853; color: white; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13.5px;">J'ai envoyé manuellement</button>
         </div>
       </div>
     </div>
@@ -17704,15 +17695,15 @@ window.mettreAJourBadgeNavAdminEscrow = mettreAJourBadgeNavAdminEscrow;
       var elAdmin = document.getElementById('modal-conf-admin');
       var elMoyen = document.getElementById('modal-conf-moyen');
       var elTel = document.getElementById('modal-conf-telephone');
-      var btn = document.getElementById('btn-confirmer-argent-envoye');
+      var btnManuel = document.getElementById('btn-confirmer-argent-envoye');
 
       if (elMontant) elMontant.textContent = Number(montant || 0).toLocaleString('fr-FR') + ' FCFA';
       if (elAdmin) elAdmin.textContent = adminNom || '';
       if (elMoyen) elMoyen.textContent = moyenPaiement || '';
       if (elTel) elTel.textContent = adminTelephone || '';
 
-      if (btn) {
-        btn.onclick = function() {
+      if (btnManuel) {
+        btnManuel.onclick = function() {
           marquerArgentEnvoye(escrowId);
         };
       }
