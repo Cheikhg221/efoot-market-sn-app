@@ -21838,22 +21838,51 @@ setTimeout(function() {
         var escrowRetour = params.get('escrow_success');
         if (escrowRetour) {
           try { history.replaceState(null, '', window.location.pathname); } catch(e) {}
-          if (confirm("✅ Retour du paiement Wave\n\nAs-tu bien effectué ton paiement ?\n\nClique sur OK pour confirmer à l'admin.")) {
-            var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
-            if (firestoreDb) {
+          
+          // ✅ NabooPay ne redirige vers success_url qu'en cas de paiement réussi.
+          // On met à jour Firestore AUTOMATIQUEMENT, sans demander à l'utilisateur.
+          var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+          if (firestoreDb) {
+            firestoreDb.collection("escrow").doc(escrowRetour).get().then(function(snap) {
+              if (!snap.exists) return;
+              var dataEsc = snap.data() || {};
+              var stActuel = (dataEsc.statut || '').toLowerCase().trim();
+
+              // Ne pas écraser si déjà avancé (l'admin a déjà validé ou plus loin)
+              if (stActuel === 'paiement_envoye' || stActuel === 'paiement_recu' 
+                  || stActuel === 'identifiants_transferes' || stActuel === 'compte_recu' 
+                  || stActuel === 'termine' || stActuel === 'terminee') {
+                console.log("ℹ️ Escrow déjà en statut " + stActuel + ", pas de mise à jour");
+                afficherNotification("✅ Ton paiement a déjà été enregistré.", "✅");
+                changerPage('transactions');
+                return;
+              }
+
               firestoreDb.collection("escrow").doc(escrowRetour).update({
                 statut: "paiement_envoye",
                 dateEnvoiPaiement: firebase.firestore.FieldValue.serverTimestamp(),
-                dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+                dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp(),
+                paiementAutomatique: true
               }).then(function() {
                 notifierAdminParEmail(escrowRetour);
-                afficherNotification("✅ Paiement confirmé ! L'admin va vérifier.", "📤");
+                afficherNotification("✅ Paiement enregistré ! L'admin va vérifier.", "📤");
                 changerPage('transactions');
               }).catch(function(err) {
-                console.warn("Erreur confirmation retour Wave :", err);
+                console.warn("Erreur mise à jour retour Wave :", err);
               });
-            }
+            }).catch(function(err) {
+              console.warn("Erreur lecture escrow retour Wave :", err);
+            });
           }
+        }
+      }, 1500);
+
+      setTimeout(function() {
+        var params = new URLSearchParams(window.location.search);
+        var escrowError = params.get('escrow_error');
+        if (escrowError) {
+          try { history.replaceState(null, '', window.location.pathname); } catch(e) {}
+          afficherNotification("⚠️ Ton paiement n'a pas abouti. Tu peux réessayer.", "⚠️");
         }
       }, 1500);
       // Nettoyage de sécurité au démarrage : supprimer les vieilles données d'annonces qui saturent le localStorage
