@@ -4686,8 +4686,9 @@
 
       <!-- Zone utilisateur connecté & bouton Déconnexion -->
       <div class="nav-user-container" id="nav-user-container">
-        <div class="user-pill" id="user-display-pill" title="Mon profil" onclick="clicSurProfilNav()" style="cursor: pointer;">
+        <div class="user-pill" id="user-display-pill" title="Mon profil" onclick="clicSurProfilNav()" style="cursor: pointer; position: relative;">
           <span id="user-display-name">👤 Invité</span>
+          <span id="nav-badge-admin-escrow" style="display: none; background: #F44336; color: white; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; margin-left: 4px; animation: badgePulse 1.5s infinite ease-in-out;">0</span>
         </div>
         <button type="button" class="btn-logout" id="btn-logout" onclick="afficherPopupDeconnexion()" title="Se déconnecter">
           <span class="btn-logout-icon">🚪</span>
@@ -4760,7 +4761,7 @@
         <div class="banner-badges">
           <span class="banner-tag">🇸🇳 100% Sénégal</span>
           <span class="banner-tag">💎 Comptes Iconiques & Epics</span>
-          <span class="banner-tag">⚡ Transfert Konami ID direct</span>
+          <span class="banner-tag">🛡️ Transaction 100% sécurisée</span>
         </div>
       </div>
 
@@ -8243,6 +8244,13 @@
       if (typeof verifierAdminEscrow === 'function') {
         verifierAdminEscrow();
       }
+
+      // Mettre à jour le badge de notifications admin escrow sur le nav
+      setTimeout(function() {
+        if (typeof mettreAJourBadgeNavAdminEscrow === 'function') {
+          mettreAJourBadgeNavAdminEscrow();
+        }
+      }, 1500);
     }
 
     /**
@@ -8782,10 +8790,11 @@
             <button type="button" 
               id="profil-btn-admin-escrow"
               class="btn-secondary" 
-              style="display: none; justify-content: flex-start; text-align: left; padding: 14px 16px; border-color: rgba(16, 185, 129, 0.4); color: #34d399;"
+              style="display: none; justify-content: flex-start; text-align: left; padding: 14px 16px; border-color: rgba(16, 185, 129, 0.4); color: #34d399; position: relative;"
               onclick="changerPage('admin-escrow')">
               <span style="font-size: 18px; margin-right: 8px;">💰</span>
               <span style="flex: 1;">Admin Escrow</span>
+              <span id="profil-badge-admin-escrow" style="display: none; background: #F44336; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; min-width: 20px; text-align: center; margin-right: 8px;">0</span>
               <span style="color: #666;">→</span>
             </button>
 
@@ -8849,6 +8858,11 @@
             }, 500);
           });
         }
+      }
+
+      // Mettre à jour le badge du bouton Admin Escrow
+      if (typeof mettreAJourBadgeAdminEscrow === 'function') {
+        mettreAJourBadgeAdminEscrow();
       }
 
       setTimeout(function() {
@@ -12518,6 +12532,70 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
         countMobile.style.display = total > 0 ? "inline-block" : "none";
       }
     }
+
+function mettreAJourBadgeAdminEscrow() {
+  var badge = document.getElementById('profil-badge-admin-escrow');
+  if (!badge) return;
+
+  var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!user || !user.uid) {
+    badge.style.display = 'none';
+    return;
+  }
+
+  // Vérifier que l'utilisateur est bien un admin escrow
+  if (typeof estAdminEscrowCache === 'undefined' || estAdminEscrowCache !== true) {
+    badge.style.display = 'none';
+    return;
+  }
+
+  // Compter les sollicitations en attente (statut "sollicitation_admin")
+  var escrows = (typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) ? escrowAdminCache : [];
+  var nbSollicitations = escrows.filter(function(e) {
+    var s = (e.statut || '').toLowerCase().trim();
+    return s === 'sollicitation_admin';
+  }).length;
+
+  if (nbSollicitations > 0) {
+    badge.textContent = nbSollicitations > 9 ? '9+' : String(nbSollicitations);
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+window.mettreAJourBadgeAdminEscrow = mettreAJourBadgeAdminEscrow;
+
+function mettreAJourBadgeNavAdminEscrow() {
+  var badge = document.getElementById('nav-badge-admin-escrow');
+  if (!badge) return;
+
+  var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!user || !user.uid) {
+    badge.style.display = 'none';
+    return;
+  }
+
+  // Vérifier que l'utilisateur est bien un admin escrow
+  if (typeof estAdminEscrowCache === 'undefined' || estAdminEscrowCache !== true) {
+    badge.style.display = 'none';
+    return;
+  }
+
+  // Compter les sollicitations en attente (statut "sollicitation_admin")
+  var escrows = (typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) ? escrowAdminCache : [];
+  var nbSollicitations = escrows.filter(function(e) {
+    var s = (e.statut || '').toLowerCase().trim();
+    return s === 'sollicitation_admin';
+  }).length;
+
+  if (nbSollicitations > 0) {
+    badge.textContent = nbSollicitations > 9 ? '9+' : String(nbSollicitations);
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+window.mettreAJourBadgeNavAdminEscrow = mettreAJourBadgeNavAdminEscrow;
 
     /**
      * Libellé lisible pour un statut de transaction
@@ -17367,6 +17445,9 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
         .then(function(docSnap) {
           if (docSnap.exists && docSnap.data() && docSnap.data().actif === true) {
             estAdminEscrowCache = true;
+            if (typeof mettreAJourBadgeNavAdminEscrow === 'function') {
+              mettreAJourBadgeNavAdminEscrow();
+            }
             if (typeof chargerEscrowAdmin === 'function') {
               chargerEscrowAdmin();
             }
@@ -17748,6 +17829,54 @@ function notifierAdminParEmail(escrowId) {
 }
 window.notifierAdminParEmail = notifierAdminParEmail;
 
+function notifierAdminParEmailSollicitation(adminId, escrowId) {
+  var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+  if (!firestoreDb || !adminId || !escrowId) return;
+  if (typeof envoyerEmail !== 'function') return;
+  if (typeof recupererEmailUtilisateur !== 'function') return;
+
+  // Récupérer l'email de l'admin (depuis la collection utilisateurs)
+  recupererEmailUtilisateur(adminId).then(function(emailAdmin) {
+    if (!emailAdmin) {
+      console.warn("⚠️ Email admin introuvable pour l'UID :", adminId);
+      return;
+    }
+
+    // Récupérer les infos de l'escrow pour enrichir le message
+    firestoreDb.collection("escrow").doc(escrowId).get().then(function(snap) {
+      if (!snap.exists) return;
+      var d = snap.data() || {};
+      var montant = Number(d.montant || d.prix || 0).toLocaleString('fr-FR');
+
+      var message =
+        "🔔 NOUVELLE SOLLICITATION ESCROW\n\n" +
+        "Un acheteur t'a choisi comme admin de confiance pour sécuriser sa transaction.\n\n" +
+        "📦 Annonce : " + (d.annonceTitre || "Compte eFootball") + "\n" +
+        "💰 Montant : " + montant + " FCFA\n" +
+        "👤 Acheteur : " + (d.acheteurNom || "Non renseigné") + "\n" +
+        "📞 Téléphone acheteur : " + (d.acheteurTelephone || "Non renseigné") + "\n\n" +
+        "➡️ Connecte-toi sur efootmarketsn.store → Profil → Admin Escrow pour " +
+        "accepter, mettre en attente ou refuser cette sollicitation.\n\n" +
+        "📅 Date : " + new Date().toLocaleString('fr-FR');
+
+      envoyerEmail(
+        emailAdmin,
+        "🔔 Nouvelle sollicitation admin - EFoot Market SN",
+        message
+      ).then(function(ok) {
+        if (ok) console.log("✅ Email admin envoyé (sollicitation) pour escrow " + escrowId);
+      }).catch(function(e) {
+        console.warn("Erreur email admin sollicitation :", e);
+      });
+    }).catch(function(e) {
+      console.warn("Erreur récupération escrow pour email admin :", e);
+    });
+  }).catch(function(e) {
+    console.warn("Erreur recupererEmailUtilisateur admin :", e);
+  });
+}
+window.notifierAdminParEmailSollicitation = notifierAdminParEmailSollicitation;
+
     function marquerArgentEnvoye(escrowId) {
       if (!escrowId) return;
       var firestoreDb = db || ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
@@ -17968,6 +18097,12 @@ window.notifierAdminParEmail = notifierAdminParEmail;
       .then(function(info) {
         window.__choisirAdminEnCours = false;
         fermerModalChoixAdminEscrow();
+
+        // 📧 Notifier l'admin par email
+        if (info && info.escrowId && adminId) {
+          notifierAdminParEmailSollicitation(adminId, info.escrowId);
+        }
+
         if (info && info.escrowId) {
           if (typeof afficherNotification === 'function') {
             afficherNotification("Sollicitation envoyée à l'admin. En attente de sa réponse.", "⏳");
@@ -18127,6 +18262,16 @@ window.notifierAdminParEmail = notifierAdminParEmail;
 
             escrowAdminCache = items;
             window.escrowAdminCache = escrowAdminCache;
+
+            // Rafraîchir le badge de sollicitations dans le profil
+            if (typeof mettreAJourBadgeAdminEscrow === 'function') {
+              mettreAJourBadgeAdminEscrow();
+            }
+
+            // Rafraîchir le badge de sollicitations dans le nav
+            if (typeof mettreAJourBadgeNavAdminEscrow === 'function') {
+              mettreAJourBadgeNavAdminEscrow();
+            }
 
             if (typeof actualiserRenduPageAdminEscrow === 'function') {
               actualiserRenduPageAdminEscrow();
