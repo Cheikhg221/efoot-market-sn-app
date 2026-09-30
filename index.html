@@ -8311,31 +8311,33 @@
      * Envoie un email de notification via EmailJS
      */
     function envoyerEmail(destinataire, sujet, message) {
-      console.log("📧 [DEBUG] envoyerEmail appelé");
-      console.log("📧 [DEBUG] Destinataire:", destinataire);
-      console.log("📧 [DEBUG] emailjs:", typeof emailjs);
       if (!destinataire || destinataire.indexOf('@') === -1) {
-        console.warn("⚠️ [DEBUG] Destinataire invalide");
+        console.warn("⚠️ Destinataire invalide:", destinataire);
         return Promise.resolve(false);
       }
-      if (typeof emailjs === 'undefined') {
-        console.warn("⚠️ [DEBUG] EmailJS non chargé");
-        return Promise.resolve(false);
-      }
-      var parametres = {
-        to_email: destinataire, sujet: sujet, message: message,
-        date: new Date().toLocaleString('fr-FR')
-      };
-      console.log("📧 [DEBUG] Paramètres:", parametres);
-      return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, parametres)
-        .then(function(r) {
-          console.log("✅ [DEBUG] Email envoyé ! Réponse:", r);
-          return true;
+
+      return fetch('https://efoot-whatsapp-api.gueyendior221.workers.dev/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_email: destinataire,
+          sujet: sujet,
+          message: message
         })
-        .catch(function(err) {
-          console.error("❌ [DEBUG] Erreur:", err);
-          return false;
-        });
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.success) {
+          console.log("✅ Email envoyé via Brevo:", data.messageId);
+          return true;
+        }
+        console.warn("⚠️ Erreur envoi email:", data);
+        return false;
+      })
+      .catch(function(err) {
+        console.error("❌ Erreur réseau email:", err);
+        return false;
+      });
     }
 
     /**
