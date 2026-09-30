@@ -9587,26 +9587,73 @@
      * Incrémente le compteur de clics et redirige vers WhatsApp pour une publicité
      */
     function contacterWhatsAppPub(numero, pubId) {
+      // Trouver le bouton cliqué pour afficher l'état "ouverture"
+      var btns = document.querySelectorAll('button[data-wa-pub="' + pubId + '"]');
+      var btn = btns.length > 0 ? btns[0] : null;
+      var texteOriginal = btn ? btn.innerHTML : '';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.style.cursor = 'wait';
+        btn.innerHTML = '⏳ Ouverture de WhatsApp...';
+      }
+
+      // Incrémenter le compteur de clics dans Firestore
       if (db && pubId) {
         db.collection("publicites").doc(pubId).update({
           clics: firebase.firestore.FieldValue.increment(1)
         }).catch(function() {});
       }
-      var message = "Bonjour, je vous contacte via EFoot Market SN";
+
+      // Notification visuelle immédiate
+      if (typeof afficherNotification === 'function') {
+        afficherNotification("Ouverture de WhatsApp...", "💬");
+      }
+
+      // Nettoyer le numéro
       var numeroClean = (numero || "").replace(/[^0-9]/g, "");
-      if (numeroClean) {
-        var url = "https://wa.me/" + numeroClean + "?text=" + encodeURIComponent(message);
+      if (!numeroClean) {
+        if (typeof afficherNotification === 'function') {
+          afficherNotification("Numéro WhatsApp non disponible", "⚠️");
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+          btn.innerHTML = texteOriginal;
+        }
+        return;
+      }
+
+      var message = "Bonjour, je vous contacte via EFoot Market SN";
+      var url = "https://wa.me/" + numeroClean + "?text=" + encodeURIComponent(message);
+
+      // Petit délai pour laisser la notification apparaître (200ms)
+      setTimeout(function() {
         try {
           var win = window.open(url, "_blank");
-          if (!win) {
+          if (!win || win.closed || typeof win.closed === 'undefined') {
+            // Popup bloquée → fallback
+            console.warn("Popup bloquée, redirection directe");
             window.location.href = url;
           }
         } catch (e) {
+          console.warn("Erreur ouverture WhatsApp :", e);
           window.location.href = url;
         }
-      }
+
+        // Restaurer le bouton après 2 secondes
+        setTimeout(function() {
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.innerHTML = texteOriginal;
+          }
+        }, 2000);
+      }, 200);
     }
-    // Export explicite sur window pour garantir l'accessibilité globale
     window.contacterWhatsAppPub = contacterWhatsAppPub;
 
     /**
@@ -9648,8 +9695,9 @@
             </div>
             <button 
               type="button"
+              data-wa-pub="${pubId}"
               onclick="event.stopPropagation(); event.preventDefault(); contacterWhatsAppPub('${numero}', '${pubId}')"
-              style="background: #25D366; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              style="background: #25D366; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;">
               💬 Contacter sur WhatsApp
             </button>
           </div>
@@ -9761,7 +9809,7 @@
             '<div style="background: rgba(37, 211, 102, 0.08); border: 1.5px solid rgba(37, 211, 102, 0.35); border-radius: 12px; padding: 22px; text-align: center;">' +
               '<h3 style="color: #25D366; font-size: 17px; font-weight: 800; margin: 0 0 6px 0;">💬 Intéressé(e) par cette offre ?</h3>' +
               '<p style="color: #ccc; font-size: 13.5px; margin: 0 0 16px 0; line-height: 1.5;">Contacte directement le partenaire officiel sur WhatsApp pour passer commande ou poser tes questions.</p>' +
-              '<button type="button" onclick="contacterWhatsAppPub(\'' + num + '\', \'' + pId + '\')" style="background: #25D366; color: white; border: none; border-radius: 10px; padding: 16px 24px; font-size: 16px; font-weight: 800; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);">' +
+              '<button type="button" data-wa-pub="' + pId + '" onclick="contacterWhatsAppPub(\'' + num + '\', \'' + pId + '\')" style="background: #25D366; color: white; border: none; border-radius: 10px; padding: 16px 24px; font-size: 16px; font-weight: 800; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4); transition: all 0.2s ease;">' +
                 '💬 Contacter sur WhatsApp' +
               '</button>' +
             '</div>' +
@@ -11117,14 +11165,24 @@ function contacterAcheteurWhatsApp(telephone, nomAcheteur, annonceTitre) {
     }
     return;
   }
+
   var message = "Bonjour " + (nomAcheteur || "") + ", je suis le vendeur du compte \"" + (annonceTitre || "eFootball") + "\" sur EFoot Market SN. Concernant ta demande d'achat...";
   var url = "https://wa.me/" + numeroClean + "?text=" + encodeURIComponent(message);
-  try {
-    var win = window.open(url, "_blank");
-    if (!win) window.location.href = url;
-  } catch (e) {
-    window.location.href = url;
+
+  if (typeof afficherNotification === 'function') {
+    afficherNotification("Ouverture de WhatsApp...", "💬");
   }
+
+  setTimeout(function() {
+    try {
+      var win = window.open(url, "_blank");
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        window.location.href = url;
+      }
+    } catch (e) {
+      window.location.href = url;
+    }
+  }, 150);
 }
 window.contacterAcheteurWhatsApp = contacterAcheteurWhatsApp;
 
@@ -11929,13 +11987,29 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
      * Ouvre directement une discussion WhatsApp avec le vendeur
      */
     function contacterWhatsApp(numero) {
-      var message = "Bonjour, je suis intéressé par votre annonce sur EFoot Market SN";
       var numeroClean = (numero || "").replace(/[^0-9]/g, "");
       if (!numeroClean) {
         alert("Numéro WhatsApp non disponible.");
         return;
       }
-      window.open("https://wa.me/" + numeroClean + "?text=" + encodeURIComponent(message), "_blank");
+
+      if (typeof afficherNotification === 'function') {
+        afficherNotification("Ouverture de WhatsApp...", "💬");
+      }
+
+      var message = "Bonjour, je suis intéressé par votre annonce sur EFoot Market SN";
+      var url = "https://wa.me/" + numeroClean + "?text=" + encodeURIComponent(message);
+
+      setTimeout(function() {
+        try {
+          var win = window.open(url, "_blank");
+          if (!win || win.closed || typeof win.closed === 'undefined') {
+            window.location.href = url;
+          }
+        } catch (e) {
+          window.location.href = url;
+        }
+      }, 150);
     }
 
     /* ==========================================================
