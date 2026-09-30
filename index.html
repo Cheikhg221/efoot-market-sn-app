@@ -17829,6 +17829,47 @@ function notifierAdminParEmail(escrowId) {
 }
 window.notifierAdminParEmail = notifierAdminParEmail;
 
+function notifierAdminCompteRecu(escrowId) {
+  var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+  if (!firestoreDb || !escrowId) return;
+  if (typeof envoyerEmail !== 'function') return;
+
+  firestoreDb.collection("escrow").doc(escrowId).get().then(function(snap) {
+    if (!snap.exists) return;
+    var d = snap.data() || {};
+    var montantBrut = Number(d.montant || d.prix || 0);
+    var commission = Math.round(montantBrut * 0.05);
+    var montantVendeur = montantBrut - commission;
+
+    var message =
+      "✅ L'ACHETEUR A CONFIRMÉ LA RÉCEPTION DU COMPTE\n\n" +
+      "Tu peux maintenant payer le vendeur (moins la commission EFoot Market SN).\n\n" +
+      "📦 Annonce : " + (d.annonceTitre || "Compte eFootball") + "\n" +
+      "💰 Montant total reçu : " + montantBrut.toLocaleString('fr-FR') + " FCFA\n" +
+      "🏦 Commission (5%) : " + commission.toLocaleString('fr-FR') + " FCFA\n" +
+      "💸 À transférer au vendeur : " + montantVendeur.toLocaleString('fr-FR') + " FCFA\n\n" +
+      "👤 Acheteur : " + (d.acheteurNom || "Non renseigné") + "\n" +
+      "🎮 Vendeur : " + (d.vendeurNom || "Non renseigné") + "\n" +
+      "📞 Téléphone vendeur : " + (d.vendeurTelephone || "Non renseigné") + "\n\n" +
+      "➡️ Connecte-toi sur efootmarketsn.store → Profil → Admin Escrow pour " +
+      "cliquer sur « J'ai transféré l'argent au vendeur ».\n\n" +
+      "📅 Date : " + new Date().toLocaleString('fr-FR');
+
+    envoyerEmail(
+      "efootmarketcontact@gmail.com",
+      "💸 À payer au vendeur - Compte reçu par l'acheteur",
+      message
+    ).then(function(ok) {
+      if (ok) console.log("✅ Email admin envoyé (compte reçu) pour escrow " + escrowId);
+    }).catch(function(e) {
+      console.warn("Erreur email admin compte reçu :", e);
+    });
+  }).catch(function(e) {
+    console.warn("Erreur récupération escrow pour email admin :", e);
+  });
+}
+window.notifierAdminCompteRecu = notifierAdminCompteRecu;
+
 function notifierAdminParEmailSollicitation(adminId, escrowId) {
   var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
   if (!firestoreDb || !adminId || !escrowId) return;
@@ -19123,6 +19164,9 @@ window.forcerStatutPaiementRecu = forcerStatutPaiementRecu;
             }
           }).catch(function(e) { console.warn(e); });
         }
+
+        // 📧 Notifier l'admin que l'acheteur a confirmé la réception
+        notifierAdminCompteRecu(escrowId);
 
         if (typeof afficherNotification === 'function') {
           afficherNotification("Réception confirmée ! L'admin va procéder au paiement du vendeur.", "success");
