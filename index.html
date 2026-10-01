@@ -20905,6 +20905,60 @@ function retirerAutorisationPaiement(demandeId) {
       const container = document.getElementById('my-ads-container');
       if (!container) return;
 
+// 🧹 NETTOYAGE : Retirer du cache les escrows dont l'annonce n'existe plus 
+// ou dont la demande est annulée
+try {
+  var annoncesConnues = getAnnonces();
+  var idsAnnonces = annoncesConnues.map(function(a) { return a.id; });
+  
+  // Filtrer escrowVendeurCache : garder seulement ceux dont l'annonce existe
+  if (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+    escrowVendeurCache = escrowVendeurCache.filter(function(e) {
+      if (!e.annonceId) return false;
+      // Si l'annonce n'existe plus, retirer l'escrow
+      if (idsAnnonces.indexOf(e.annonceId) === -1) {
+        console.log("🧹 Escrow orphelin retiré du cache (annonce supprimée) :", e.id);
+        // En profiter pour supprimer l'escrow de Firestore en arrière-plan
+        if (db) {
+          db.collection("escrow").doc(e.id).delete().catch(function(err) {
+            console.warn("Erreur suppression escrow orphelin :", err);
+          });
+        }
+        return false;
+      }
+      return true;
+    });
+    window.escrowVendeurCache = escrowVendeurCache;
+  }
+  
+  // Filtrer aussi mesAnnoncesEscrowCache
+  if (typeof mesAnnoncesEscrowCache !== 'undefined' && Array.isArray(mesAnnoncesEscrowCache)) {
+    mesAnnoncesEscrowCache = mesAnnoncesEscrowCache.filter(function(a) {
+      return a.id && idsAnnonces.indexOf(a.id) !== -1;
+    });
+    window.mesAnnoncesEscrowCache = mesAnnoncesEscrowCache;
+  }
+  
+  // Filtrer aussi annoncesEnAttenteCache
+  if (typeof annoncesEnAttenteCache !== 'undefined' && Array.isArray(annoncesEnAttenteCache)) {
+    annoncesEnAttenteCache = annoncesEnAttenteCache.filter(function(a) {
+      return a.id && idsAnnonces.indexOf(a.id) !== -1;
+    });
+    window.annoncesEnAttenteCache = annoncesEnAttenteCache;
+  }
+  
+  // Filtrer aussi mesAnnoncesVenduesCache
+  if (typeof mesAnnoncesVenduesCache !== 'undefined' && Array.isArray(mesAnnoncesVenduesCache)) {
+    mesAnnoncesVenduesCache = mesAnnoncesVenduesCache.filter(function(a) {
+      return a.id && idsAnnonces.indexOf(a.id) !== -1;
+    });
+    window.mesAnnoncesVenduesCache = mesAnnoncesVenduesCache;
+  }
+  
+} catch (e) {
+  console.warn("Erreur nettoyage caches dans afficherMesAnnonces :", e);
+}
+
       const profil = getProfilUtilisateur();
       const annonces = getAnnonces();
       const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
@@ -20952,9 +21006,15 @@ function retirerAutorisationPaiement(demandeId) {
       }
 
       // Intégrer les annonces en escrow en cours depuis le cache escrow vendeur
+      // ⚠️ UNIQUEMENT si l'annonce existe encore dans Firestore
       var mesEscrows = (typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) ? escrowVendeurCache : [];
+      var annoncesExistantes = getAnnonces();
+      var idsAnnoncesExistantes = annoncesExistantes.map(function(a) { return a.id; });
       mesEscrows.forEach(function(e) {
-        if (e.annonceId && !mesAnnonces.some(a => a.id === e.annonceId)) {
+        if (e.annonceId 
+            && !mesAnnonces.some(a => a.id === e.annonceId)
+            && idsAnnoncesExistantes.indexOf(e.annonceId) !== -1) {
+          // L'annonce existe toujours → l'ajouter
           mesAnnonces.push({
             id: e.annonceId,
             titre: e.annonceTitre || "Compte eFootball",
