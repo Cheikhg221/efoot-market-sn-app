@@ -11300,11 +11300,76 @@ function fermerModalChoixAcheteurContact() {
 }
 window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
 
+function genererBlocInfoAdmin(escrowActif) {
+  if (!escrowActif) return '';
+  var stEscrow = (escrowActif.statut || '').toLowerCase().trim();
+  
+  // N'afficher les infos admin qu'à partir de "attente_paiement" 
+  // (c'est-à-dire après que l'admin a accepté la sollicitation)
+  var statutsAvecAdmin = ['attente_paiement', 'paiement_envoye', 'paiement_recu', 
+                          'identifiants_transferes', 'compte_recu', 'termine', 'terminee'];
+  if (statutsAvecAdmin.indexOf(stEscrow) === -1) {
+    return '';
+  }
+
+  var adminNom = escapeHtml(escrowActif.adminNom || 'Admin');
+  var adminTel = (escrowActif.adminTelephone || '').toString();
+  var adminTelClean = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(adminTel) : adminTel.replace(/[^0-9]/g, '');
+  var adminRegion = escapeHtml(escrowActif.adminRegion || '');
+  var moyenPaiement = escapeHtml(escrowActif.moyenPaiement || 'Wave / Orange Money');
+
+  // Message WhatsApp pré-rempli pour le vendeur
+  var messageWa = "Bonjour " + (escrowActif.adminNom || '') + ", je suis le vendeur du compte \"" + 
+    (escrowActif.annonceTitre || "eFootball") + "\" sur EFoot Market SN. " +
+    "Concernant la transaction avec l'acheteur " + (escrowActif.acheteurNom || '') + "...";
+
+  var html = '';
+  html += '<div style="background: rgba(96,165,250,0.08); border: 1.5px solid rgba(96,165,250,0.35); border-radius: 10px; padding: 14px; margin-bottom: 10px;">';
+  html += '  <div style="font-size: 12px; color: #60a5fa; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">';
+  html += '    <span>🛡️</span> <span>COORDONNÉES DE L\'ADMIN</span>';
+  html += '  </div>';
+  html += '  <div style="font-size: 13.5px; line-height: 1.8; color: #e4e4e7; margin-bottom: 12px;">';
+  html += '    <div>👤 <strong>' + adminNom + '</strong></div>';
+  html += '    <div>📞 <a href="tel:' + adminTelClean + '" style="color: #60a5fa; text-decoration: none;">' + escapeHtml(adminTel || 'Non renseigné') + '</a></div>';
+  if (adminRegion) {
+    html += '    <div>📍 ' + adminRegion + '</div>';
+  }
+  html += '    <div>💳 ' + moyenPaiement + '</div>';
+  html += '  </div>';
+
+  if (adminTelClean) {
+    html += '<a href="https://wa.me/' + adminTelClean + '?text=' + encodeURIComponent(messageWa) + '" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #25D366; color: white; border: none; border-radius: 8px; padding: 11px 14px; font-size: 13px; font-weight: 700; text-decoration: none; width: 100%; box-sizing: border-box;">';
+    html += '  💬 Contacter l\'admin sur WhatsApp';
+    html += '</a>';
+  } else {
+    html += '<div style="font-size: 12px; color: #888; text-align: center;">Numéro de l\'admin non disponible</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
         function rendreContenuVendeur(escrowActif, demandeEnAttente, demandesAnnonce) {
           var html = '';
 
           var stEscrow = escrowActif ? (escrowActif.statut || '').toLowerCase().trim() : '';
-          var estEscrowVerrouille = escrowActif && (
+          
+          // Détecter si un acheteur est autorisé à payer
+          var demandesAcceptees = (demandesAnnonce || []).filter(function(d) {
+            var s = (d.statut || '').toLowerCase();
+            return s === 'acceptee';
+          });
+          var demandesAttente = (demandesAnnonce || []).filter(function(d) {
+            var s = (d.statut || '').toLowerCase();
+            return s === 'en_attente' || s === 'attente' || s === 'demande_envoyee';
+          });
+          var demandeAutorisee = (demandesAnnonce || []).find(function(d) {
+            return d.autoriseAPayer === true;
+          });
+          var autorisationActive = !!demandeAutorisee;
+
+          // Détecter si l'acheteur a déjà payé à l'admin (escrow verrouillé)
+          var paiementConfirme = escrowActif && (
             stEscrow === 'paiement_envoye' ||
             stEscrow === 'paiement_recu' ||
             stEscrow === 'identifiants_transferes' ||
@@ -11313,150 +11378,143 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
             stEscrow === 'terminee'
           );
 
-          if (estEscrowVerrouille) {
-            // MODIFICATION 2 : Bandeau lecture seule quand escrow verrouillé
+          // ═══ CAS 1 : Paiement confirmé → Mode escrow verrouillé total ═══
+          if (paiementConfirme) {
+            // Ajouter le bloc coordonnées admin
+            html += genererBlocInfoAdmin(escrowActif);
+
             if (stEscrow === 'paiement_envoye') {
-              html += '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #FF9800; border-radius:8px; padding:14px; text-align:center; color:#FF9800; font-weight:700; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - L\'acheteur a envoyé l\'argent à l\'admin. Tu ne peux plus modifier la transaction.</div>';
+              html += '<div style="background:rgba(255,152,0,0.15); border:1.5px solid #FF9800; border-radius:8px; padding:14px; text-align:center; color:#FF9800; font-weight:700; font-size:14px; line-height:1.4;">📤 L\'acheteur a envoyé l\'argent. L\'admin va vérifier la réception.</div>';
             } else if (stEscrow === 'paiement_recu') {
-              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:800; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - L\'admin a confirmé la réception. Transfère les identifiants Konami à l\'acheteur.</div>';
+              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:800; font-size:14px; line-height:1.4;">💰 Argent sécurisé chez l\'admin ! Transfère maintenant les identifiants Konami ID à l\'acheteur.</div>';
               html += '<button type="button" onclick="marquerIdentifiantsTransferes(\'' + escrowActif.id + '\')" style="background:#00C853; color:white; width:100%; padding:15px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:15px; box-shadow:0 4px 12px rgba(0,200,83,0.35);">✅ J\'ai transféré les identifiants</button>';
             } else if (stEscrow === 'identifiants_transferes') {
-              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:8px; padding:14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - En attente de confirmation de l\'acheteur.</div>';
+              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:8px; padding:14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px; line-height:1.4;">📦 Identifiants transférés. En attente que l\'acheteur confirme la réception du compte.</div>';
             } else if (stEscrow === 'compte_recu') {
-              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:700; font-size:14px; line-height:1.4;">🔒 Transaction verrouillée - L\'admin va te payer.</div>';
+              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:700; font-size:14px; line-height:1.4;">🎉 L\'acheteur a confirmé la réception. L\'admin va te payer.</div>';
             } else if (stEscrow === 'termine' || stEscrow === 'terminee') {
               html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; color:#00E676; font-weight:700; font-size:14px; line-height:1.4;">✅ Transaction terminée avec succès.</div>';
             }
-            // MODIFICATION 3 & 4 : TOUS les boutons vendeur sont cachés.
-            // Seuls le bandeau de statut ci-dessus, le bouton "✅ J'ai transféré les identifiants" si paiement_recu, et "📤 Partager mon annonce" sont affichés.
-          } else {
-            // Si PAS de transaction escrow OU statut === "attente_paiement" :
-            // Comportement actuel (garder tous les boutons)
-            if (escrowActif && stEscrow === 'attente_paiement') {
-              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid rgba(255,193,7,0.5); border-radius:8px; padding:12px 14px; text-align:center; color:#FFC107; font-weight:700; font-size:14px;">⏳ En attente du paiement acheteur</div>';
-            }
 
-            // MODIFICATION 6 : Gestion des demandes côté vendeur (CAS A, B, C, D)
-            var demandesAttente = (demandesAnnonce || []).filter(function(d) {
-              var s = (d.statut || '').toLowerCase();
-              return s === 'en_attente' || s === 'attente' || s === 'demande_envoyee';
-            });
-            var demandesAcceptees = (demandesAnnonce || []).filter(function(d) {
-              var s = (d.statut || '').toLowerCase();
-              return s === 'acceptee';
-            });
-            var demandeAutorisee = (demandesAnnonce || []).find(function(d) {
-              return d.autoriseAPayer === true;
-            });
+            // Bouton "Partager mon annonce" toujours visible
+            html += '<button type="button" onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:14px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:14px; margin-top:10px;">📤 Partager mon annonce</button>';
 
-            // Bouton de contact WhatsApp acheteur (visible dès qu'au moins 1 demande est acceptée)
-            var nbAcceptees = demandesAcceptees.length;
-            if (nbAcceptees > 0 && !estEscrowVerrouille) {
-              var libelleContact = nbAcceptees === 1 
-                ? '💬 Contacter l\'acheteur sur WhatsApp' 
-                : '💬 Contacter un acheteur (' + nbAcceptees + ')';
-              html += '<button type="button" onclick="ouvrirModalChoixAcheteurContact(\'' + annonceId + '\')" style="background: #25D366; color: white; width: 100%; padding: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">' +
-                libelleContact +
-              '</button>';
-            }
+            conteneur.innerHTML = '<div style="background:#1E1E1E; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; border:1px solid #2a2a2a;">' + html + '</div>';
+            return;
+          }
 
-            // MODIFICATION 1 : CAS D : une demande a autoriseAPayer === true ET l'escrow n'est PAS verrouillé
-            if (demandeAutorisee && !estEscrowVerrouille) {
-              var nomAcheteur = escapeHtml(demandeAutorisee.acheteurNom || 'l\'acheteur');
-              html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; margin-bottom:12px;">' +
-                '<p style="color:#00E676; font-weight:800; font-size:14px; margin:0 0 8px 0; line-height:1.4;">🔒 ACHETEUR AUTORISÉ : ' + nomAcheteur + ' — Aucun autre acheteur ne peut être autorisé tant que celui-ci n\'a pas payé.</p>' +
-                '<div style="background: rgba(255,193,7,0.12); border-left: 3px solid #FFC107; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; font-size: 12.5px; color: #FFC107; font-weight: 700; line-height: 1.5; text-align: left;">' +
-                  '⚠️ <strong>Rappel sécurité :</strong> N\'envoie <strong>jamais</strong> tes identifiants Konami ID avant que l\'admin n\'ait confirmé avoir reçu l\'argent.' +
+          // ═══ CAS 2 : Autorisation active mais paiement pas encore fait ═══
+          if (autorisationActive) {
+            var nomAcheteur = escapeHtml(demandeAutorisee.acheteurNom || 'l\'acheteur');
+            
+            // Bandeau indiquant que l'acheteur est autorisé
+            html += '<div style="background:rgba(0,200,83,0.15); border:1.5px solid #00C853; border-radius:8px; padding:14px; text-align:center; margin-bottom:12px;">' +
+              '<p style="color:#00E676; font-weight:800; font-size:14px; margin:0 0 8px 0; line-height:1.4;">🔒 ACHETEUR AUTORISÉ : ' + nomAcheteur + '</p>' +
+              '<p style="color:#ccc; font-size:12.5px; margin:0; line-height:1.5;">En attente de son paiement à l\'admin. Aucun autre acheteur ne peut être autorisé tant que celui-ci n\'a pas payé.</p>' +
+            '</div>';
+
+            // Ajouter le bloc coordonnées admin (si l'admin a déjà accepté)
+            html += genererBlocInfoAdmin(escrowActif);
+
+            // Message de sécurité
+            html += '<div style="background: rgba(255,193,7,0.12); border-left: 3px solid #FFC107; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; font-size: 12.5px; color: #FFC107; font-weight: 700; line-height: 1.5;">' +
+              '⚠️ <strong>Rappel sécurité :</strong> N\'envoie <strong>jamais</strong> tes identifiants Konami ID avant que l\'admin n\'ait confirmé avoir reçu l\'argent.' +
+            '</div>';
+
+            // Bouton "Retirer l'autorisation" (disponible tant que l'acheteur n'a pas payé)
+            html += '<button type="button" onclick="retirerAutorisationPaiement(\'' + demandeAutorisee.id + '\')" style="background:#262626; color:#fff; border:1px solid #444; padding:12px 16px; border-radius:8px; cursor:pointer; font-size:13.5px; font-weight:600; width:100%;">' +
+              '🔓 Retirer l\'autorisation' +
+            '</button>';
+
+            // Bouton "Partager mon annonce"
+            html += '<button type="button" onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:14px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:14px;">📤 Partager mon annonce</button>';
+
+            conteneur.innerHTML = '<div style="background:#1E1E1E; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; border:1px solid #2a2a2a;">' + html + '</div>';
+            return;
+          }
+
+          // ═══ CAS 3 : Aucune autorisation active → Mode normal (tous les boutons) ═══
+
+          // Bouton "Contacter un acheteur" (visible dès qu'au moins 1 demande acceptée)
+          var nbAcceptees = demandesAcceptees.length;
+          if (nbAcceptees > 0) {
+            var libelleContact = nbAcceptees === 1 
+              ? '💬 Contacter l\'acheteur sur WhatsApp' 
+              : '💬 Contacter un acheteur (' + nbAcceptees + ')';
+            html += '<button type="button" onclick="ouvrirModalChoixAcheteurContact(\'' + annonceId + '\')" style="background: #25D366; color: white; width: 100%; padding: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">' +
+              libelleContact +
+            '</button>';
+          }
+
+          // CAS A : 0 acceptée ET 1+ en attente → bouton "Accepter une demande"
+          if (demandesAcceptees.length === 0 && demandesAttente.length > 0) {
+            html += '<button type="button" onclick="ouvrirModalChoixDemande(\'' + annonceId + '\', \'accepter\')" style="background:#00C853; color:white; width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px; box-shadow:0 2px 8px rgba(0,200,83,0.3); margin-bottom:10px;">' +
+              '✅ Accepter une demande' +
+            '</button>';
+          }
+
+          // CAS B : 1 acceptée ET 1+ en attente → liste des demandes en attente
+          if (demandesAcceptees.length === 1 && demandesAttente.length > 0) {
+            demandesAttente.forEach(function(demande) {
+              var nomA = escapeHtml(demande.acheteurNom || 'Acheteur');
+              html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin-bottom:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="ouvrirModalActionDemande(\'' + demande.id + '\')">' +
+                '<div>' +
+                  '<div style="color:#FFC107; font-weight:700; font-size:13.5px;">⏳ Demande en attente</div>' +
+                  '<div style="color:#fff; font-size:13px; margin-top:2px;">👤 ' + nomA + '</div>' +
                 '</div>' +
-                '<button type="button" onclick="retirerAutorisationPaiement(\'' + demandeAutorisee.id + '\')" style="background:#262626; color:#fff; border:1px solid #444; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">' +
-                  '🔓 Retirer l\'autorisation' +
-                '</button>' +
+                '<div style="color:#aaa; font-size:18px;">›</div>' +
               '</div>';
-            }
+            });
+          }
 
-            // CAS A : 0 acceptée ET 1+ en attente
-            if (demandesAcceptees.length === 0 && demandesAttente.length > 0) {
-              html += '<button type="button" onclick="ouvrirModalChoixDemande(\'' + annonceId + '\', \'accepter\')" style="background:#00C853; color:white; width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px; box-shadow:0 2px 8px rgba(0,200,83,0.3); margin-bottom:10px;">' +
-                '✅ Accepter une demande' +
-              '</button>';
-              html += '<div style="background: rgba(255,193,7,0.1); border-left: 3px solid #FFC107; border-radius: 6px; padding: 10px 12px; margin-top: 10px; font-size: 12.5px; color: #FFC107; font-weight: 700; line-height: 1.4; text-align: left;">' +
-                '⚠️ <strong>Important :</strong> N\'envoie <strong>jamais</strong> tes identifiants Konami ID avant que l\'admin n\'ait reçu l\'argent de l\'acheteur.' +
-              '</div>';
-            }
+          // CAS C : 2 acceptées → bandeau
+          if (demandesAcceptees.length >= 2) {
+            html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:8px; padding:12px 14px; text-align:center; margin-bottom:10px;">' +
+              '<p style="color:#FFC107; font-weight:700; font-size:13.5px; line-height:1.5; margin:0;">⚠️ Tu as atteint la limite de 2 demandes acceptées. Autorise l\'un des 2 acheteurs à payer, ou refuse-en un pour rouvrir l\'annonce.</p>' +
+            '</div>';
+          }
 
-            // CAS B : 1 acceptée ET 1+ en attente
-            if (demandesAcceptees.length === 1 && demandesAttente.length > 0) {
-              demandesAttente.forEach(function(demande) {
-                var nomA = escapeHtml(demande.acheteurNom || 'Acheteur');
-                html += '<div style="background:rgba(255,193,7,0.1); border:1px solid #FFC107; border-radius:8px; padding:12px; margin-bottom:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="ouvrirModalActionDemande(\'' + demande.id + '\')">' +
-                  '<div>' +
-                    '<div style="color:#FFC107; font-weight:700; font-size:13.5px;">⏳ Demande en attente</div>' +
-                    '<div style="color:#fff; font-size:13px; margin-top:2px;">👤 ' + nomA + '</div>' +
-                  '</div>' +
-                  '<div style="color:#aaa; font-size:18px;">›</div>' +
-                '</div>';
-              });
-              html += '<div style="background: rgba(255,193,7,0.1); border-left: 3px solid #FFC107; border-radius: 6px; padding: 10px 12px; margin-top: 10px; font-size: 12.5px; color: #FFC107; font-weight: 700; line-height: 1.4; text-align: left;">' +
-                '⚠️ <strong>Important :</strong> N\'envoie <strong>jamais</strong> tes identifiants Konami ID avant que l\'admin n\'ait reçu l\'argent de l\'acheteur.' +
-              '</div>';
-            }
+          // Bouton "Autoriser un acheteur à payer" (visible si au moins 1 acceptée)
+          if (demandesAcceptees.length > 0) {
+            html += '<button type="button" onclick="ouvrirModalAutoriserPaiement(\'' + annonceId + '\')" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(16,185,129,0.3); margin-bottom:4px;">' +
+              '🔑 Autoriser un acheteur à payer' +
+            '</button>' +
+            '<div style="font-size: 11px; color: #888; text-align: center; margin-top: 6px; margin-bottom: 10px; line-height: 1.4;">' +
+              '💰 Une commission de 6% sera prélevée sur le montant de la vente escrow.' +
+            '</div>';
+          }
 
-            // CAS C : 2 acceptées ET 0 en attente (ou 2 acceptées sans acheteur autorisé)
-            if (demandesAcceptees.length >= 2 && !demandeAutorisee) {
-              html += '<div style="background:rgba(255,193,7,0.15); border:1.5px solid #FFC107; border-radius:8px; padding:12px 14px; text-align:center; margin-bottom:10px;">' +
-                '<p style="color:#FFC107; font-weight:700; font-size:13.5px; line-height:1.5; margin:0;">⚠️ Tu as atteint la limite de 2 demandes acceptées. Autorise l\'un des 2 acheteurs à payer, ou refuse-en un pour rouvrir l\'annonce.</p>' +
-              '</div>';
-              html += '<div style="background: rgba(255,193,7,0.1); border-left: 3px solid #FFC107; border-radius: 6px; padding: 10px 12px; margin-top: 10px; font-size: 12.5px; color: #FFC107; font-weight: 700; line-height: 1.4; text-align: left;">' +
-                '⚠️ <strong>Important :</strong> N\'envoie <strong>jamais</strong> tes identifiants Konami ID avant que l\'admin n\'ait reçu l\'argent de l\'acheteur.' +
-              '</div>';
-            }
-
-            // Bouton "🔑 Autoriser un acheteur à payer" si au moins 1 acceptée et aucune encore autorisée
-            if (demandesAcceptees.length > 0 && !demandeAutorisee) {
-              html += '<button type="button" onclick="ouvrirModalAutoriserPaiement(\'' + annonceId + '\')" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(16,185,129,0.3); margin-bottom:4px;">' +
-                '🔑 Autoriser un acheteur à payer' +
-              '</button>' +
-              '<div style="font-size: 11px; color: #888; text-align: center; margin-top: 6px; margin-bottom: 10px; line-height: 1.4;">' +
-                '💰 Une commission de 6% sera prélevée sur le montant de la vente escrow.' +
-              '</div>';
-            }
-
-            // Afficher les boutons pour les statuts "en_cours" ET "fermee"
-            var stAnnonce = (annonce.statut || '').toLowerCase();
-            if (stAnnonce === 'en_cours' || stAnnonce === 'fermee') {
-              // Bouton fermer/ouvrir aux offres : uniquement en "en_cours"
-              if (stAnnonce === 'en_cours') {
-                if (annonce.accepteAutresOffres !== false) {
-                  html += '<button type="button" onclick="fermerAuxOffres(\'' + annonce.id + '\')" style="background:#FFC107; color:#111; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔒 Fermer aux nouvelles offres</button>';
-                } else {
-                  html += '<button type="button" onclick="laisserOuverte(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🔓 Ouvrir aux offres</button>';
-                }
+          // Boutons "Ouvrir/Fermer aux offres", "Marquer VENDU", "Annuler la transaction"
+          var stAnnonce = (annonce.statut || '').toLowerCase();
+          if (stAnnonce === 'en_cours' || stAnnonce === 'fermee' || stAnnonce === 'active') {
+            // Bouton Ouvrir/Fermer aux offres : uniquement en "en_cours"
+            if (stAnnonce === 'en_cours') {
+              if (annonce.accepteAutresOffres !== false) {
+                html += '<button type="button" onclick="fermerAuxOffres(\'' + annonce.id + '\')" style="background:#FFC107; color:#111; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px; margin-bottom:10px;">🔒 Fermer aux nouvelles offres</button>';
+              } else {
+                html += '<button type="button" onclick="laisserOuverte(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px; margin-bottom:10px;">🔓 Ouvrir aux offres</button>';
               }
+            }
 
-              // Bouton "Marquer comme VENDU" : toujours visible dès qu'au moins 1 demande est acceptée
-              if (demandesAcceptees.length > 0) {
-                html += '<button type="button" onclick="marquerVendue(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">🎉 Marquer comme VENDU</button>';
-              }
+            // Bouton "Marquer comme VENDU"
+            if (demandesAcceptees.length > 0 || demandesAttente.length > 0) {
+              html += '<button type="button" onclick="marquerVendue(\'' + annonce.id + '\')" style="background:#00C853; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px; margin-bottom:10px;">🎉 Marquer comme VENDU</button>';
+            }
 
-              // Bouton "Annuler la transaction" : toujours visible dès qu'au moins 1 demande est acceptée
-              if (demandesAcceptees.length > 0) {
-                var dAssociee = (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
-                  var s = (d.statut || '').toLowerCase();
-                  return d.annonceId === annonce.id && (s === 'acceptee' || s === 'en_cours' || s === 'en_attente_confirmation_acheteur');
-                }) || (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
-                  return d.annonceId === annonce.id;
-                }) || {};
-                var demandeId = dAssociee.id || (escrowActif ? (escrowActif.demandeId || '') : '') || '';
-
-                html += '<button type="button" onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Annuler la transaction</button>';
-              }
+            // Bouton "Annuler la transaction"
+            if (demandesAcceptees.length > 0 || demandesAttente.length > 0) {
+              var dAssociee = (typeof demandesVendeurCache !== 'undefined' ? demandesVendeurCache : []).find(function(d) {
+                var s = (d.statut || '').toLowerCase();
+                return d.annonceId === annonce.id && (s === 'acceptee' || s === 'en_cours' || s === 'en_attente');
+              }) || {};
+              var demandeId = dAssociee.id || '';
+              html += '<button type="button" onclick="annulerTransaction(\'' + demandeId + '\', \'' + annonce.id + '\')" style="background:#333; color:white; width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-size:14px;">❌ Annuler la transaction</button>';
             }
           }
 
-          // Toujours affiché :
+          // Bouton "Partager mon annonce" toujours visible
           html += '<button type="button" onclick="partagerAnnonce(\'' + annonceId + '\')" style="background:#333; color:white; width:100%; padding:14px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:14px;">📤 Partager mon annonce</button>';
 
-          // 3. Grouper tous ces boutons dans un conteneur visuel (background #1E1E1E, border-radius 12px, padding 16px)
           conteneur.innerHTML = '<div style="background:#1E1E1E; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; border:1px solid #2a2a2a;">' + html + '</div>';
         }
 
@@ -11698,7 +11756,15 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
                     '</div>' +
                     '<button type="button" onclick="ouvrirModalConfirmationPaiement(\'' + escrow.id + '\')" style="background:linear-gradient(135deg, #10b981, #059669); color:white; width:100%; padding:15px; border-radius:10px; font-size:15px; font-weight:800; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(16,185,129,0.35);">' +
                       '💳 Envoyer l\'argent' +
-                    '</button>';
+                    '</button>' +
+                    '<div style="margin-top:14px; padding-top:14px; border-top:1px dashed #333;">' +
+                      '<div style="font-size:11.5px; color:#888; text-align:center; margin-bottom:8px; line-height:1.5;">' +
+                        'Vous avez déjà payé mais le système ne l\'affiche pas ?' +
+                      '</div>' +
+                      '<button type="button" onclick="ouvrirAideContactAdmin(\'' + escrow.id + '\')" style="background:rgba(245,158,11,0.12); color:#fbbf24; width:100%; padding:12px; border-radius:10px; font-size:13px; font-weight:700; border:1.5px solid rgba(245,158,11,0.4); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s ease;" onmouseover="this.style.background=\'rgba(245,158,11,0.2)\'" onmouseout="this.style.background=\'rgba(245,158,11,0.12)\'">' +
+                        '🚨 Besoin d\'aide ? Contacter l\'admin' +
+                      '</button>' +
+                    '</div>';
                 }
                 // b) Si escrow.statut === "paiement_envoye" :
                 else if (stEscrow === 'paiement_envoye') {
@@ -12033,6 +12099,141 @@ window.fermerModalChoixAcheteurContact = fermerModalChoixAcheteurContact;
         }
       }, 150);
     }
+
+function ouvrirAideContactAdmin(escrowId) {
+  if (!escrowId) {
+    if (typeof afficherNotification === 'function') {
+      afficherNotification("Transaction introuvable", "⚠️");
+    }
+    return;
+  }
+
+  // Chercher l'escrow dans le cache acheteur en priorité
+  var escrow = (typeof escrowAcheteurCache !== 'undefined' && Array.isArray(escrowAcheteurCache))
+    ? escrowAcheteurCache.find(function(e) { return e.id === escrowId; })
+    : null;
+
+  // Si pas trouvé, chercher aussi dans escrowVendeurCache et escrowAdminCache
+  if (!escrow && typeof escrowVendeurCache !== 'undefined' && Array.isArray(escrowVendeurCache)) {
+    escrow = escrowVendeurCache.find(function(e) { return e.id === escrowId; });
+  }
+  if (!escrow && typeof escrowAdminCache !== 'undefined' && Array.isArray(escrowAdminCache)) {
+    escrow = escrowAdminCache.find(function(e) { return e.id === escrowId; });
+  }
+
+  // Si l'escrow n'est pas dans les caches, lire depuis Firestore
+  if (!escrow) {
+    var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+    if (firestoreDb) {
+      firestoreDb.collection("escrow").doc(escrowId).get().then(function(snap) {
+        if (snap.exists) {
+          var data = snap.data() || {};
+          data.id = snap.id;
+          afficherModalAideAdmin(data);
+        } else {
+          afficherNotification("Transaction introuvable", "⚠️");
+        }
+      }).catch(function(e) {
+        console.warn("Erreur chargement escrow pour aide :", e);
+        afficherNotification("Erreur de connexion. Réessaye.", "⚠️");
+      });
+    }
+    return;
+  }
+
+  afficherModalAideAdmin(escrow);
+}
+window.ouvrirAideContactAdmin = ouvrirAideContactAdmin;
+
+function afficherModalAideAdmin(escrow) {
+  var adminNom = escapeHtml(escrow.adminNom || "l'admin");
+  var adminTel = (typeof normaliserNumeroWa === 'function') ? normaliserNumeroWa(escrow.adminTelephone) : (escrow.adminTelephone || "").replace(/[^0-9]/g, "");
+  var adminTelAffiche = escapeHtml(escrow.adminTelephone || "Non renseigné");
+  var annonceTitre = escapeHtml(escrow.annonceTitre || "Compte eFootball");
+  var montant = Number(escrow.montant || escrow.prix || 0).toLocaleString('fr-FR');
+  var acheteurNom = escapeHtml(escrow.acheteurNom || "");
+
+  // Construire l'URL WhatsApp avec message pré-rempli
+  var message = "Bonjour " + (escrow.adminNom || "") + ",\n\n" +
+    "Je t'ai envoyé le paiement de " + montant + " FCFA pour :\n" +
+    "📦 " + (escrow.annonceTitre || "Compte eFootball") + "\n\n" +
+    "Mais sur EFoot Market SN, ma transaction est toujours en attente.\n" +
+    "Peux-tu vérifier et confirmer la réception ?\n\n" +
+    "Merci !\n" + (escrow.acheteurNom || "");
+
+  var urlWhatsApp = adminTel ? ("https://wa.me/" + adminTel + "?text=" + encodeURIComponent(message)) : "";
+
+  // Créer la modale si elle n'existe pas
+  var modal = document.getElementById('modal-aide-admin');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-aide-admin';
+    modal.className = 'modal-backdrop';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = 
+    '<div class="modal-card" style="max-width: 460px;">' +
+      '<div class="modal-header-row">' +
+        '<div class="modal-title" style="color: #fbbf24; margin-bottom: 0; font-weight: 800; font-size: 17px; display: flex; align-items: center; gap: 8px;">' +
+          '<span>🚨</span> <span>Besoin d\'aide ?</span>' +
+        '</div>' +
+        '<button type="button" class="modal-close-btn" onclick="fermerModalAideAdmin()" title="Fermer">✕</button>' +
+      '</div>' +
+
+      '<div style="background: rgba(245,158,11,0.1); border-left: 3px solid #f59e0b; border-radius: 8px; padding: 12px 14px; margin-bottom: 18px;">' +
+        '<div style="font-size: 13px; color: #fbbf24; font-weight: 700; margin-bottom: 6px;">' +
+          'Si tu as déjà payé mais que le système ne l\'affiche pas' +
+        '</div>' +
+        '<div style="font-size: 12.5px; color: #e4e4e7; line-height: 1.5;">' +
+          'Cela peut arriver si tu as fermé ton navigateur juste après avoir payé, ou en cas de bug réseau.' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="background: #202020; border: 1px solid #333; border-radius: 10px; padding: 14px; margin-bottom: 18px;">' +
+        '<div style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Détails de la transaction</div>' +
+        '<div style="font-size: 13.5px; line-height: 1.8; color: #e4e4e7;">' +
+          '<div>📦 <strong>' + annonceTitre + '</strong></div>' +
+          '<div>💰 <strong style="color: #00C853;">' + montant + ' FCFA</strong></div>' +
+          '<div>🛡️ Admin : <strong>' + adminNom + '</strong></div>' +
+          '<div>📞 Téléphone : <strong>' + adminTelAffiche + '</strong></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="font-size: 13px; color: #ccc; margin-bottom: 18px; line-height: 1.5; text-align: center;">' +
+        'Contacte directement l\'admin sur WhatsApp pour lui signaler ton paiement et lui demander de vérifier.' +
+      '</div>' +
+
+      (adminTel ? 
+        '<a href="' + urlWhatsApp + '" target="_blank" rel="noopener noreferrer" onclick="fermerModalAideAdmin()" style="display: flex; align-items: center; justify-content: center; gap: 10px; background: #25D366; color: white; border: none; border-radius: 10px; padding: 16px; font-size: 15.5px; font-weight: 800; text-decoration: none; width: 100%; box-sizing: border-box; box-shadow: 0 4px 14px rgba(37,211,102,0.35);">' +
+          '💬 Contacter l\'admin sur WhatsApp' +
+        '</a>'
+      :
+        '<div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 14px; text-align: center; font-size: 13px; color: #f87171;">' +
+          '⚠️ Numéro de l\'admin non disponible. Contacte le support : <a href="mailto:efootmarketcontact@gmail.com" style="color: #fbbf24;">efootmarketcontact@gmail.com</a>' +
+        '</div>'
+      ) +
+
+      '<div style="margin-top: 14px; text-align: center;">' +
+        '<button type="button" class="btn-secondary" onclick="fermerModalAideAdmin()" style="font-size: 13px; padding: 10px 18px;">' +
+          'Fermer' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+  modal.style.display = 'flex';
+  modal.classList.add('active');
+}
+window.afficherModalAideAdmin = afficherModalAideAdmin;
+
+function fermerModalAideAdmin() {
+  var modal = document.getElementById('modal-aide-admin');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
+}
+window.fermerModalAideAdmin = fermerModalAideAdmin;
 
     /* ==========================================================
        SECTION 7.1 : PARTAGE D'UNE ANNONCE (Web Share API & Copie de Lien)
@@ -15366,6 +15567,14 @@ window.mettreAJourBadgeNavAdminEscrow = mettreAJourBadgeNavAdminEscrow;
             "Le vendeur t'a autorisé à payer. Clique sur le bouton <strong>« 💳 Envoyer l'argent »</strong> pour être redirigé vers la page de paiement sécurisée Wave / Orange Money.<br><br>" +
             "<div style=\"background: rgba(0,200,83,0.1); border-left: 3px solid #00C853; border-radius: 6px; padding: 10px 12px; margin-top: 6px; font-size: 12.5px; color: #B9F6CA; line-height: 1.5;\">" +
               "💰 Le paiement se fait directement en ligne via Wave ou Orange Money. L'admin vérifiera la réception ensuite." +
+            "</div>" +
+            "<div style=\"margin-top: 14px; padding-top: 14px; border-top: 1px dashed #444;\">" +
+              "<div style=\"font-size: 11.5px; color: #888; text-align: center; margin-bottom: 8px; line-height: 1.5;\">" +
+                "Tu as déjà payé mais le système ne l'affiche pas ?" +
+              "</div>" +
+              "<button type=\"button\" onclick=\"ouvrirAideContactAdmin('" + (escrowAcheteur ? escrowAcheteur.id : '') + "')\" style=\"background:rgba(245,158,11,0.12); color:#fbbf24; width:100%; padding:12px; border-radius:10px; font-size:13px; font-weight:700; border:1.5px solid rgba(245,158,11,0.4); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;\">" +
+                "🚨 Besoin d'aide ? Contacter l'admin" +
+              "</button>" +
             "</div>";
           couleurTitre = "#fbbf24";
           classeBox = "box-demande";
