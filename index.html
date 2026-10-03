@@ -5011,8 +5011,8 @@
           <!-- Description -->
           <div class="form-group">
             <label for="pub-desc">
-              <span>Description détaillée <span class="required-star">*</span></span>
-              <small style="color: var(--text-muted); font-weight: 400;">Min. 10 caractères</small>
+              <span>Description détaillée <span style="font-size: 11px; color: #888; font-weight: 400;">(optionnel)</span></span>
+              <small style="color: var(--text-muted); font-weight: 400;">Recommandé</small>
             </label>
             <textarea 
               id="pub-desc" 
@@ -10504,7 +10504,9 @@ window.normaliserNumeroWa = normaliserNumeroWa;
       const powerInput = document.getElementById('pub-power');
 
       let titreValide = titreInput.value.trim().length >= 5;
-      let descValide = descInput.value.trim().length >= 10;
+      // La description est désormais OPTIONNELLE
+      // Si remplie, elle doit comporter au moins 10 caractères (pour la qualité)
+      let descValide = (descInput.value.trim().length === 0) || (descInput.value.trim().length >= 10);
       let prixValide = !isNaN(prixInput.value) && parseFloat(prixInput.value) >= 100;
       let regionValide = !regionInput || (regionInput.value.trim() !== "");
       let whatsappValide = validerFormatWhatsApp(whatsappInput.value.trim());
@@ -10606,7 +10608,7 @@ window.normaliserNumeroWa = normaliserNumeroWa;
         // Ajouter dans Firestore
         db.collection("annonces").add({
           titre: arg.titre,
-          description: arg.description,
+          description: arg.description || "Aucune description fournie.",
           prix: Number(arg.prix),
           plateforme: arg.plateforme,
           typeCompte: arg.typeCompte || "Standard",
@@ -10684,7 +10686,7 @@ window.normaliserNumeroWa = normaliserNumeroWa;
         // Ajouter dans Firestore
         db.collection("annonces").add({
           titre: titre,
-          description: description,
+          description: description || "Aucune description fournie.",
           prix: prix,
           plateforme: plateforme,
           typeCompte: plateforme === 'Mobile' ? 'Mobile' : (plateforme.includes('PS') ? 'Console' : 'Standard'),
