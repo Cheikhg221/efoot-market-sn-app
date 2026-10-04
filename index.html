@@ -10584,14 +10584,92 @@ window.normaliserNumeroWa = normaliserNumeroWa;
         return;
       }
 
+      // 📊 Afficher une indication de compression
+      const dropzone = document.getElementById('pub-image-dropzone');
+      if (dropzone) {
+        dropzone.innerHTML = '<div style="font-size: 24px; margin-bottom: 6px;">⏳</div>' +
+          '<div style="font-size: 13px; color: #00C853; font-weight: 600;">Compression en cours...</div>';
+      }
+
       const reader = new FileReader();
       reader.onload = function(e) {
-        uploadedImageBase64 = e.target.result;
-        const preview = document.getElementById('image-preview-element');
-        const wrapper = document.getElementById('image-preview-wrapper');
-        preview.src = uploadedImageBase64;
-        wrapper.style.display = 'block';
-        validerChamp('pub-image');
+        const imageOriginale = new Image();
+        imageOriginale.onload = function() {
+          // ⚙️ Redimensionner l'image (max 1200px de large)
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = imageOriginale.width;
+          let height = imageOriginale.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          // 🎨 Créer un canvas pour redimensionner
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(imageOriginale, 0, 0, width, height);
+
+          // 🗜️ Compresser en JPEG qualité 0.75 (bon compromis taille/qualité)
+          let qualite = 0.75;
+          let base64 = canvas.toDataURL('image/jpeg', qualite);
+          let tailleEstimee = Math.round((base64.length * 3) / 4); // Taille en bytes
+
+          // 📉 Si l'image est encore trop grosse (> 700 Ko), réduire la qualité
+          while (tailleEstimee > 700 * 1024 && qualite > 0.4) {
+            qualite -= 0.1;
+            base64 = canvas.toDataURL('image/jpeg', qualite);
+            tailleEstimee = Math.round((base64.length * 3) / 4);
+          }
+
+          // 📉 Si toujours trop grosse, réduire les dimensions
+          if (tailleEstimee > 700 * 1024) {
+            const ratio = Math.sqrt((700 * 1024) / tailleEstimee);
+            canvas.width = Math.round(width * ratio);
+            canvas.height = Math.round(height * ratio);
+            const ctx2 = canvas.getContext('2d');
+            ctx2.drawImage(imageOriginale, 0, 0, canvas.width, canvas.height);
+            base64 = canvas.toDataURL('image/jpeg', 0.6);
+            tailleEstimee = Math.round((base64.length * 3) / 4);
+          }
+
+          uploadedImageBase64 = base64;
+
+          // 🖼️ Afficher l'aperçu
+          const preview = document.getElementById('image-preview-element');
+          const wrapper = document.getElementById('image-preview-wrapper');
+          if (preview) preview.src = uploadedImageBase64;
+          if (wrapper) wrapper.style.display = 'block';
+
+          // 🔄 Restaurer la dropzone
+          if (dropzone) {
+            dropzone.innerHTML = '<div style="font-size: 28px; margin-bottom: 6px;">📸</div>' +
+              '<div style="font-size: 13.5px; font-weight: 600; color: var(--text-white);">Cliquez pour choisir une photo <span class="required-star">*</span></div>' +
+              '<div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Format PNG, JPG ou WEBP (obligatoire)</div>';
+          }
+
+          console.log('✅ Image compressée : ' + Math.round(tailleEstimee / 1024) + ' Ko (qualité ' + qualite + ')');
+          validerChamp('pub-image');
+        };
+        imageOriginale.onerror = function() {
+          alert("Erreur de lecture de l'image. Réessayez avec une autre photo.");
+          if (dropzone) {
+            dropzone.innerHTML = '<div style="font-size: 28px; margin-bottom: 6px;">📸</div>' +
+              '<div style="font-size: 13.5px; font-weight: 600; color: var(--text-white);">Cliquez pour choisir une photo <span class="required-star">*</span></div>' +
+              '<div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Format PNG, JPG ou WEBP (obligatoire)</div>';
+          }
+        };
+        imageOriginale.src = e.target.result;
       };
       reader.readAsDataURL(fichier);
     }
