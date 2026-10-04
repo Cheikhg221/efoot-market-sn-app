@@ -4897,7 +4897,7 @@
       <!-- En-tête de la grille -->
       <div class="ads-header-row">
         <div class="ads-count-text">
-          <span id="ads-counter">...</span> annonce(s) disponible(s)
+          <span id="ads-counter"><span style="color: #00C853; font-weight: 600;">Chargement...</span></span> annonce(s) disponible(s)
         </div>
         <button class="btn-primary" style="padding: 6px 12px; font-size: 13px;" onclick="changerPage('publier')">
           ➕ Déposer une annonce
@@ -9393,7 +9393,7 @@
     function afficherSkeletonLoader() {
       var container = document.getElementById('products-grid-container');
       var counter = document.getElementById('ads-counter');
-      if (counter) counter.textContent = "...";
+      if (counter) counter.innerHTML = '<span style="color: #00C853; font-weight: 600;">Chargement...</span>';
       if (!container) return;
 
       // Générer 6 cartes skeleton (2 rangées de 3 en desktop, 1 col en mobile)
@@ -9427,15 +9427,16 @@
       if (!container) return;
       
       container.innerHTML = `
-        <div class="empty-state" style="grid-column: 1 / -1;">
-          <div class="empty-icon">⚠️</div>
-          <div class="empty-title">Impossible de charger les annonces</div>
-          <div class="empty-desc">
-            Vérifie ta connexion internet puis réessaie.
+        <div class="empty-state" style="grid-column: 1 / -1; padding: 60px 20px;">
+          <div class="empty-icon" style="font-size: 56px;">📡</div>
+          <div class="empty-title" style="font-size: 20px;">Connexion lente détectée</div>
+          <div class="empty-desc" style="font-size: 14px; max-width: 400px; line-height: 1.6;">
+            Le chargement des annonces prend plus de temps que prévu.<br>
+            Cela peut arriver sur une connexion mobile lente.
           </div>
           <button class="btn-primary" onclick="location.reload()" 
-            style="padding: 12px 24px;">
-            🔄 Réessayer
+            style="padding: 14px 28px; font-size: 15px; margin-top: 10px;">
+            🔄 Recharger la page
           </button>
         </div>
       `;
@@ -10171,6 +10172,14 @@
     function afficherCartes(liste) {
       const container = document.getElementById('products-grid-container');
       const counter = document.getElementById('ads-counter');
+      
+      // Si les annonces ne sont PAS encore chargées, garder le skeleton
+      if (!annoncesChargees) {
+        if (counter) counter.innerHTML = '<span style="color: #00C853; font-weight: 600;">Chargement...</span>';
+        return;
+      }
+      
+      // Les annonces sont chargées : afficher le vrai compteur
       if (counter) counter.textContent = liste ? liste.length : 0;
 
       // Si aucune annonce ne correspond
@@ -10279,13 +10288,17 @@
       var annoncesEnCours = [];
       var requetesTerminees = 0;
 
+      // Timeout de secours étendu à 20 secondes (pour éviter les faux "0 annonces")
       var securiteFirestore = setTimeout(function() {
         if (!annoncesChargees && requetesTerminees < 2) {
-          console.warn("⚠️ Une requête Firestore a échoué, on force l'affichage");
-          requetesTerminees = 2; // Forcer
-          combinerAnnonces();
+          console.warn("⚠️ Firestore n'a pas répondu après 20s, on force l'affichage");
+          // On ne montre PAS l'empty state, on garde le skeleton et on log
+          // Seulement si vraiment aucune requête n'a été reçue
+          if (typeof afficherErreurChargement === 'function') {
+            afficherErreurChargement();
+          }
         }
-      }, 8000);
+      }, 20000);
 
       function combinerAnnonces() {
         requetesTerminees++;
@@ -22399,13 +22412,12 @@ setTimeout(function() {
         }
       }, 2000);
 
-      // Délai de sécurité : si après 15 secondes Firestore n'a pas répondu, afficher l'erreur
       setTimeout(function() {
         if (!annoncesChargees) {
-          console.warn("Firestore n'a pas répondu après 15 secondes");
+          console.warn("Firestore n'a pas répondu après 25 secondes - affichage erreur");
           afficherErreurChargement();
         }
-      }, 15000);
+      }, 25000);
 
       try {
         // Démarrer l'écoute temps réel de la collection Firestore "annonces"
