@@ -22828,8 +22828,8 @@ setTimeout(function() {
   <div class="modal-backdrop" id="modal-tutoriel-video" 
        onclick="if(event.target===this) fermerTutorielVideo()">
     <div style="background: #1a1a1a; border-radius: 16px; 
-         max-width: 500px; width: 92%; padding: 16px; 
-         border: 1px solid #333; position: relative;">
+         width: 92%; max-width: 380px; max-height: 90vh; padding: 16px; 
+         border: 1px solid #333; position: relative; overflow-y: auto;">
       
       <button type="button" onclick="fermerTutorielVideo()" 
         style="position: absolute; top: 12px; right: 12px; 
@@ -22844,9 +22844,10 @@ setTimeout(function() {
         🎬 Transaction sécurisée EFoot Market SN
       </h3>
       
-      <div style="position: relative; width: 100%; 
-           padding-bottom: 177.78%; background: #000; 
-           border-radius: 10px; overflow: hidden;">
+      <div style="position: relative; width: 100%; max-width: 340px; 
+           margin: 0 auto; aspect-ratio: 9 / 16; 
+           max-height: 70vh; background: #000; border-radius: 10px; 
+           overflow: hidden;">
         <iframe id="tutoriel-video-iframe" 
           src="" 
           style="position: absolute; top: 0; left: 0; 
