@@ -5636,6 +5636,17 @@
                 bien livré. <strong style="color: #fff;">Si problème, l'argent est remboursé.</strong>
               </p>
 
+              <button type="button" onclick="ouvrirTutorielVideo()" 
+                style="display: flex; align-items: center; justify-content: center; 
+                gap: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+                color: #fff; border: none; padding: 14px 22px; border-radius: 10px; 
+                font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; 
+                margin: 16px 0 20px 0; box-shadow: 0 4px 14px rgba(239,68,68,0.35); 
+                transition: transform 0.2s ease;">
+                <span style="font-size: 20px;">▶️</span>
+                <span>Voir le tutoriel vidéo (1 min)</span>
+              </button>
+
               <!-- Timeline des étapes -->
               <div style="display: flex; flex-direction: column; gap: 14px;">
 
@@ -22623,6 +22634,28 @@ setTimeout(function() {
     } else {
       initialiserApplication();
     }
+
+    function ouvrirTutorielVideo() {
+      var modal = document.getElementById('modal-tutoriel-video');
+      var iframe = document.getElementById('tutoriel-video-iframe');
+      if (!modal || !iframe) return;
+      iframe.src = 'https://www.youtube.com/embed/NbqrgMqBoug?autoplay=1&rel=0';
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
+
+    function fermerTutorielVideo() {
+      var modal = document.getElementById('modal-tutoriel-video');
+      var iframe = document.getElementById('tutoriel-video-iframe');
+      if (iframe) iframe.src = '';
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+      }
+    }
+
+    window.ouvrirTutorielVideo = ouvrirTutorielVideo;
+    window.fermerTutorielVideo = fermerTutorielVideo;
   </script>
 
   <!-- ==========================================================
@@ -22762,6 +22795,46 @@ setTimeout(function() {
     <div style="position: relative; max-width: 95vw; max-height: 95vh; display: flex; justify-content: center; align-items: center;" onclick="event.stopPropagation()">
       <button type="button" onclick="fermerZoomSignalement()" style="position: absolute; top: -14px; right: -14px; background: #ef4444; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 16px;">✕</button>
       <img id="zoom-signalement-img" src="" alt="Preuve capture d'écran" style="max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: 8px; border: 1px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
+    </div>
+  </div>
+  <!-- Modale Tutoriel Vidéo Protection Admin -->
+  <div class="modal-backdrop" id="modal-tutoriel-video" 
+       onclick="if(event.target===this) fermerTutorielVideo()">
+    <div style="background: #1a1a1a; border-radius: 16px; 
+         max-width: 500px; width: 92%; padding: 16px; 
+         border: 1px solid #333; position: relative;">
+      
+      <button type="button" onclick="fermerTutorielVideo()" 
+        style="position: absolute; top: 12px; right: 12px; 
+        background: rgba(0,0,0,0.6); color: #fff; border: none; 
+        border-radius: 50%; width: 32px; height: 32px; 
+        cursor: pointer; font-size: 16px; font-weight: bold; z-index: 5;">
+        ✕
+      </button>
+      
+      <h3 style="color: #00E676; font-size: 16px; font-weight: 800; 
+         margin: 0 0 12px 0; padding-right: 40px;">
+        🎬 Transaction sécurisée EFoot Market SN
+      </h3>
+      
+      <div style="position: relative; width: 100%; 
+           padding-bottom: 177.78%; background: #000; 
+           border-radius: 10px; overflow: hidden;">
+        <iframe id="tutoriel-video-iframe" 
+          src="" 
+          style="position: absolute; top: 0; left: 0; 
+          width: 100%; height: 100%; border: 0;" 
+          allow="accelerometer; autoplay; clipboard-write; 
+          encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen>
+        </iframe>
+      </div>
+      
+      <p style="color: #aaa; font-size: 12.5px; text-align: center; 
+         margin: 12px 0 0 0; line-height: 1.5;">
+        💡 Regarde cette vidéo pour comprendre comment ta transaction 
+        est protégée par l'admin.
+      </p>
     </div>
   </div>
 </body>
