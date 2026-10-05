@@ -4750,6 +4750,33 @@
         </div>
       </div>
 
+      <div id="section-tutoriel-accueil" style="background: linear-gradient(135deg, #1a0a0a 0%, #2a0f0f 100%); border: 1.5px solid #ef4444; border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; position: relative; overflow: hidden;" onclick="ouvrirTutorielVideo()">
+        
+        <div style="flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; box-shadow: 0 4px 14px rgba(239,68,68,0.45); animation: pulsePlayBtn 2s infinite ease-in-out;">
+          ▶️
+        </div>
+        
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 3px;">
+            🎬 Tutoriel : Comment ça marche ?
+          </div>
+          <div style="font-size: 12.5px; color: #fca5a5; line-height: 1.4;">
+            Découvre en 1 minute comment acheter en toute sécurité avec la protection admin.
+          </div>
+        </div>
+        
+        <div style="flex-shrink: 0; color: #ef4444; font-size: 20px; font-weight: bold;">
+          ›
+        </div>
+      </div>
+
+      <style>
+      @keyframes pulsePlayBtn {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(239,68,68,0.45); }
+        50% { transform: scale(1.08); box-shadow: 0 6px 22px rgba(239,68,68,0.7); }
+      }
+      </style>
+
       <!-- Bannière des meilleures offres -->
       <div class="home-banner">
         <div class="banner-title">
@@ -22812,7 +22839,7 @@ setTimeout(function() {
         ✕
       </button>
       
-      <h3 style="color: #00E676; font-size: 16px; font-weight: 800; 
+      <h3 style="color: #ef4444; font-size: 16px; font-weight: 800; 
          margin: 0 0 12px 0; padding-right: 40px;">
         🎬 Transaction sécurisée EFoot Market SN
       </h3>
