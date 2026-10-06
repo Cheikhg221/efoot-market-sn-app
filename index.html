@@ -4344,6 +4344,112 @@
       animation: goldBorderFlow 3s linear infinite;
     }
 
+    /* Compte à rebours du boost */
+    .boost-countdown-box {
+      background: linear-gradient(135deg, #2a1f00 0%, #1a1200 100%);
+      border: 1.5px solid #FFD700;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .boost-countdown-digits {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .boost-cd-unit {
+      background: #1a1a1a;
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      border-radius: 6px;
+      padding: 6px 8px;
+      min-width: 42px;
+      text-align: center;
+    }
+
+    .boost-cd-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #FFD700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .boost-cd-label {
+      font-size: 9px;
+      color: #888;
+      text-transform: uppercase;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Prix barré */
+    .boost-price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 6px;
+    }
+
+    .boost-price-old {
+      font-size: 22px;
+      font-weight: 700;
+      color: #888;
+      text-decoration: line-through;
+      text-decoration-color: #ef4444;
+      text-decoration-thickness: 2px;
+      position: relative;
+    }
+
+    .boost-price-new {
+      font-size: 42px;
+      font-weight: 900;
+      color: #FFD700;
+      line-height: 1;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    .boost-promo-badge {
+      display: inline-block;
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      animation: promoPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes promoPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    /* Effet de barre de progression boost */
+    .boost-progress-bar {
+      height: 6px;
+      background: rgba(255, 215, 0, 0.15);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    .boost-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FFD700, #FFA000);
+      border-radius: 3px;
+      transition: width 1s linear;
+    }
+
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -11226,6 +11332,40 @@ window.normaliserNumeroWa = normaliserNumeroWa;
           <button class="btn-secondary" onclick="changerPage('accueil')">
             ← Retour à l'accueil
           </button>
+          ${estMonAnnonce ? (
+            estAnnonceBoostee(ad) ? `
+              <div class="boost-countdown-box" id="boost-countdown-${ad.id}">
+                <div style="font-size: 24px;">⭐</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 800; color: #FFD700; margin-bottom: 4px;">
+                    Boost actif
+                  </div>
+                  <div style="font-size: 11.5px; color: #aaa; margin-bottom: 8px;">
+                    Ton annonce reste en 1ère position
+                  </div>
+                  <div class="boost-countdown-digits" data-expiration="${ad.boost.dateExpiration ? (ad.boost.dateExpiration.seconds ? ad.boost.dateExpiration.seconds * 1000 : new Date(ad.boost.dateExpiration).getTime()) : ''}">
+                    <div class="boost-cd-unit"><div class="boost-cd-value" data-unit="j">0</div><div class="boost-cd-label">Jours</div></div>
+                    <div class="boost-cd-unit"><div class="boost-cd-value" data-unit="h">0</div><div class="boost-cd-label">Heures</div></div>
+                    <div class="boost-cd-unit"><div class="boost-cd-value" data-unit="m">0</div><div class="boost-cd-label">Min</div></div>
+                    <div class="boost-cd-unit"><div class="boost-cd-value" data-unit="s">0</div><div class="boost-cd-label">Sec</div></div>
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <button type="button" 
+                onclick="ouvrirModalBoost('${ad.id}', '${escapeHtml(ad.titre).replace(/'/g, "\\'")}')" 
+                style="display: flex; align-items: center; justify-content: center; 
+                gap: 10px; width: 100%; padding: 14px 20px; 
+                background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%); 
+                color: #000; border: none; border-radius: 10px; font-size: 15px; 
+                font-weight: 800; cursor: pointer; margin-bottom: 14px; 
+                box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4); 
+                transition: transform 0.2s ease;">
+                <span style="font-size: 20px;">🚀</span>
+                <span>Booster cette annonce (250 FCFA / 7 jours)</span>
+              </button>
+            `
+          ) : ''}
           <div style="display: flex; align-items: center; gap: 10px;">
             <button 
               type="button" 
@@ -11379,6 +11519,22 @@ window.normaliserNumeroWa = normaliserNumeroWa;
       if (!estVendue) {
         afficherBoutonsAnnonce(ad.id, ad);
       }
+
+      // Démarrer le compte à rebours si boost actif
+      setTimeout(function() {
+        if (typeof arreterTousComptesARebours === 'function') {
+          arreterTousComptesARebours();
+        }
+        var boostBox = document.querySelector('[id^="boost-countdown-"]');
+        if (boostBox) {
+          var idParts = boostBox.id.split('boost-countdown-');
+          if (idParts[1]) {
+            if (typeof demarrerCompteAReboursBoost === 'function') {
+              demarrerCompteAReboursBoost(idParts[1]);
+            }
+          }
+        }
+      }, 100);
     }
 
     /**
@@ -22943,6 +23099,70 @@ setTimeout(function() {
     window.ouvrirModalBoost = ouvrirModalBoost;
     window.fermerModalBoost = fermerModalBoost;
     window.payerBoost = payerBoost;
+
+    var boostCountdownIntervals = {};
+
+    function demarrerCompteAReboursBoost(annonceId) {
+      var container = document.getElementById('boost-countdown-' + annonceId);
+      if (!container) return;
+
+      var digitsContainer = container.querySelector('.boost-countdown-digits');
+      if (!digitsContainer) return;
+
+      var expirationStr = digitsContainer.getAttribute('data-expiration');
+      if (!expirationStr) return;
+
+      var expirationTime = parseInt(expirationStr, 10);
+      if (isNaN(expirationTime)) return;
+
+      // Arrêter l'intervalle existant si présent
+      if (boostCountdownIntervals[annonceId]) {
+        clearInterval(boostCountdownIntervals[annonceId]);
+      }
+
+      function update() {
+        var now = Date.now();
+        var remaining = expirationTime - now;
+
+        if (remaining <= 0) {
+          // Boost expiré
+          clearInterval(boostCountdownIntervals[annonceId]);
+          delete boostCountdownIntervals[annonceId];
+          if (container) container.remove();
+          return;
+        }
+
+        var days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((remaining % (1000 * 60)) / (1000 * 60));
+        var seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+        var elJ = digitsContainer.querySelector('[data-unit="j"]');
+        var elH = digitsContainer.querySelector('[data-unit="h"]');
+        var elM = digitsContainer.querySelector('[data-unit="m"]');
+        var elS = digitsContainer.querySelector('[data-unit="s"]');
+
+        if (elJ) elJ.textContent = String(days).padStart(2, '0');
+        if (elH) elH.textContent = String(hours).padStart(2, '0');
+        if (elM) elM.textContent = String(minutes).padStart(2, '0');
+        if (elS) elS.textContent = String(seconds).padStart(2, '0');
+      }
+
+      update();
+      boostCountdownIntervals[annonceId] = setInterval(update, 1000);
+    }
+
+    function arreterTousComptesARebours() {
+      for (var key in boostCountdownIntervals) {
+        if (boostCountdownIntervals.hasOwnProperty(key)) {
+          clearInterval(boostCountdownIntervals[key]);
+        }
+      }
+      boostCountdownIntervals = {};
+    }
+
+    window.demarrerCompteAReboursBoost = demarrerCompteAReboursBoost;
+    window.arreterTousComptesARebours = arreterTousComptesARebours;
   </script>
 
   <!-- ==========================================================
@@ -23142,12 +23362,17 @@ setTimeout(function() {
         contour doré scintillant qui attire l'œil.
       </p>
       
-      <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border: 1.5px solid #FFD700; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-        <div style="font-size: 32px; font-weight: 800; color: #FFD700; line-height: 1;">
-          250 <span style="font-size: 18px;">FCFA</span>
+      <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border: 1.5px solid #FFD700; border-radius: 12px; padding: 20px 18px; margin-bottom: 20px; position: relative; overflow: hidden;">
+        <div class="boost-promo-badge">🔥 PROMO -50%</div>
+        <div class="boost-price-row">
+          <div class="boost-price-old">500 FCFA</div>
+          <div class="boost-price-new">250 <span style="font-size: 20px;">FCFA</span></div>
         </div>
-        <div style="font-size: 12.5px; color: #aaa; margin-top: 6px;">
+        <div style="font-size: 12.5px; color: #aaa; margin-top: 8px;">
           Paiement unique • Wave / Orange Money
+        </div>
+        <div style="font-size: 11.5px; color: #FFD700; margin-top: 6px; font-weight: 700;">
+          ⏰ Offre valable jusqu'à épuisement
         </div>
       </div>
       
