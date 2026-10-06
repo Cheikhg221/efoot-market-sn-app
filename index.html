@@ -4275,6 +4275,75 @@
       }
     }
 
+    /* Carte boostée avec contour doré scintillant */
+    .ad-card.boosted-card {
+      border: 2px solid transparent !important;
+      background: 
+        linear-gradient(#1E1E1E, #1E1E1E) padding-box,
+        linear-gradient(90deg, #FFD700, #FFA000, #FFD700, #FFF176, #FFD700) border-box;
+      background-size: 100% 100%, 300% 100%;
+      animation: goldBorderFlow 3s linear infinite;
+      position: relative;
+      box-shadow: 0 0 18px rgba(255, 215, 0, 0.35);
+    }
+
+    @keyframes goldBorderFlow {
+      0% { background-position: 0% 50%, 0% 50%; }
+      100% { background-position: 0% 50%, 300% 50%; }
+    }
+
+    .ad-card.boosted-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.15), transparent);
+      animation: goldShine 2.5s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @keyframes goldShine {
+      0% { left: -100%; }
+      50%, 100% { left: 100%; }
+    }
+
+    /* Badge BOOSTÉ */
+    .boost-badge {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #FFD700, #FFA000);
+      color: #000;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      z-index: 5;
+      box-shadow: 0 2px 10px rgba(255, 215, 0, 0.6);
+      animation: boostPulse 1.8s ease-in-out infinite;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    @keyframes boostPulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.08); }
+    }
+
+    /* Carte boostée dans "Mes annonces" */
+    .my-ad-item.boosted-item {
+      border: 2px solid transparent !important;
+      background: 
+        linear-gradient(#1E1E1E, #1E1E1E) padding-box,
+        linear-gradient(90deg, #FFD700, #FFA000, #FFD700) border-box;
+      background-size: 100% 100%, 300% 100%;
+      animation: goldBorderFlow 3s linear infinite;
+    }
+
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -9314,6 +9383,24 @@
       annoncesFirestore = liste;
     }
 
+    function estAnnonceBoostee(annonce) {
+      if (!annonce || !annonce.boost) return false;
+      if (annonce.boost.actif !== true) return false;
+      var expiration = annonce.boost.dateExpiration;
+      if (!expiration) return false;
+      var expDate;
+      if (typeof expiration === 'string') {
+        expDate = new Date(expiration);
+      } else if (expiration.seconds) {
+        expDate = new Date(expiration.seconds * 1000);
+      } else if (typeof expiration.toDate === 'function') {
+        expDate = expiration.toDate();
+      } else {
+        return false;
+      }
+      return expDate.getTime() > Date.now();
+    }
+
     /**
      * Gère la saisie dans les barres de recherche desktop et mobile
      */
@@ -9552,6 +9639,13 @@
         }
 
         return true;
+      });
+
+      // Priorité aux annonces boostées
+      resultats.sort(function(a, b) {
+        var aBoost = estAnnonceBoostee(a) ? 1 : 0;
+        var bBoost = estAnnonceBoostee(b) ? 1 : 0;
+        return bBoost - aBoost;
       });
 
       // Tri des annonces
@@ -10259,8 +10353,9 @@
         const isFav = estFavori(ad.id);
 
         return `
-          <article class="ad-card" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
+          <article class="ad-card ${estAnnonceBoostee(ad) ? 'boosted-card' : ''}" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
             <div class="card-media">
+              ${estAnnonceBoostee(ad) ? '<div class="boost-badge">⭐ BOOSTÉ</div>' : ''}
               ${mediaHtml}
               <div class="card-platform-badge">
                 <span>${(ad.plateforme && (ad.plateforme.toLowerCase().includes('mobile') || ad.plateforme.toLowerCase().includes('android') || ad.plateforme.toLowerCase().includes('ios'))) ? '📱' : '🎮'}</span>
@@ -21404,7 +21499,7 @@ try {
             `<span>⚽</span>`;
 
           html += `
-            <div class="my-ad-item">
+            <div class="my-ad-item ${estAnnonceBoostee(item) ? 'boosted-item' : ''}">
               <div class="my-ad-info">
                 <div class="my-ad-thumb">${mediaHtml}</div>
                 <div class="my-ad-details">
@@ -21414,6 +21509,15 @@ try {
                 </div>
               </div>
               <div class="my-ad-actions">
+                ${estAnnonceBoostee(item) ? `
+                  <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.4); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #FFD700; font-weight: 700;">
+                    ⭐ Boosté jusqu'au ${formaterDate(item.boost.dateExpiration)}
+                  </div>
+                ` : `
+                  <button class="btn-primary" style="background: linear-gradient(135deg, #FFD700, #FFA000); color: #000; font-weight: 800; font-size: 12px; padding: 8px 14px; border: none; display: inline-flex; align-items: center; gap: 5px;" onclick="ouvrirModalBoost('${item.id}', '${escapeHtml(item.titre).replace(/'/g, "\\'")}')">
+                    🚀 Booster
+                  </button>
+                `}
                 <button class="btn-secondary" onclick="changerPage('detail', { annonceId: '${item.id}' })">
                   👁️ Voir
                 </button>
@@ -22721,6 +22825,94 @@ setTimeout(function() {
 
     window.ouvrirTutorielVideo = ouvrirTutorielVideo;
     window.fermerTutorielVideo = fermerTutorielVideo;
+
+    var currentBoostAnnonceId = null;
+
+    function ouvrirModalBoost(annonceId, annonceTitre) {
+      if (!annonceId) return;
+      currentBoostAnnonceId = annonceId;
+      
+      var titreEl = document.getElementById('boost-annonce-titre');
+      if (titreEl) {
+        titreEl.textContent = '📦 ' + (annonceTitre || 'Ton annonce');
+      }
+      
+      var btn = document.getElementById('btn-confirmer-boost');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '💳 Payer 500 FCFA et booster';
+        btn.onclick = function() { payerBoost(annonceId); };
+      }
+      
+      var modal = document.getElementById('modal-boost');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+      }
+    }
+
+    function fermerModalBoost() {
+      currentBoostAnnonceId = null;
+      var modal = document.getElementById('modal-boost');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+      }
+    }
+
+    function payerBoost(annonceId) {
+      var btn = document.getElementById('btn-confirmer-boost');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Création du paiement...';
+      }
+      
+      var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      var profil = (typeof getProfilUtilisateur === 'function') ? getProfilUtilisateur() : null;
+      var vendeurNom = profil ? ((profil.prenom || '') + ' ' + (profil.nom || '')).trim() : '';
+      var vendeurTel = profil ? (profil.telephone || '') : '';
+      
+      // Récupérer le titre de l'annonce
+      var annonces = (typeof getAnnonces === 'function') ? getAnnonces() : [];
+      var ad = annonces.find(function(a) { return a.id === annonceId; });
+      var annonceTitre = ad ? ad.titre : 'Compte eFootball';
+      
+      fetch('https://efoot-whatsapp-api.gueyendior221.workers.dev/create-boost-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          annonceId: annonceId,
+          annonceTitre: annonceTitre,
+          vendeurId: user ? user.uid : '',
+          vendeurNom: vendeurNom,
+          vendeurTelephone: vendeurTel
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result && result.checkout_url) {
+          window.location.href = result.checkout_url;
+        } else {
+          alert("Erreur : " + (result.error || "Impossible de créer le paiement."));
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '💳 Payer 500 FCFA et booster';
+          }
+        }
+      })
+      .catch(function(err) {
+        console.error("Erreur paiement boost :", err);
+        alert("Erreur de connexion au service de paiement.");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '💳 Payer 500 FCFA et booster';
+        }
+      });
+    }
+
+    window.ouvrirModalBoost = ouvrirModalBoost;
+    window.fermerModalBoost = fermerModalBoost;
+    window.payerBoost = payerBoost;
   </script>
 
   <!-- ==========================================================
@@ -22900,6 +23092,51 @@ setTimeout(function() {
          margin: 12px 0 0 0; line-height: 1.5;">
         💡 Regarde cette vidéo pour comprendre comment ta transaction 
         est protégée par l'admin.
+      </p>
+    </div>
+  </div>
+
+  <!-- Modale Boost d'annonce -->
+  <div class="modal-backdrop" id="modal-boost" onclick="if(event.target===this) fermerModalBoost()">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      
+      <div style="font-size: 52px; margin-bottom: 10px;">🚀</div>
+      
+      <h3 style="font-size: 20px; font-weight: 800; color: #FFD700; margin-bottom: 8px;">
+        Booster mon annonce
+      </h3>
+      
+      <p style="font-size: 13.5px; color: #ccc; line-height: 1.5; margin-bottom: 18px;">
+        Mets ton annonce en <strong style="color: #fff;">première position</strong> 
+        sur l'accueil pendant <strong style="color: #FFD700;">7 jours</strong> avec un 
+        contour doré scintillant qui attire l'œil.
+      </p>
+      
+      <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border: 1.5px solid #FFD700; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+        <div style="font-size: 32px; font-weight: 800; color: #FFD700; line-height: 1;">
+          500 <span style="font-size: 18px;">FCFA</span>
+        </div>
+        <div style="font-size: 12.5px; color: #aaa; margin-top: 6px;">
+          Paiement unique • Wave / Orange Money
+        </div>
+      </div>
+      
+      <div id="boost-annonce-titre" style="font-size: 12.5px; color: #888; margin-bottom: 18px; font-style: italic;">
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" id="btn-confirmer-boost" 
+          style="background: linear-gradient(135deg, #FFD700, #FFA000); color: #000; padding: 14px 20px; border: none; border-radius: 10px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          💳 Payer 500 FCFA et booster
+        </button>
+        <button type="button" onclick="fermerModalBoost()" 
+          style="background: transparent; color: #888; padding: 10px; border: 1px solid #444; border-radius: 8px; font-size: 13px; cursor: pointer;">
+          Annuler
+        </button>
+      </div>
+      
+      <p style="font-size: 11px; color: #666; margin-top: 14px; line-height: 1.4;">
+        💡 Si tu payes 2 fois, les durées sont cumulées automatiquement.
       </p>
     </div>
   </div>
