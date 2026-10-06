@@ -22982,6 +22982,65 @@ setTimeout(function() {
         console.warn("Erreur affichage initial :", e);
         try { changerPage('accueil'); } catch (e2) {}
       }
+
+      // Nettoyage automatique des boosts expirés dans Firestore
+      setTimeout(function() {
+        var firestoreDb = db || (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+        if (!firestoreDb) return;
+        
+        var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+        if (!user || !user.uid) return;
+        
+        // Récupérer les annonces du vendeur connecté
+        firestoreDb.collection("annonces")
+          .where("vendeurId", "==", user.uid)
+          .get()
+          .then(function(snap) {
+            var now = Date.now();
+            var promesses = [];
+            
+            snap.forEach(function(doc) {
+              var data = doc.data() || {};
+              var boost = data.boost || {};
+              
+              if (boost.actif !== true) return;
+              if (!boost.dateExpiration) return;
+              
+              var exp = boost.dateExpiration;
+              var expTime = 0;
+              if (exp.seconds) {
+                expTime = exp.seconds * 1000;
+              } else if (typeof exp === 'string') {
+                expTime = new Date(exp).getTime();
+              } else if (typeof exp.toDate === 'function') {
+                expTime = exp.toDate().getTime();
+              }
+              
+              if (expTime > 0 && expTime < now) {
+                // Boost expiré → désactiver proprement
+                promesses.push(
+                  firestoreDb.collection("annonces").doc(doc.id).update({
+                    "boost.actif": false,
+                    "boost.dateDesactivation": new Date().toISOString()
+                  }).then(function() {
+                    console.log("🧹 Boost expiré désactivé :", doc.id);
+                  }).catch(function(err) {
+                    console.warn("Erreur désactivation boost :", err);
+                  })
+                );
+              }
+            });
+            
+            if (promesses.length > 0) {
+              Promise.all(promesses).then(function() {
+                console.log("✅ Nettoyage des boosts expirés terminé :", promesses.length);
+              });
+            }
+          })
+          .catch(function(err) {
+            console.warn("Erreur vérification boosts expirés :", err);
+          });
+      }, 5000);   // 5 secondes après le chargement
     }
 
     if (document.readyState === 'loading') {
