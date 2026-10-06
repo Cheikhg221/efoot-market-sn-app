@@ -10650,13 +10650,11 @@ window.normaliserNumeroWa = normaliserNumeroWa;
       const whatsappInput = document.getElementById('pub-whatsapp');
       const powerInput = document.getElementById('pub-power');
 
-      let titreValide = titreInput.value.trim().length >= 5;
-      // La description est désormais OPTIONNELLE
-      // Si remplie, elle doit comporter au moins 10 caractères (pour la qualité)
-      let descValide = (descInput.value.trim().length === 0) || (descInput.value.trim().length >= 10);
-      let prixValide = !isNaN(prixInput.value) && parseFloat(prixInput.value) >= 100;
-      let regionValide = !regionInput || (regionInput.value.trim() !== "");
-      let whatsappValide = validerFormatWhatsApp(whatsappInput.value.trim());
+      let titreValide = titreInput ? titreInput.value.trim().length >= 5 : false;
+      let descValide = descInput ? ((descInput.value.trim().length === 0) || (descInput.value.trim().length >= 10)) : true;
+      let prixValide = prixInput ? (!isNaN(prixInput.value) && parseFloat(prixInput.value) >= 100) : false;
+      let regionValide = regionInput ? (regionInput.value.trim() !== "") : false;
+      let whatsappValide = whatsappInput ? validerFormatWhatsApp(whatsappInput.value.trim()) : false;
       let powerValide = false;
       if (powerInput) {
         if (powerInput.value === 'custom') {
@@ -10701,7 +10699,9 @@ window.normaliserNumeroWa = normaliserNumeroWa;
       // Activation dynamique du bouton de soumission
       const boutonPublier = document.getElementById('btn-submit-publish');
       const formulaireCompletValide = titreValide && descValide && prixValide && regionValide && whatsappValide && powerValide && imageValide;
-      boutonPublier.disabled = !formulaireCompletValide;
+      if (boutonPublier) {
+        boutonPublier.disabled = !formulaireCompletValide;
+      }
 
       return formulaireCompletValide;
     }
@@ -10812,11 +10812,24 @@ window.normaliserNumeroWa = normaliserNumeroWa;
      * Supprime l'image prévisualisée
      */
     function supprimerImageApercu() {
-      uploadedImageBase64 = null;
-      document.getElementById('file-upload-input').value = "";
-      document.getElementById('image-preview-element').src = "";
-      document.getElementById('image-preview-wrapper').style.display = 'none';
-      validerChamp('pub-image');
+      try {
+        uploadedImageBase64 = null;
+
+        var inputFile = document.getElementById('file-upload-input');
+        if (inputFile) inputFile.value = "";
+
+        var previewEl = document.getElementById('image-preview-element');
+        if (previewEl) previewEl.src = "";
+
+        var wrapperEl = document.getElementById('image-preview-wrapper');
+        if (wrapperEl) wrapperEl.style.display = 'none';
+
+        if (typeof validerChamp === 'function') {
+          validerChamp('pub-image');
+        }
+      } catch (e) {
+        console.warn("Erreur bénigne suppression image :", e);
+      }
     }
 
     var publicationEnCours = false;
@@ -10974,23 +10987,40 @@ window.normaliserNumeroWa = normaliserNumeroWa;
 
           afficherNotification("Compte eFootball publié avec succès !", "🚀");
 
-          // Réinitialiser le formulaire
-          const form = document.getElementById('publish-ad-form');
-          if (form) form.reset();
-          const customWrap = document.getElementById('pub-power-custom-wrap');
-          if (customWrap) customWrap.style.display = 'none';
-          supprimerImageApercu();
-          const dropzone = document.getElementById('pub-image-dropzone');
-          if (dropzone) dropzone.classList.remove('invalid');
-          const errImg = document.getElementById('err-pub-image');
-          if (errImg) errImg.classList.remove('visible');
-          const errReg = document.getElementById('err-pub-region');
-          if (errReg) errReg.classList.remove('visible');
-          const regField = document.getElementById('pub-region');
-          if (regField) regField.classList.remove('invalid');
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<span>➕</span> Publier l'annonce`;
+          // Réinitialiser le formulaire (protégé contre toute erreur)
+          try {
+            var form = document.getElementById('publish-ad-form');
+            if (form) form.reset();
+
+            var customWrap = document.getElementById('pub-power-custom-wrap');
+            if (customWrap) customWrap.style.display = 'none';
+
+            supprimerImageApercu();
+
+            var dropzone = document.getElementById('pub-image-dropzone');
+            if (dropzone) dropzone.classList.remove('invalid');
+
+            var errImg = document.getElementById('err-pub-image');
+            if (errImg) errImg.classList.remove('visible');
+
+            var errReg = document.getElementById('err-pub-region');
+            if (errReg) errReg.classList.remove('visible');
+
+            var regField = document.getElementById('pub-region');
+            if (regField) regField.classList.remove('invalid');
+
+            var submitBtnReset = document.getElementById('btn-submit-publish');
+            if (submitBtnReset) {
+              submitBtnReset.disabled = true;
+              submitBtnReset.innerHTML = '<span>➕</span> Publier l\'annonce';
+            }
+          } catch (e) {
+            console.warn("Erreur bénigne réinitialisation formulaire :", e);
+          }
+
+          // Réinitialiser le flag anti-double-clic
+          if (typeof publicationEnCours !== 'undefined') {
+            publicationEnCours = false;
           }
 
           afficherAccueil();
