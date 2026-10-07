@@ -9747,29 +9747,64 @@
         return true;
       });
 
-      // Priorité aux annonces boostées
+      // ═══ TRI FINAL avec priorité boost ═══
+      // Règle : les annonces boostées toujours en premier.
+      // Entre boostées : tri par dateDebut du boost (le plus ancien en premier).
+      // Entre non-boostées : tri selon le critère choisi.
+      
+      function getBoostStart(annonce) {
+        var b = annonce.boost || {};
+        var d = b.dateDebut;
+        if (!d) return 0;
+        if (d.seconds) return d.seconds * 1000;
+        if (typeof d === 'string') return new Date(d).getTime();
+        if (typeof d.toDate === 'function') return d.toDate().getTime();
+        return 0;
+      }
+      
+      function getTimeAnnonce(a) {
+        return (a.datePublication && a.datePublication.toMillis) 
+          ? a.datePublication.toMillis() 
+          : new Date(a.datePublication || a.date || 0).getTime();
+      }
+      
       resultats.sort(function(a, b) {
         var aBoost = estAnnonceBoostee(a) ? 1 : 0;
         var bBoost = estAnnonceBoostee(b) ? 1 : 0;
-        return bBoost - aBoost;
+        
+        // 1. Boostées AVANT non-boostées
+        if (aBoost !== bBoost) {
+          return bBoost - aBoost;
+        }
+        
+        // 2. Entre boostées : le plus ancien en premier
+        if (aBoost === 1 && bBoost === 1) {
+          return getBoostStart(a) - getBoostStart(b);
+        }
+        
+        // 3. Entre non-boostées : appliquer le tri choisi
+        if (tri === 'price-asc') {
+          return a.prix - b.prix;
+        }
+        if (tri === 'price-desc') {
+          return b.prix - a.prix;
+        }
+        if (tri === 'date-desc') {
+          return getTimeAnnonce(b) - getTimeAnnonce(a);
+        }
+        
+        // Tri par défaut : fiabilité vendeur
+        var statsA = getNoteEtAvisVendeur(a.vendeurId || a.vendeur);
+        var statsB = getNoteEtAvisVendeur(b.vendeurId || b.vendeur);
+        var badgePoids = { "excellent": 4, "tres_fiable": 3, "recommande": 2, "nouveau": 1 };
+        var poidsA = badgePoids[statsA.badge] || 1;
+        var poidsB = badgePoids[statsB.badge] || 1;
+        if (poidsB !== poidsA) return poidsB - poidsA;
+        if (statsB.noteMoyenne !== statsA.noteMoyenne) {
+          return statsB.noteMoyenne - statsA.noteMoyenne;
+        }
+        return getTimeAnnonce(b) - getTimeAnnonce(a);
       });
-
-      // Tri des annonces
-      if (tri === 'price-asc') {
-        resultats.sort((a, b) => a.prix - b.prix);
-      } else if (tri === 'price-desc') {
-        resultats.sort((a, b) => b.prix - a.prix);
-      } else if (tri === 'date-desc') {
-        // Par date décroissante (plus récent d'abord)
-        resultats.sort((a, b) => {
-          const timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.datePublication || a.date || 0).getTime();
-          const timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.datePublication || b.date || 0).getTime();
-          return timeB - timeA;
-        });
-      } else {
-        // Par défaut : tri par Fiabilité vendeur (1. Badge, 2. Note moyenne, 3. Date publication)
-        resultats = trierAnnoncesParFiabilite(resultats);
-      }
 
       afficherCartes(resultats);
     }
