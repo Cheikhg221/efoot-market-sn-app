@@ -4450,6 +4450,813 @@
       transition: width 1s linear;
     }
 
+    /* ═══ LANDING PAGE ═══ */
+    #landing-screen {
+      position: fixed;
+      inset: 0;
+      background: #060a07;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 200, 83, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(0, 230, 118, 0.08) 0%, transparent 40%);
+      z-index: 1600;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #landing-screen.active { display: block; }
+
+    /* Nav flottante */
+    .landing-nav {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 92%;
+      max-width: 1100px;
+      background: rgba(15, 20, 18, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 200, 83, 0.25);
+      border-radius: 16px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1700;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .landing-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 17px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .landing-logo img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #0c2415;
+      padding: 4px;
+      border: 1px solid rgba(0, 200, 83, 0.3);
+    }
+
+    .landing-logo .accent { color: #00E676; }
+
+    .landing-nav-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .landing-btn-login {
+      background: transparent;
+      color: #ccc;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .landing-btn-login:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .landing-btn-signup {
+      background: linear-gradient(135deg, #00C853 0%, #00E676 100%);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 18px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 200, 83, 0.35);
+      transition: all 0.2s;
+    }
+
+    .landing-btn-signup:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 230, 118, 0.5);
+    }
+
+    /* Conteneur sections */
+    .landing-content {
+      padding-top: 90px;
+      padding-bottom: 60px;
+    }
+
+    .landing-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+
+    /* HERO */
+    .landing-hero {
+      text-align: center;
+      padding: 60px 20px 80px;
+    }
+
+    .landing-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 200, 83, 0.12);
+      border: 1px solid rgba(0, 200, 83, 0.3);
+      color: #00E676;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    .landing-hero h1 {
+      font-size: 46px;
+      font-weight: 900;
+      line-height: 1.1;
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin: 0 0 20px 0;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .landing-hero h1 .accent {
+      color: #00E676;
+      text-shadow: 0 0 30px rgba(0, 230, 118, 0.4);
+    }
+
+    .landing-hero p {
+      font-size: 17px;
+      color: #94A3B8;
+      max-width: 600px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    .landing-hero-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 50px;
+    }
+
+    .landing-btn-primary {
+      background: linear-gradient(135deg, #00C853 0%, #00E676 100%);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 32px;
+      font-size: 15.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0, 200, 83, 0.4);
+      transition: all 0.25s;
+    }
+
+    .landing-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0, 230, 118, 0.55);
+    }
+
+    .landing-btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 15px 26px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .landing-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Mockup cartes preview */
+    .landing-preview {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 800px;
+      margin: 0 auto;
+      perspective: 1000px;
+    }
+
+    .landing-preview-card {
+      background: #1E1E1E;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 16px;
+      width: 200px;
+      text-align: left;
+      animation: floatCard 3s ease-in-out infinite;
+    }
+
+    .landing-preview-card:nth-child(2) {
+      animation-delay: 0.5s;
+      transform: translateY(-10px);
+    }
+
+    .landing-preview-card:nth-child(3) {
+      animation-delay: 1s;
+    }
+
+    @keyframes floatCard {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .landing-preview-card.gold {
+      border: 2px solid transparent;
+      background: 
+        linear-gradient(#1E1E1E, #1E1E1E) padding-box,
+        linear-gradient(90deg, #FFD700, #FFA000) border-box;
+    }
+
+    .preview-card-emoji {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .preview-card-title { font-size: 13px; color: #fff; font-weight: 600; margin-bottom: 6px; }
+    .preview-card-price { font-size: 18px; color: #00E676; font-weight: 800; }
+
+    /* Titres sections */
+    .landing-section-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .landing-section-title h2 {
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.3px;
+    }
+
+    .landing-section-title h2 .accent { color: #00E676; }
+
+    .landing-section-title p {
+      font-size: 15px;
+      color: #94A3B8;
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* 3 étapes */
+    .landing-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .landing-step {
+      background: linear-gradient(135deg, #131313 0%, #1a1a1a 100%);
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 28px 22px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .landing-step:hover {
+      border-color: rgba(0, 200, 83, 0.4);
+      transform: translateY(-4px);
+    }
+
+    .landing-step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(0, 200, 83, 0.15);
+      border: 1px solid rgba(0, 200, 83, 0.4);
+      color: #00E676;
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .landing-step-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+    .landing-step h3 { font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 8px 0; }
+    .landing-step p { font-size: 13.5px; color: #94A3B8; line-height: 1.6; margin: 0; }
+
+    /* Features grid */
+    .landing-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .landing-feature {
+      background: #131313;
+      border: 1px solid #262626;
+      border-radius: 14px;
+      padding: 22px;
+      transition: all 0.2s;
+    }
+
+    .landing-feature:hover {
+      border-color: rgba(0, 200, 83, 0.35);
+      background: #181818;
+    }
+
+    .landing-feature-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .landing-feature h3 {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 6px 0;
+    }
+
+    .landing-feature p {
+      font-size: 13px;
+      color: #94A3B8;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Avis utilisateurs */
+    .landing-reviews {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .landing-review {
+      background: #131313;
+      border: 1px solid #262626;
+      border-radius: 14px;
+      padding: 22px;
+    }
+
+    .landing-review-stars {
+      color: #FFD700;
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .landing-review-text {
+      color: #e2e8f0;
+      font-size: 13.5px;
+      line-height: 1.6;
+      font-style: italic;
+      margin-bottom: 14px;
+    }
+
+    .landing-review-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid #262626;
+    }
+
+    .landing-review-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00C853, #1565C0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .landing-review-name {
+      font-size: 13.5px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .landing-review-loc {
+      font-size: 11.5px;
+      color: #64748B;
+    }
+
+    /* CTA final */
+    .landing-cta {
+      background: linear-gradient(135deg, #0a1f12 0%, #061208 100%);
+      border: 1.5px solid #00C853;
+      border-radius: 20px;
+      padding: 50px 30px;
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .landing-cta::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(0, 230, 118, 0.15) 0%, transparent 60%);
+      animation: ctaGlow 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes ctaGlow {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .landing-cta h2 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 12px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .landing-cta p {
+      font-size: 15px;
+      color: #94A3B8;
+      margin-bottom: 26px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .landing-cta .landing-btn-primary {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Footer */
+    .landing-footer {
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 1px solid #1e1e1e;
+      margin-top: 40px;
+    }
+
+    .landing-footer p {
+      font-size: 12px;
+      color: #64748B;
+      margin: 6px 0;
+    }
+
+    .landing-footer a {
+      color: #00E676;
+      text-decoration: none;
+      margin: 0 8px;
+    }
+
+    /* ═══ INSCRIPTION MULTI-ÉTAPES ═══ */
+    #signup-screen {
+      position: fixed;
+      inset: 0;
+      background: #060a07;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 200, 83, 0.15) 0%, transparent 50%);
+      z-index: 1800;
+      overflow-y: auto;
+      display: none;
+      padding: 30px 16px;
+    }
+
+    #signup-screen.active { display: block; }
+
+    .signup-container {
+      max-width: 480px;
+      margin: 30px auto;
+      background: #131313;
+      border: 1px solid #262626;
+      border-radius: 20px;
+      padding: 28px 24px 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .signup-header {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+
+    .signup-header h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 6px 0;
+    }
+
+    .signup-header p {
+      font-size: 13.5px;
+      color: #94A3B8;
+      margin: 0;
+    }
+
+    /* Barre de progression avec manette */
+    .signup-progress-wrap {
+      margin: 24px 0 30px;
+      padding: 0 12px;
+    }
+
+    .signup-progress-bar {
+      position: relative;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: visible;
+    }
+
+    .signup-progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #00C853, #00E676);
+      border-radius: 3px;
+      transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 12px rgba(0, 230, 118, 0.5);
+    }
+
+    .signup-progress-gamepad {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 26px;
+      transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      filter: drop-shadow(0 4px 12px rgba(0, 230, 118, 0.6));
+      animation: gamepadBounce 0.6s ease;
+    }
+
+    @keyframes gamepadBounce {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -70%) scale(1.15); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .signup-progress-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding: 0 2px;
+    }
+
+    .signup-progress-step {
+      font-size: 10px;
+      color: #444;
+      font-weight: 600;
+      text-align: center;
+      flex: 1;
+      transition: color 0.3s;
+    }
+
+    .signup-progress-step.active { color: #00E676; }
+    .signup-progress-step.done { color: #00C853; }
+
+    /* Étapes contenu */
+    .signup-step-content {
+      animation: stepFade 0.4s ease;
+    }
+
+    @keyframes stepFade {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .signup-step-emoji {
+      text-align: center;
+      font-size: 56px;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .signup-step-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 8px 0;
+    }
+
+    .signup-step-subtitle {
+      text-align: center;
+      font-size: 13.5px;
+      color: #94A3B8;
+      margin: 0 0 24px 0;
+      line-height: 1.5;
+    }
+
+    /* Boutons Google/Invité étape 1 */
+    .signup-auth-choice {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .signup-auth-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 15px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .signup-auth-btn-google {
+      background: #fff;
+      color: #000;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.1);
+    }
+
+    .signup-auth-btn-google:hover {
+      background: #F5F5F5;
+      transform: translateY(-2px);
+    }
+
+    .signup-auth-btn-guest {
+      background: linear-gradient(135deg, #00C853 0%, #00E676 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(0, 200, 83, 0.4);
+    }
+
+    .signup-auth-btn-guest:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 230, 118, 0.55);
+    }
+
+    /* Champs formulaire */
+    .signup-form-group {
+      margin-bottom: 16px;
+    }
+
+    .signup-form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .signup-form-group input,
+    .signup-form-group select {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1.5px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 13px 14px;
+      color: #fff;
+      font-size: 14.5px;
+      outline: none;
+      transition: all 0.2s;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .signup-form-group input:focus,
+    .signup-form-group select:focus {
+      border-color: #00C853;
+      background: #1f1f1f;
+    }
+
+    .signup-form-group input::placeholder {
+      color: #555;
+    }
+
+    /* Actions (Précédent / Suivant) */
+    .signup-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 26px;
+    }
+
+    .signup-btn-back {
+      background: transparent;
+      color: #94A3B8;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 13px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .signup-btn-back:hover {
+      color: #fff;
+      border-color: #444;
+    }
+
+    .signup-btn-next {
+      flex: 1;
+      background: linear-gradient(135deg, #00C853 0%, #00E676 100%);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 200, 83, 0.4);
+      transition: all 0.2s;
+    }
+
+    .signup-btn-next:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 230, 118, 0.55);
+    }
+
+    .signup-btn-next:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Étape finale */
+    .signup-success {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .signup-success-emoji {
+      font-size: 72px;
+      margin-bottom: 16px;
+      display: block;
+      animation: successBounce 0.8s ease;
+    }
+
+    @keyframes successBounce {
+      0% { transform: scale(0); }
+      60% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      .landing-nav {
+        width: 94%;
+        padding: 8px 12px;
+        top: 10px;
+      }
+      .landing-logo { font-size: 14px; }
+      .landing-logo img { width: 30px; height: 30px; }
+      .landing-btn-login { padding: 7px 12px; font-size: 12.5px; }
+      .landing-btn-signup { padding: 8px 14px; font-size: 12.5px; }
+      .landing-hero h1 { font-size: 30px; }
+      .landing-hero p { font-size: 14.5px; }
+      .landing-hero-buttons { flex-direction: column; }
+      .landing-btn-primary, .landing-btn-secondary { width: 100%; justify-content: center; }
+      .landing-section { padding: 40px 16px; }
+      .landing-section-title h2 { font-size: 24px; }
+      .landing-cta h2 { font-size: 22px; }
+      .landing-cta { padding: 36px 20px; }
+      .signup-container { padding: 22px 18px 26px; }
+      .signup-header h2 { font-size: 19px; }
+    }
+
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -4513,10 +5320,308 @@
     <div style="color: #00C853; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;">Chargement...</div>
   </div>
 
+  <div id="landing-screen">
+    <nav class="landing-nav">
+      <div class="landing-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <img src="/logo.png" alt="EFoot Market SN">
+        <span>EFoot <span class="accent">Market</span> SN</span>
+      </div>
+      <div class="landing-nav-actions">
+        <button type="button" class="landing-btn-login" onclick="landingVersConnexion()">
+          Se connecter
+        </button>
+        <button type="button" class="landing-btn-signup" onclick="ouvrirInscription()">
+          S'inscrire
+        </button>
+      </div>
+    </nav>
+
+    <div class="landing-content">
+      
+      <!-- HERO -->
+      <section class="landing-section landing-hero">
+        <div class="landing-hero-badge">
+          <span>🇸🇳</span> Marketplace n°1 au Sénégal
+        </div>
+        <h1>Achète et vends tes <span class="accent">comptes eFootball</span> en toute sécurité</h1>
+        <p>La première plateforme sénégalaise pour échanger tes comptes eFootball. Paiement sécurisé avec protection admin, vendeurs vérifiés, 100% Wave & Orange Money.</p>
+        <div class="landing-hero-buttons">
+          <button type="button" class="landing-btn-primary" onclick="ouvrirInscription()">
+            🎮 Commencer gratuitement
+          </button>
+          <button type="button" class="landing-btn-secondary" onclick="scrollVersComment()">
+            Voir comment ça marche
+          </button>
+        </div>
+        <div class="landing-preview">
+          <div class="landing-preview-card">
+            <div class="preview-card-emoji" style="margin-bottom: 10px;">
+              <svg viewBox="0 0 200 100" width="100%" height="80" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="p1bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0a3d1c"/>
+                    <stop offset="100%" stop-color="#061a0d"/>
+                  </linearGradient>
+                  <linearGradient id="p1gold" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#FFD700"/>
+                    <stop offset="100%" stop-color="#FFA000"/>
+                  </linearGradient>
+                </defs>
+                <rect x="0" y="0" width="200" height="100" rx="8" fill="url(#p1bg)"/>
+                <circle cx="55" cy="50" r="26" fill="#0f1a15" stroke="#00C853" stroke-width="1.5"/>
+                <circle cx="55" cy="42" r="9" fill="#00C853" fill-opacity="0.3"/>
+                <path d="M40 68 Q55 55 70 68 Q70 80 55 80 Q40 80 40 68 Z" fill="#00C853" fill-opacity="0.35"/>
+                <rect x="95" y="20" width="90" height="6" rx="3" fill="#00C853" fill-opacity="0.5"/>
+                <rect x="95" y="32" width="70" height="6" rx="3" fill="#ffffff" fill-opacity="0.2"/>
+                <rect x="95" y="44" width="85" height="6" rx="3" fill="#ffffff" fill-opacity="0.2"/>
+                <rect x="95" y="60" width="50" height="14" rx="4" fill="url(#p1gold)"/>
+                <text x="120" y="70" font-size="8" font-weight="800" fill="#1a1200" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">★ 102</text>
+                <rect x="152" y="60" width="32" height="14" rx="4" fill="#00C853" fill-opacity="0.8"/>
+                <text x="168" y="70" font-size="7.5" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">RWF</text>
+              </svg>
+            </div>
+            <div class="preview-card-title">Compte Messi Iconic</div>
+            <div class="preview-card-price">25 000 FCFA</div>
+          </div>
+          <div class="landing-preview-card gold">
+            <div class="preview-card-emoji" style="margin-bottom: 10px;">
+              <svg viewBox="0 0 200 100" width="100%" height="80" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="p2bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#2a1f00"/>
+                    <stop offset="100%" stop-color="#140e00"/>
+                  </linearGradient>
+                  <linearGradient id="p2gold" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#FFD700"/>
+                    <stop offset="100%" stop-color="#FFA000"/>
+                  </linearGradient>
+                </defs>
+                <rect x="0" y="0" width="200" height="100" rx="8" fill="url(#p2bg)" stroke="#FFD700" stroke-width="1"/>
+                <circle cx="55" cy="50" r="26" fill="#1f1800" stroke="#FFD700" stroke-width="1.5"/>
+                <circle cx="55" cy="42" r="9" fill="#FFD700" fill-opacity="0.4"/>
+                <path d="M40 68 Q55 55 70 68 Q70 80 55 80 Q40 80 40 68 Z" fill="#FFD700" fill-opacity="0.4"/>
+                <circle cx="73" cy="33" r="8" fill="#FFD700"/>
+                <text x="73" y="36.5" font-size="9" fill="#140e00" text-anchor="middle" font-weight="bold" font-family="system-ui, -apple-system, sans-serif">★</text>
+                <rect x="95" y="20" width="90" height="6" rx="3" fill="url(#p2gold)"/>
+                <rect x="95" y="32" width="70" height="6" rx="3" fill="#ffffff" fill-opacity="0.25"/>
+                <rect x="95" y="44" width="80" height="6" rx="3" fill="#ffffff" fill-opacity="0.25"/>
+                <rect x="95" y="60" width="54" height="14" rx="4" fill="url(#p2gold)"/>
+                <text x="122" y="70" font-size="7.5" font-weight="900" fill="#140e00" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">⚡ BOOSTÉ</text>
+                <rect x="154" y="60" width="32" height="14" rx="4" fill="#FFA000" fill-opacity="0.3" stroke="#FFD700" stroke-width="0.8"/>
+                <text x="170" y="70" font-size="7.5" font-weight="bold" fill="#FFD700" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">EPIC</text>
+              </svg>
+            </div>
+            <div class="preview-card-title">Compte CR7 Epic</div>
+            <div class="preview-card-price">18 000 FCFA</div>
+          </div>
+          <div class="landing-preview-card">
+            <div class="preview-card-emoji" style="margin-bottom: 10px;">
+              <svg viewBox="0 0 200 100" width="100%" height="80" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="p3bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0c1b33"/>
+                    <stop offset="100%" stop-color="#060d1a"/>
+                  </linearGradient>
+                  <linearGradient id="p3blue" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#00B0FF"/>
+                    <stop offset="100%" stop-color="#2979FF"/>
+                  </linearGradient>
+                </defs>
+                <rect x="0" y="0" width="200" height="100" rx="8" fill="url(#p3bg)" stroke="#00B0FF" stroke-opacity="0.4" stroke-width="1"/>
+                <circle cx="55" cy="50" r="26" fill="#081426" stroke="#00B0FF" stroke-width="1.5"/>
+                <path d="M55 33 L67 40 L67 56 L55 64 L43 56 L43 40 Z" fill="#00B0FF" fill-opacity="0.25" stroke="#00B0FF" stroke-width="1.2"/>
+                <text x="55" y="52" font-size="10" font-weight="900" fill="#00E5FF" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">D1</text>
+                <rect x="95" y="20" width="90" height="6" rx="3" fill="#00B0FF" fill-opacity="0.7"/>
+                <rect x="95" y="32" width="85" height="5" rx="2.5" fill="#ffffff" fill-opacity="0.15"/>
+                <rect x="95" y="32" width="68" height="5" rx="2.5" fill="#00B0FF" fill-opacity="0.8"/>
+                <rect x="95" y="42" width="85" height="5" rx="2.5" fill="#ffffff" fill-opacity="0.15"/>
+                <rect x="95" y="42" width="55" height="5" rx="2.5" fill="#00E5FF" fill-opacity="0.8"/>
+                <rect x="95" y="60" width="46" height="14" rx="4" fill="url(#p3blue)"/>
+                <text x="118" y="70" font-size="7.5" font-weight="900" fill="#ffffff" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">DIV 1</text>
+                <rect x="146" y="60" width="40" height="14" rx="4" fill="#00B0FF" fill-opacity="0.2" stroke="#00B0FF" stroke-width="0.8"/>
+                <text x="166" y="70" font-size="7.5" font-weight="bold" fill="#00E5FF" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">TOP 500</text>
+              </svg>
+            </div>
+            <div class="preview-card-title">Compte avec puissance 3288</div>
+            <div class="preview-card-price">12 500 FCFA</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMMENT ÇA MARCHE -->
+      <section class="landing-section" id="landing-comment">
+        <div class="landing-section-title">
+          <h2>Comment ça <span class="accent">marche</span> ?</h2>
+          <p>3 étapes simples pour acheter ou vendre ton compte en toute sécurité</p>
+        </div>
+        <div class="landing-steps">
+          <div class="landing-step">
+            <div class="landing-step-num">1</div>
+            <span class="landing-step-icon">🔍</span>
+            <h3>Trouve ton compte</h3>
+            <p>Parcours des centaines d'annonces vérifiées. Filtre par prix, plateforme ou puissance d'équipe.</p>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-num">2</div>
+            <span class="landing-step-icon">🛡️</span>
+            <h3>Paie en sécurité</h3>
+            <p>Ton argent est gardé par un admin de confiance jusqu'à ce que tu reçoives ton compte.</p>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-num">3</div>
+            <span class="landing-step-icon">🎮</span>
+            <h3>Reçois ton compte</h3>
+            <p>Teste le compte, confirme la réception, et l'admin transfère le paiement au vendeur.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES -->
+      <section class="landing-section">
+        <div class="landing-section-title">
+          <h2>Pourquoi <span class="accent">nous choisir</span> ?</h2>
+          <p>La sécurité et la confiance au cœur de chaque transaction</p>
+        </div>
+        <div class="landing-features">
+          <div class="landing-feature">
+            <span class="landing-feature-icon">🛡️</span>
+            <h3>Protection Admin</h3>
+            <p>Un administrateur de confiance sécurise chaque transaction. Zéro risque d'arnaque.</p>
+          </div>
+          <div class="landing-feature">
+            <span class="landing-feature-icon">⭐</span>
+            <h3>Avis vérifiés</h3>
+            <p>Consulte les notes et avis laissés par les acheteurs avant de faire affaire.</p>
+          </div>
+          <div class="landing-feature">
+            <span class="landing-feature-icon">💰</span>
+            <h3>Wave & Orange Money</h3>
+            <p>Paie directement avec ton mobile money. Rapide, simple, sécurisé.</p>
+          </div>
+          <div class="landing-feature">
+            <span class="landing-feature-icon">🚀</span>
+            <h3>Boost d'annonce</h3>
+            <p>Mets ton annonce en avant pour vendre plus vite avec un contour doré.</p>
+          </div>
+          <div class="landing-feature">
+            <span class="landing-feature-icon">📱</span>
+            <h3>100% Mobile</h3>
+            <p>Publie et achète depuis ton téléphone, où que tu sois au Sénégal.</p>
+          </div>
+          <div class="landing-feature">
+            <span class="landing-feature-icon">🇸🇳</span>
+            <h3>14 régions couvertes</h3>
+            <p>De Dakar à Ziguinchor, trouve des comptes près de chez toi.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- AVIS -->
+      <section class="landing-section">
+        <div class="landing-section-title">
+          <h2>Ils nous font <span class="accent">confiance</span></h2>
+          <p>Des centaines de transactions réussies au Sénégal</p>
+        </div>
+        <div class="landing-reviews">
+          <div class="landing-review">
+            <div class="landing-review-stars">★★★★★</div>
+            <div class="landing-review-text">"J'ai vendu mon compte en 2 jours grâce au boost. Paiement reçu instantanément sur Wave. Franchement top !"</div>
+            <div class="landing-review-author">
+              <div class="landing-review-avatar">M</div>
+              <div>
+                <div class="landing-review-name">Moussa D.</div>
+                <div class="landing-review-loc">Dakar</div>
+              </div>
+            </div>
+          </div>
+          <div class="landing-review">
+            <div class="landing-review-stars">★★★★★</div>
+            <div class="landing-review-text">"Le système de protection admin m'a rassuré. J'ai pu tester le compte avant de confirmer. Zéro stress."</div>
+            <div class="landing-review-author">
+              <div class="landing-review-avatar">A</div>
+              <div>
+                <div class="landing-review-name">Aminata S.</div>
+                <div class="landing-review-loc">Thiès</div>
+              </div>
+            </div>
+          </div>
+          <div class="landing-review">
+            <div class="landing-review-stars">★★★★★</div>
+            <div class="landing-review-text">"Enfin une plateforme sérieuse pour eFootball au Sénégal. Les filtres sont pratiques et les vendeurs notés."</div>
+            <div class="landing-review-author">
+              <div class="landing-review-avatar">C</div>
+              <div>
+                <div class="landing-review-name">Cheikh G.</div>
+                <div class="landing-review-loc">Touba</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA FINAL -->
+      <section class="landing-section">
+        <div class="landing-cta">
+          <h2>Prêt à rejoindre la communauté ?</h2>
+          <p>Crée ton compte gratuit en 30 secondes et commence à acheter ou vendre dès maintenant.</p>
+          <button type="button" class="landing-btn-primary" onclick="ouvrirInscription()">
+            🚀 Créer mon compte gratuit
+          </button>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="landing-footer">
+        <p>© 2026 EFoot Market SN — Tous droits réservés</p>
+        <p>
+          <a href="#" onclick="event.preventDefault(); landingVersConnexion();">Se connecter</a> •
+          <a href="mailto:efootmarketcontact@gmail.com">Contact</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+
+  <div id="signup-screen">
+    <div class="signup-container">
+      
+      <div class="signup-header">
+        <h2>Créer mon compte</h2>
+        <p>Rejoins EFoot Market SN en quelques secondes</p>
+      </div>
+
+      <!-- Barre de progression -->
+      <div class="signup-progress-wrap">
+        <div class="signup-progress-bar">
+          <div class="signup-progress-fill" id="signup-fill" style="width: 0%;"></div>
+          <div class="signup-progress-gamepad" id="signup-gamepad" style="left: 0%;">🎮</div>
+        </div>
+        <div class="signup-progress-labels">
+          <div class="signup-progress-step active" data-step="1">Connexion</div>
+          <div class="signup-progress-step" data-step="2">Identité</div>
+          <div class="signup-progress-step" data-step="3">Contact</div>
+          <div class="signup-progress-step" data-step="4">Région</div>
+          <div class="signup-progress-step" data-step="5">Fin</div>
+        </div>
+      </div>
+
+      <!-- Conteneur des étapes -->
+      <div id="signup-step-container"></div>
+    </div>
+  </div>
+
   <!-- ==========================================================
        ÉCRAN DE CONNEXION FIREBASE (ANONYME & GOOGLE)
        ========================================================== -->
   <div id="auth-screen" class="auth-screen" style="display: none;">
+    <button type="button" onclick="afficherLanding()" 
+      style="position: fixed; top: 16px; left: 16px; 
+      background: rgba(15, 20, 18, 0.85); color: #fff; border: 1px solid rgba(0, 200, 83, 0.3); 
+      border-radius: 50%; width: 42px; height: 42px; 
+      cursor: pointer; font-size: 18px; z-index: 100; 
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(10px);">
+      ←
+    </button>
     <!-- Décorations d'arrière-plan en filigrane (Manette, Ballon, Rayons diagonaux) -->
     <div class="auth-bg-decorations" aria-hidden="true">
       <!-- Manette haut-gauche en filigrane -->
@@ -7449,6 +8554,16 @@
     var pendingActionCallback = null;
     var publicationEnCours = false;
 
+    var signupStep = 1;
+    var signupData = {
+      mode: null,        // 'google' ou 'guest'
+      prenom: '',
+      nom: '',
+      telephone: '',
+      localisation: 'Dakar',
+      user: null
+    };
+
     // Variables pour la confirmation d'acceptation / refus de demande d'achat
     var demandeEnAttenteConfirmation = null;
     var boutonEnAttenteConfirmation = null;
@@ -8025,7 +9140,8 @@
               if (typeof estAdminEscrowCache !== 'undefined') {
                 estAdminEscrowCache = false;
               }
-              afficherEcranConnexion();
+              // Toujours afficher la landing aux utilisateurs non connectés
+              afficherLanding();
               const loading = document.getElementById('loading-screen');
               if (loading) loading.style.display = 'none';
             }
@@ -8045,7 +9161,8 @@
         if (loading) loading.style.display = 'none';
       }
     } else {
-      afficherEcranConnexion();
+      // Toujours afficher la landing aux utilisateurs non connectés
+      afficherLanding();
       const loading = document.getElementById('loading-screen');
       if (loading) loading.style.display = 'none';
     }
@@ -8489,6 +9606,7 @@
      * Bascule l'affichage vers l'écran de connexion
      */
     function afficherEcranConnexion() {
+      cacherLanding();
       const loading = document.getElementById('loading-screen');
       if (loading) loading.style.display = 'none';
 
@@ -23257,6 +24375,454 @@ setTimeout(function() {
 
     window.demarrerCompteAReboursBoost = demarrerCompteAReboursBoost;
     window.arreterTousComptesARebours = arreterTousComptesARebours;
+
+    // ═══ LANDING PAGE ═══
+    function afficherLanding() {
+      var landing = document.getElementById('landing-screen');
+      var auth = document.getElementById('auth-screen');
+      var app = document.getElementById('app-wrapper');
+      var complete = document.getElementById('complete-profile-screen');
+      
+      if (landing) landing.classList.add('active');
+      if (auth) auth.style.display = 'none';
+      if (app) app.style.display = 'none';
+      if (complete) complete.style.display = 'none';
+
+      // Rétablir l'affichage normal de l'auth pour les autres cas
+      setTimeout(function() {
+        var btnGuest = document.getElementById('btn-auth-guest');
+        if (btnGuest) btnGuest.style.display = '';
+        var separator = document.querySelector('.auth-or-separator');
+        if (separator) separator.style.display = '';
+        var alreadyAccount = document.querySelector('.auth-already-account');
+        if (alreadyAccount) alreadyAccount.style.display = '';
+        var welcomeHeading = document.querySelector('.auth-welcome-heading');
+        if (welcomeHeading) welcomeHeading.textContent = 'Bienvenue sur eFoot Market SN';
+        var welcomeSub = document.querySelector('.auth-welcome-sub');
+        if (welcomeSub) welcomeSub.innerHTML = 'Achetez et vendez vos comptes eFootball<br>au Sénégal.';
+      }, 50);
+    }
+
+    function cacherLanding() {
+      var landing = document.getElementById('landing-screen');
+      if (landing) landing.classList.remove('active');
+    }
+
+    function landingVersConnexion() {
+      cacherLanding();
+      afficherEcranConnexion();
+      // Masquer le bouton invité (accessible uniquement via l'inscription)
+      setTimeout(function() {
+        var btnGuest = document.getElementById('btn-auth-guest');
+        if (btnGuest) btnGuest.style.display = 'none';
+        var separator = document.querySelector('.auth-or-separator');
+        if (separator) separator.style.display = 'none';
+        var alreadyAccount = document.querySelector('.auth-already-account');
+        if (alreadyAccount) alreadyAccount.style.display = 'none';
+        // Changer le sous-titre pour un ton "connexion"
+        var welcomeSub = document.querySelector('.auth-welcome-sub');
+        if (welcomeSub) {
+          welcomeSub.innerHTML = 'Connecte-toi avec ton compte Google pour retrouver tes annonces, transactions et favoris.';
+        }
+        var welcomeHeading = document.querySelector('.auth-welcome-heading');
+        if (welcomeHeading) {
+          welcomeHeading.textContent = 'Connexion à ton compte';
+        }
+      }, 50);
+    }
+
+    function scrollVersComment() {
+      var el = document.getElementById('landing-comment');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ═══ INSCRIPTION MULTI-ÉTAPES ═══
+    function ouvrirInscription() {
+      cacherLanding();
+      signupStep = 1;
+      signupData = {
+        mode: null,
+        prenom: '',
+        nom: '',
+        telephone: '',
+        localisation: 'Dakar',
+        user: null
+      };
+      var signup = document.getElementById('signup-screen');
+      if (signup) signup.classList.add('active');
+      afficherEtapeInscription();
+    }
+
+    function fermerInscription() {
+      var signup = document.getElementById('signup-screen');
+      if (signup) signup.classList.remove('active');
+      afficherLanding();
+    }
+
+    function mettreAJourProgression() {
+      // 5 étapes : positions de la manette de 0% à 100%
+      var positions = { 1: 0, 2: 25, 3: 50, 4: 75, 5: 100 };
+      var pos = positions[signupStep] || 0;
+      
+      var fill = document.getElementById('signup-fill');
+      var gamepad = document.getElementById('signup-gamepad');
+      
+      if (fill) fill.style.width = pos + '%';
+      if (gamepad) {
+        gamepad.style.left = pos + '%';
+        // Rejouer l'animation bounce
+        gamepad.style.animation = 'none';
+        setTimeout(function() { gamepad.style.animation = 'gamepadBounce 0.6s ease'; }, 10);
+      }
+      
+      // Mise à jour des labels
+      var labels = document.querySelectorAll('.signup-progress-step');
+      labels.forEach(function(lbl) {
+        var s = parseInt(lbl.getAttribute('data-step'), 10);
+        lbl.classList.remove('active', 'done');
+        if (s < signupStep) lbl.classList.add('done');
+        if (s === signupStep) lbl.classList.add('active');
+      });
+    }
+
+    function afficherEtapeInscription() {
+      var container = document.getElementById('signup-step-container');
+      if (!container) return;
+      
+      mettreAJourProgression();
+      
+      var html = '';
+      
+      if (signupStep === 1) {
+        // Étape 1 : Choix Google / Invité
+        html = `
+          <div class="signup-step-content">
+            <span class="signup-step-emoji">🎮</span>
+            <h3 class="signup-step-title">Comment veux-tu continuer ?</h3>
+            <p class="signup-step-subtitle">Choisis ton mode de connexion</p>
+            
+            <div class="signup-auth-choice">
+              <button type="button" class="signup-auth-btn signup-auth-btn-google" onclick="signupChoixGoogle()">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Continuer avec Google</span>
+              </button>
+              
+              <button type="button" class="signup-auth-btn signup-auth-btn-guest" onclick="signupChoixInvite()">
+                <span style="font-size: 20px;">👤</span>
+                <span>Continuer en invité</span>
+              </button>
+            </div>
+            
+            <div class="signup-actions">
+              <button type="button" class="signup-btn-back" onclick="fermerInscription()">Annuler</button>
+            </div>
+          </div>
+        `;
+      }
+      else if (signupStep === 2) {
+        // Étape 2 : Prénom + Nom
+        html = `
+          <div class="signup-step-content">
+            <span class="signup-step-emoji">👤</span>
+            <h3 class="signup-step-title">Comment tu t'appelles ?</h3>
+            <p class="signup-step-subtitle">Ces informations apparaîtront sur ton profil</p>
+            
+            <div class="signup-form-group">
+              <label>Prénom</label>
+              <input type="text" id="signup-prenom" placeholder="Ex : Cheikh" value="${escapeHtml(signupData.prenom)}" maxlength="30">
+            </div>
+            
+            <div class="signup-form-group">
+              <label>Nom</label>
+              <input type="text" id="signup-nom" placeholder="Ex : Gueye" value="${escapeHtml(signupData.nom)}" maxlength="30">
+            </div>
+            
+            <div class="signup-actions">
+              <button type="button" class="signup-btn-back" onclick="etapeSignupPrecedente()">← Retour</button>
+              <button type="button" class="signup-btn-next" id="signup-next-btn" onclick="etapeSignupSuivante()" disabled>
+                Continuer →
+              </button>
+            </div>
+          </div>
+        `;
+        
+        setTimeout(function() {
+          var prenomInput = document.getElementById('signup-prenom');
+          var nomInput = document.getElementById('signup-nom');
+          if (prenomInput) prenomInput.focus();
+          
+          function verifier() {
+            var p = (prenomInput ? prenomInput.value.trim() : '');
+            var n = (nomInput ? nomInput.value.trim() : '');
+            var btn = document.getElementById('signup-next-btn');
+            if (btn) btn.disabled = (p.length < 2 || n.length < 2);
+          }
+          
+          if (prenomInput) prenomInput.addEventListener('input', verifier);
+          if (nomInput) nomInput.addEventListener('input', verifier);
+          verifier();
+        }, 50);
+      }
+      else if (signupStep === 3) {
+        // Étape 3 : Téléphone
+        html = `
+          <div class="signup-step-content">
+            <span class="signup-step-emoji">📱</span>
+            <h3 class="signup-step-title">Ton numéro de téléphone</h3>
+            <p class="signup-step-subtitle">Il servira uniquement pour te contacter lors des transactions</p>
+            
+            <div class="signup-form-group">
+              <label>Numéro WhatsApp (+221)</label>
+              <input type="tel" id="signup-telephone" placeholder="Ex : 77 123 45 67" value="${escapeHtml(signupData.telephone)}" maxlength="20">
+            </div>
+            
+            <div style="font-size: 11.5px; color: #f59e0b; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 10px 12px; margin-top: 8px; line-height: 1.4;">
+              ⚠️ Ton numéro est visible uniquement dans tes annonces pour être contacté
+            </div>
+            
+            <div class="signup-actions">
+              <button type="button" class="signup-btn-back" onclick="etapeSignupPrecedente()">← Retour</button>
+              <button type="button" class="signup-btn-next" id="signup-next-btn" onclick="etapeSignupSuivante()" disabled>
+                Continuer →
+              </button>
+            </div>
+          </div>
+        `;
+        
+        setTimeout(function() {
+          var telInput = document.getElementById('signup-telephone');
+          if (telInput) telInput.focus();
+          
+          function verifier() {
+            var t = (telInput ? telInput.value.trim() : '');
+            var btn = document.getElementById('signup-next-btn');
+            var valide = false;
+            if (typeof validerTelephoneSenegal === 'function') {
+              valide = validerTelephoneSenegal(t);
+            } else {
+              valide = t.replace(/[^0-9]/g, '').length >= 9;
+            }
+            if (btn) btn.disabled = !valide;
+          }
+          
+          if (telInput) telInput.addEventListener('input', verifier);
+          verifier();
+        }, 50);
+      }
+      else if (signupStep === 4) {
+        // Étape 4 : Région
+        var regions = ['Dakar', 'Diourbel', 'Fatick', 'Kaffrine', 'Kaolack', 'Kédougou', 'Kolda', 'Louga', 'Matam', 'Saint-Louis', 'Sédhiou', 'Tambacounda', 'Thiès', 'Ziguinchor'];
+        var optionsHtml = regions.map(function(r) {
+          return '<option value="' + r + '"' + (signupData.localisation === r ? ' selected' : '') + '>' + r + '</option>';
+        }).join('');
+        
+        html = `
+          <div class="signup-step-content">
+            <span class="signup-step-emoji">📍</span>
+            <h3 class="signup-step-title">Où te trouves-tu ?</h3>
+            <p class="signup-step-subtitle">Ta région nous aide à te proposer des comptes proches</p>
+            
+            <div class="signup-form-group">
+              <label>Région du Sénégal</label>
+              <select id="signup-localisation">
+                ${optionsHtml}
+              </select>
+            </div>
+            
+            <div class="signup-actions">
+              <button type="button" class="signup-btn-back" onclick="etapeSignupPrecedente()">← Retour</button>
+              <button type="button" class="signup-btn-next" onclick="etapeSignupSuivante()">
+                Continuer →
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      else if (signupStep === 5) {
+        // Étape 5 : Terminé
+        html = `
+          <div class="signup-step-content signup-success">
+            <span class="signup-success-emoji">🎉</span>
+            <h3 class="signup-step-title">Bienvenue ${escapeHtml(signupData.prenom)} !</h3>
+            <p class="signup-step-subtitle">Ton compte est prêt. Tu peux maintenant commencer à explorer.</p>
+            
+            <div class="signup-actions">
+              <button type="button" class="signup-btn-next" onclick="terminerInscription()" style="width: 100%;">
+                🚀 Entrer sur EFoot Market SN
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function signupChoixGoogle() {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(function(result) {
+          var user = result.user;
+          signupData.mode = 'google';
+          signupData.user = user;
+          
+          // Pré-remplir depuis Google
+          if (user.displayName) {
+            var parts = user.displayName.trim().split(/\s+/);
+            signupData.prenom = parts[0] || '';
+            signupData.nom = parts.slice(1).join(' ') || '';
+          }
+          
+          // Passer directement à l'étape 3 (téléphone)
+          signupStep = 3;
+          afficherEtapeInscription();
+        })
+        .catch(function(err) {
+          console.warn("Erreur Google signup:", err);
+          if (err.code !== 'auth/popup-closed-by-user') {
+            alert("Erreur de connexion Google : " + err.message);
+          }
+        });
+    }
+
+    function signupChoixInvite() {
+      signupData.mode = 'guest';
+      signupStep = 2;
+      afficherEtapeInscription();
+    }
+
+    function etapeSignupSuivante() {
+      // Sauvegarder les données de l'étape en cours
+      if (signupStep === 2) {
+        var prenom = document.getElementById('signup-prenom');
+        var nom = document.getElementById('signup-nom');
+        if (prenom) signupData.prenom = prenom.value.trim();
+        if (nom) signupData.nom = nom.value.trim();
+        if (signupData.prenom.length < 2 || signupData.nom.length < 2) return;
+      }
+      else if (signupStep === 3) {
+        var tel = document.getElementById('signup-telephone');
+        if (tel) signupData.telephone = tel.value.trim();
+        if (typeof validerTelephoneSenegal === 'function' && !validerTelephoneSenegal(signupData.telephone)) return;
+      }
+      else if (signupStep === 4) {
+        var loc = document.getElementById('signup-localisation');
+        if (loc) signupData.localisation = loc.value;
+      }
+      
+      signupStep++;
+      afficherEtapeInscription();
+    }
+
+    function etapeSignupPrecedente() {
+      // Sauvegarder les données avant de revenir
+      if (signupStep === 2) {
+        var prenom = document.getElementById('signup-prenom');
+        var nom = document.getElementById('signup-nom');
+        if (prenom) signupData.prenom = prenom.value.trim();
+        if (nom) signupData.nom = nom.value.trim();
+        // Si mode invité, retour à l'étape 1
+        signupStep = 1;
+      }
+      else if (signupStep === 3) {
+        var tel = document.getElementById('signup-telephone');
+        if (tel) signupData.telephone = tel.value.trim();
+        // Si mode Google, retour à l'étape 1 (car pas d'étape 2)
+        signupStep = (signupData.mode === 'google') ? 1 : 2;
+      }
+      else if (signupStep === 4) {
+        signupStep = 3;
+      }
+      else {
+        signupStep--;
+      }
+      afficherEtapeInscription();
+    }
+
+    function terminerInscription() {
+      // Créer le profil final
+      var profilData = {
+        prenom: signupData.prenom,
+        nom: signupData.nom,
+        telephone: signupData.telephone,
+        localisation: signupData.localisation,
+        complete: true
+      };
+      
+      // Si mode invité : créer un compte anonyme
+      if (signupData.mode === 'guest') {
+        firebase.auth().signInAnonymously()
+          .then(function(cred) {
+            var user = cred.user;
+            profilData.photo = null;
+            profilData.email = null;
+            profilData.id = user.uid;
+            
+            localStorage.setItem('efoot_profil', JSON.stringify(profilData));
+            localStorage.setItem('efoot_nom', (signupData.prenom + ' ' + signupData.nom).trim());
+            localStorage.removeItem('efoot_profil_saute');
+            
+            // Sauvegarder dans Firestore
+            if (typeof sauvegarderProfilFirestore === 'function') {
+              sauvegarderProfilFirestore(profilData);
+            }
+            
+            fermerInscriptionFinal();
+          })
+          .catch(function(err) {
+            alert("Erreur : " + err.message);
+          });
+      }
+      else if (signupData.mode === 'google' && signupData.user) {
+        var user = signupData.user;
+        profilData.photo = user.photoURL || null;
+        profilData.email = user.email || null;
+        profilData.id = user.uid;
+        
+        localStorage.setItem('efoot_profil', JSON.stringify(profilData));
+        localStorage.setItem('efoot_nom', (signupData.prenom + ' ' + signupData.nom).trim());
+        localStorage.removeItem('efoot_profil_saute');
+        
+        if (typeof sauvegarderProfilFirestore === 'function') {
+          sauvegarderProfilFirestore(profilData);
+        }
+        
+        fermerInscriptionFinal();
+      }
+    }
+
+    function fermerInscriptionFinal() {
+      var signup = document.getElementById('signup-screen');
+      if (signup) signup.classList.remove('active');
+      cacherLanding();
+      
+      // Afficher l'app
+      if (typeof afficherApplication === 'function') {
+        afficherApplication();
+      }
+      if (typeof mettreAJourAffichageUtilisateur === 'function') {
+        mettreAJourAffichageUtilisateur(firebase.auth().currentUser);
+      }
+      afficherNotification("Bienvenue sur EFoot Market SN !", "🎉");
+    }
+
+    window.afficherLanding = afficherLanding;
+    window.cacherLanding = cacherLanding;
+    window.landingVersConnexion = landingVersConnexion;
+    window.scrollVersComment = scrollVersComment;
+    window.ouvrirInscription = ouvrirInscription;
+    window.fermerInscription = fermerInscription;
+    window.signupChoixGoogle = signupChoixGoogle;
+    window.signupChoixInvite = signupChoixInvite;
+    window.etapeSignupSuivante = etapeSignupSuivante;
+    window.etapeSignupPrecedente = etapeSignupPrecedente;
+    window.terminerInscription = terminerInscription;
+    window.fermerInscriptionFinal = fermerInscriptionFinal;
   </script>
 
   <!-- ==========================================================
