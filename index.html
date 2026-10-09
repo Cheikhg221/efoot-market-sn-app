@@ -5974,17 +5974,17 @@
         <!-- Téléphone -->
         <div class="form-group" style="margin-bottom: 12px;">
           <label for="onboard-telephone" style="font-size: 13px; font-weight: 600; color: #fff; display: flex; justify-content: space-between;">
-            <span>Téléphone <span class="required-star" style="color: var(--primary);">*</span></span>
-            <small style="color: var(--text-muted); font-weight: normal;">+221XXXXXXXX</small>
+            <span>Téléphone WhatsApp <span class="required-star" style="color: var(--primary);">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">7 pays d'Afrique (SN, ML, BF, CI, MR, CM, GM)</small>
           </label>
           <input 
             type="tel" 
             id="onboard-telephone" 
             class="form-control" 
-            placeholder="+221 77 123 45 67" 
+            placeholder="Ex : +221 77 123 45 67 ou 77 123 45 67" 
             required
           >
-          <div class="error-msg" id="err-onboard-telephone" style="color: var(--danger); font-size: 11px; display: none; margin-top: 3px;">Numéro sénégalais requis (+221 suivi de 9 chiffres).</div>
+          <div class="error-msg" id="err-onboard-telephone" style="color: var(--danger); font-size: 11px; display: none; margin-top: 3px;">Numéro invalide pour votre pays (ex: Sénégal, Mali, Côte d'Ivoire...).</div>
         </div>
 
         <!-- Localisation -->
@@ -6498,16 +6498,16 @@
             <div class="form-group">
               <label for="pub-whatsapp">
                 <span>Numéro WhatsApp <span class="required-star">*</span></span>
-                <small style="color: var(--text-muted); font-weight: 400;">+221XXXXXXXX</small>
+                <small style="color: var(--text-muted); font-weight: 400;">7 pays (SN, ML, BF, CI, MR, CM, GM)</small>
               </label>
               <input 
                 type="text" 
                 id="pub-whatsapp" 
                 class="form-control" 
-                placeholder="Ex : 221771234567"
+                placeholder="Ex : 771234567 ou +221771234567"
                 oninput="validerChamp('pub-whatsapp')"
               >
-              <div class="error-msg" id="err-pub-whatsapp">Numéro sénégalais invalide (ex: 221771234567 ou +221771234567).</div>
+              <div class="error-msg" id="err-pub-whatsapp">Numéro invalide (ex: Sénégal, Mali, Côte d'Ivoire...).</div>
             </div>
           </div>
 
@@ -7927,17 +7927,17 @@
 
         <div class="form-group" style="margin-bottom: 12px;">
           <label for="modal-profile-telephone" style="display: flex; justify-content: space-between;">
-            <span>Téléphone <span class="required-star">*</span></span>
-            <small style="color: var(--text-muted); font-weight: normal;">+221XXXXXXXX</small>
+            <span>Téléphone WhatsApp <span class="required-star">*</span></span>
+            <small style="color: var(--text-muted); font-weight: normal;">7 pays (SN, ML, BF, CI, MR, CM, GM)</small>
           </label>
           <input 
             type="tel" 
             id="modal-profile-telephone" 
             class="form-control" 
-            placeholder="+221 77 123 45 67" 
+            placeholder="Ex : +221 77 123 45 67 ou 77 123 45 67" 
             required
           >
-          <div class="error-msg" id="err-modal-telephone">Numéro sénégalais requis (+221 suivi de 9 chiffres).</div>
+          <div class="error-msg" id="err-modal-telephone">Numéro invalide pour votre pays (ex: Sénégal, Mali, Côte d'Ivoire...).</div>
         </div>
 
         <div class="form-group" style="margin-bottom: 16px;">
@@ -8692,6 +8692,18 @@
     var STORAGE_AVIS = 'efoot_avis';
     var STORAGE_FAVORIS = 'efoot_favoris';
     var LIMITE_FAVORIS = 10;
+
+    var PAYS_AFRIQUE = [
+      { code: 'SN', nom: 'Sénégal',        indicatif: '+221', drapeau: '🇸🇳', longueur: 9,  exemple: '77 123 45 67' },
+      { code: 'ML', nom: 'Mali',           indicatif: '+223', drapeau: '🇲🇱', longueur: 8,  exemple: '76 12 34 56' },
+      { code: 'BF', nom: 'Burkina Faso',   indicatif: '+226', drapeau: '🇧🇫', longueur: 8,  exemple: '70 12 34 56' },
+      { code: 'CI', nom: 'Côte d\'Ivoire', indicatif: '+225', drapeau: '🇨🇮', longueur: 10, exemple: '07 12 34 56 78' },
+      { code: 'MR', nom: 'Mauritanie',     indicatif: '+222', drapeau: '🇲🇷', longueur: 8,  exemple: '46 12 34 56' },
+      { code: 'GN', nom: 'Guinée',         indicatif: '+224', drapeau: '🇬🇳', longueur: 9,  exemple: '62 12 34 56' },
+      { code: 'GM', nom: 'Gambie',         indicatif: '+220', drapeau: '🇬🇲', longueur: 7,  exemple: '701 23 45' }
+    ];
+
+    var PAYS_DEFAUT = 'SN';
 
     // Cache des annonces synchronisé en temps réel depuis Firebase Firestore
     var annoncesFirestore = [];
@@ -9816,46 +9828,321 @@
     }
 
     /**
-     * Valide si un numéro est un numéro sénégalais mobile valide
-     * Préfixes mobiles valides au Sénégal : 70, 72, 75, 76, 77, 78
-     * Format accepté : +221XXXXXXXXX, 221XXXXXXXXX, ou 9 chiffres (ex: 77XXXXXXX)
+     * Système de validation multi-pays (7 pays d'Afrique)
+     * Trouve la configuration du pays par son code (ex: 'SN', 'ML')
      */
-    function validerTelephoneSenegal(tel) {
-      if (!tel) return false;
-      const digits = String(tel).replace(/[^0-9]/g, '');
-      let num9 = "";
-      if (digits.startsWith('221') && digits.length === 12) {
-        num9 = digits.substring(3);
-      } else if (digits.length === 9) {
-        num9 = digits;
-      } else {
-        return false;
-      }
-      // Préfixes mobiles valides au Sénégal : 70, 72, 75, 76, 77, 78
-      return /^(70|72|75|76|77|78)[0-9]{7}$/.test(num9);
+    function obtenirPaysParCode(code) {
+      if (!code) return PAYS_AFRIQUE.find(function(p) { return p.code === PAYS_DEFAUT; });
+      var cUpper = String(code).toUpperCase().trim();
+      return PAYS_AFRIQUE.find(function(p) { return p.code === cUpper; }) || PAYS_AFRIQUE.find(function(p) { return p.code === PAYS_DEFAUT; });
     }
 
     /**
-     * Normalise un numéro sénégalais en format lisible : +221 77 123 45 67
-     * Vérifie également la validité du préfixe mobile
+     * Détecte le pays à partir de la chaîne de téléphone saisie
      */
-    function normaliserTelephoneSenegal(tel) {
-      if (!tel) return "";
-      const digits = String(tel).replace(/[^0-9]/g, '');
-      let num9 = "";
-      if (digits.startsWith('221') && digits.length === 12) {
-        num9 = digits.substring(3);
-      } else if (digits.length === 9) {
-        num9 = digits;
-      } else {
-        return String(tel).trim();
+    function detecterPaysTelephone(tel, codePaysOptionnel) {
+      if (codePaysOptionnel) {
+        var p = obtenirPaysParCode(codePaysOptionnel);
+        if (p) return p;
       }
-      // Si le préfixe n'est pas valide, retourner le numéro tel quel
-      if (!/^(70|72|75|76|77|78)/.test(num9)) {
-        return String(tel).trim();
+      if (!tel) return obtenirPaysParCode(PAYS_DEFAUT);
+      var str = String(tel).trim();
+      var digits = str.replace(/[^0-9]/g, '');
+
+      // Vérifier les indicatifs internationaux (sans le + ou avec 00)
+      for (var i = 0; i < PAYS_AFRIQUE.length; i++) {
+        var pays = PAYS_AFRIQUE[i];
+        var indDigits = pays.indicatif.replace(/[^0-9]/g, '');
+        if (str.startsWith(pays.indicatif) || str.startsWith('+' + indDigits)) {
+          return pays;
+        }
+        if (digits.startsWith('00' + indDigits) || (digits.startsWith(indDigits) && digits.length === (indDigits.length + pays.longueur))) {
+          return pays;
+        }
       }
-      return `+221 ${num9.substring(0, 2)} ${num9.substring(2, 5)} ${num9.substring(5, 7)} ${num9.substring(7, 9)}`;
+
+      // Par défaut, si la longueur correspond exactement à un pays précis :
+      for (var j = 0; j < PAYS_AFRIQUE.length; j++) {
+        if (digits.length === PAYS_AFRIQUE[j].longueur) {
+          // Si 9 chiffres commençant par un préfixe sénégalais
+          if (PAYS_AFRIQUE[j].code === 'SN' && /^(70|72|75|76|77|78)/.test(digits)) {
+            return PAYS_AFRIQUE[j];
+          }
+          if (PAYS_AFRIQUE[j].code === 'CI' && digits.length === 10) {
+            return PAYS_AFRIQUE[j];
+          }
+        }
+      }
+
+      return obtenirPaysParCode(PAYS_DEFAUT);
     }
+
+    /**
+     * Valide si un numéro est valide pour le pays donné ou détecté
+     */
+    function validerTelephoneMultiPays(tel, codePays) {
+      if (!tel) return false;
+      var pays = codePays ? obtenirPaysParCode(codePays) : detecterPaysTelephone(tel);
+      var digits = String(tel).replace(/[^0-9]/g, '');
+      var indDigits = pays.indicatif.replace(/[^0-9]/g, '');
+
+      var numLocal = "";
+      if (digits.startsWith('00' + indDigits)) {
+        numLocal = digits.substring(2 + indDigits.length);
+      } else if (digits.startsWith(indDigits) && digits.length === (indDigits.length + pays.longueur)) {
+        numLocal = digits.substring(indDigits.length);
+      } else if (digits.length === pays.longueur) {
+        numLocal = digits;
+      } else {
+        // Tenter avec détection automatique sur les autres indicatifs
+        for (var i = 0; i < PAYS_AFRIQUE.length; i++) {
+          var autrePays = PAYS_AFRIQUE[i];
+          var autreInd = autrePays.indicatif.replace(/[^0-9]/g, '');
+          if (digits.startsWith('00' + autreInd) && digits.length === (2 + autreInd.length + autrePays.longueur)) {
+            return true;
+          }
+          if (digits.startsWith(autreInd) && digits.length === (autreInd.length + autrePays.longueur)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      if (numLocal.length !== pays.longueur) return false;
+
+      // Spécificités préfixes mobiles Sénégal
+      if (pays.code === 'SN') {
+        return /^(70|72|75|76|77|78)[0-9]{7}$/.test(numLocal);
+      }
+
+      return /^[0-9]+$/.test(numLocal);
+    }
+
+    /**
+     * Normalise un numéro selon le format lisible du pays
+     */
+    function formaterTelephoneMultiPays(tel, codePays) {
+      if (!tel) return "";
+      var pays = codePays ? obtenirPaysParCode(codePays) : detecterPaysTelephone(tel);
+      var digits = String(tel).replace(/[^0-9]/g, '');
+      var indDigits = pays.indicatif.replace(/[^0-9]/g, '');
+
+      var numLocal = "";
+      if (digits.startsWith('00' + indDigits)) {
+        numLocal = digits.substring(2 + indDigits.length);
+      } else if (digits.startsWith(indDigits) && digits.length === (indDigits.length + pays.longueur)) {
+        numLocal = digits.substring(indDigits.length);
+      } else if (digits.length === pays.longueur) {
+        numLocal = digits;
+      } else {
+        // Détecter si un autre pays correspond
+        for (var i = 0; i < PAYS_AFRIQUE.length; i++) {
+          var ap = PAYS_AFRIQUE[i];
+          var ai = ap.indicatif.replace(/[^0-9]/g, '');
+          if (digits.startsWith(ai) && digits.length === (ai.length + ap.longueur)) {
+            pays = ap;
+            numLocal = digits.substring(ai.length);
+            break;
+          }
+        }
+        if (!numLocal) return String(tel).trim();
+      }
+
+      if (pays.code === 'SN' && numLocal.length === 9) {
+        return pays.indicatif + " " + numLocal.substring(0, 2) + " " + numLocal.substring(2, 5) + " " + numLocal.substring(5, 7) + " " + numLocal.substring(7, 9);
+      } else if (pays.code === 'CI' && numLocal.length === 10) {
+        return pays.indicatif + " " + numLocal.substring(0, 2) + " " + numLocal.substring(2, 4) + " " + numLocal.substring(4, 6) + " " + numLocal.substring(6, 8) + " " + numLocal.substring(8, 10);
+      } else if (numLocal.length === 8) {
+        return pays.indicatif + " " + numLocal.substring(0, 2) + " " + numLocal.substring(2, 4) + " " + numLocal.substring(4, 6) + " " + numLocal.substring(6, 8);
+      } else if (numLocal.length === 7) {
+        return pays.indicatif + " " + numLocal.substring(0, 3) + " " + numLocal.substring(3, 5) + " " + numLocal.substring(5, 7);
+      }
+
+      return pays.indicatif + " " + numLocal;
+    }
+
+    /**
+     * Valide si un numéro est un numéro sénégalais ou africain mobile valide (alias rétro-compatible)
+     */
+    function validerTelephoneSenegal(tel, codePays) {
+      return validerTelephoneMultiPays(tel, codePays);
+    }
+
+    /**
+     * Normalise un numéro en format lisible (alias rétro-compatible)
+     */
+    function normaliserTelephoneSenegal(tel, codePays) {
+      return formaterTelephoneMultiPays(tel, codePays);
+    }
+
+    // Alias demandé pour obtenir la config pays par code
+    function getPaysByCode(code) {
+      return obtenirPaysParCode(code);
+    }
+    window.getPaysByCode = getPaysByCode;
+
+    // Détecte le pays depuis un numéro de téléphone brut
+    function detecterPaysDepuisNumero(numero) {
+      var p = detecterPaysTelephone(numero);
+      return p ? p.code : PAYS_DEFAUT;
+    }
+    window.detecterPaysDepuisNumero = detecterPaysDepuisNumero;
+
+    function genererChampTelephone(idChamp, valeurInitiale, codePaysInitial) {
+      var paysCode = codePaysInitial || detecterPaysDepuisNumero(valeurInitiale) || PAYS_DEFAUT;
+      var pays = getPaysByCode(paysCode);
+      
+      var numLocal = '';
+      if (valeurInitiale) {
+        var net = String(valeurInitiale).replace(/[^0-9]/g, '');
+        var ind = pays.indicatif.replace('+', '');
+        if (net.startsWith(ind)) {
+          numLocal = net.substring(ind.length);
+        } else {
+          numLocal = net;
+        }
+      }
+      
+      var html = '<div style="display: flex; gap: 8px; align-items: stretch; width: 100%;">';
+      
+      // Bouton sélecteur de pays (drapeau + indicatif)
+      html += '<button type="button" id="' + idChamp + '-country-btn" onclick="ouvrirSelecteurPays(\'' + idChamp + '\')" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; background: #1a1a1a; border: 1.5px solid #2a2a2a; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; outline: none; font-family: inherit; white-space: nowrap; transition: all 0.2s;" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'#2a2a2a\'">';
+      html += '<span id="' + idChamp + '-flag" style="font-size: 20px; line-height: 1;">' + pays.drapeau + '</span>';
+      html += '<span id="' + idChamp + '-indicatif" style="font-size: 13px; color: #aaa;">' + pays.indicatif + '</span>';
+      html += '<span style="font-size: 10px; color: #666; margin-left: 2px;">▼</span>';
+      html += '</button>';
+      
+      // Input number
+      html += '<input type="tel" id="' + idChamp + '" placeholder="' + pays.exemple + '" value="' + escapeHtml(numLocal) + '" style="flex: 1; min-width: 0; background: #1a1a1a; border: 1.5px solid #2a2a2a; border-radius: 10px; padding: 13px 14px; color: #fff; font-size: 14.5px; outline: none; font-family: inherit; transition: all 0.2s;" oninput="onSaisieTelephone(\'' + idChamp + '\')" onfocus="this.style.borderColor=\'#00C853\'" onblur="onSaisieTelephone(\'' + idChamp + '\')">';
+      
+      // Select caché pour stocker le code pays actuel
+      html += '<select id="' + idChamp + '-country" style="display: none;">';
+      PAYS_AFRIQUE.forEach(function(p) {
+        html += '<option value="' + p.code + '"' + (p.code === paysCode ? ' selected' : '') + '>' + p.nom + '</option>';
+      });
+      html += '</select>';
+      
+      html += '</div>';
+      return html;
+    }
+    window.genererChampTelephone = genererChampTelephone;
+
+    var _currentPhoneSelector = null;
+
+    function ouvrirSelecteurPays(idChamp) {
+      _currentPhoneSelector = idChamp;
+      
+      // Supprimer une ancienne modale si elle existe
+      var ancien = document.getElementById('modal-selecteur-pays');
+      if (ancien) ancien.remove();
+      
+      var select = document.getElementById(idChamp + '-country');
+      var currentValue = select ? select.value : PAYS_DEFAUT;
+      
+      // Créer la modale
+      var modal = document.createElement('div');
+      modal.id = 'modal-selecteur-pays';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 5000; display: flex; align-items: flex-end; justify-content: center; animation: fadeIn 0.2s ease;';
+      
+      var sheet = document.createElement('div');
+      sheet.style.cssText = 'background: #131313; border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; max-height: 70vh; overflow-y: auto; padding: 20px 16px 30px; border-top: 1px solid #2a2a2a; animation: slideUp 0.3s ease;';
+      
+      var html = '';
+      html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #2a2a2a;">';
+      html += '<div style="font-size: 16px; font-weight: 800; color: #fff;">🌍 Choisir le pays</div>';
+      html += '<button type="button" onclick="fermerSelecteurPays()" style="background: none; border: none; color: #888; font-size: 22px; cursor: pointer; padding: 0 8px;">✕</button>';
+      html += '</div>';
+      
+      html += '<div style="display: flex; flex-direction: column; gap: 6px;">';
+      PAYS_AFRIQUE.forEach(function(p) {
+        var active = p.code === currentValue;
+        var bgColor = active ? 'rgba(0,200,83,0.15)' : '#1a1a1a';
+        var borderColor = active ? '#00C853' : '#2a2a2a';
+        
+        html += '<button type="button" onclick="choisirPays(\'' + idChamp + '\', \'' + p.code + '\')" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: ' + bgColor + '; border: 1.5px solid ' + borderColor + '; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; width: 100%; font-family: inherit; transition: all 0.15s;" onmouseover="this.style.borderColor=\'#00C853\'" onmouseout="this.style.borderColor=\'' + borderColor + '\'">';
+        html += '<span style="font-size: 26px; line-height: 1;">' + p.drapeau + '</span>';
+        html += '<span style="flex: 1;">' + p.nom + '</span>';
+        html += '<span style="color: #888; font-size: 13.5px; font-weight: 500;">' + p.indicatif + '</span>';
+        if (active) {
+          html += '<span style="color: #00E676; font-size: 18px; margin-left: 4px;">✓</span>';
+        }
+        html += '</button>';
+      });
+      html += '</div>';
+      
+      sheet.innerHTML = html;
+      modal.appendChild(sheet);
+      
+      // Fermer en cliquant en dehors
+      modal.onclick = function(e) {
+        if (e.target === modal) fermerSelecteurPays();
+      };
+      
+      document.body.appendChild(modal);
+    }
+
+    function choisirPays(idChamp, codePays) {
+      var select = document.getElementById(idChamp + '-country');
+      var flagEl = document.getElementById(idChamp + '-flag');
+      var indEl = document.getElementById(idChamp + '-indicatif');
+      var input = document.getElementById(idChamp);
+      
+      if (!select) return;
+      
+      select.value = codePays;
+      var pays = getPaysByCode(codePays);
+      
+      if (flagEl) flagEl.textContent = pays.drapeau;
+      if (indEl) indEl.textContent = pays.indicatif;
+      if (input) input.placeholder = pays.exemple;
+      
+      fermerSelecteurPays();
+      onSaisieTelephone(idChamp);
+    }
+
+    function fermerSelecteurPays() {
+      var modal = document.getElementById('modal-selecteur-pays');
+      if (modal) modal.remove();
+      _currentPhoneSelector = null;
+    }
+
+    // Gestion de la saisie téléphonique
+    function onSaisieTelephone(idChamp) {
+      var input = document.getElementById(idChamp);
+      var select = document.getElementById(idChamp + '-country');
+      if (!input) return;
+      
+      var codePays = select ? select.value : PAYS_DEFAUT;
+      var pays = getPaysByCode(codePays);
+      var val = input.value.trim();
+      
+      // Mise à jour de l'état si c'est le formulaire d'inscription
+      if (idChamp === 'signup-telephone' && typeof signupData !== 'undefined') {
+        signupData.codePays = codePays;
+        var digits = val.replace(/[^0-9]/g, '');
+        signupData.telephone = digits ? (pays.indicatif + digits) : '';
+        
+        var btn = document.getElementById('signup-next-btn');
+        if (btn) {
+          var valide = validerTelephoneMultiPays(val, codePays);
+          btn.disabled = !valide;
+        }
+      }
+    }
+    window.onSaisieTelephone = onSaisieTelephone;
+
+    // Animation slide-up
+    (function ajouterAnimSlideUp() {
+      if (document.getElementById('anim-slide-up-style')) return;
+      var style = document.createElement('style');
+      style.id = 'anim-slide-up-style';
+      style.textContent = '@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }';
+      document.head.appendChild(style);
+    })();
+
+    window.ouvrirSelecteurPays = ouvrirSelecteurPays;
+    window.choisirPays = choisirPays;
+    window.fermerSelecteurPays = fermerSelecteurPays;
 
     /**
      * Formate le nom vendeur au format : Prénom + Initiale du nom (ex: "Cheikh S.")
@@ -10039,18 +10326,18 @@
 
             <div class="form-group" style="margin-bottom: 14px;">
               <label for="edit-page-telephone" style="display: flex; justify-content: space-between;">
-                <span>Téléphone <span class="required-star">*</span></span>
-                <small style="color: var(--text-muted); font-weight: normal;">+221XXXXXXXX</small>
+                <span>Téléphone WhatsApp <span class="required-star">*</span></span>
+                <small style="color: var(--text-muted); font-weight: normal;">7 pays (SN, ML, BF, CI, MR, CM, GM)</small>
               </label>
               <input 
                 type="tel" 
                 id="edit-page-telephone" 
                 class="form-control" 
                 value="${escapeHtml(profil.telephone || '')}" 
-                placeholder="+221 77 123 45 67"
+                placeholder="Ex : +221 77 123 45 67 ou 77 123 45 67"
                 required
               >
-              <div class="error-msg" id="err-edit-telephone">Veuillez renseigner un numéro sénégalais valide (+221 suivi de 9 chiffres).</div>
+              <div class="error-msg" id="err-edit-telephone">Veuillez renseigner un numéro valide pour votre pays (ex: Sénégal, Mali, Côte d'Ivoire...).</div>
               <div style="font-size: 11.5px; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                 <span>⚠️</span>
                 <span>Votre téléphone est visible uniquement dans vos annonces pour être contacté</span>
@@ -11964,42 +12251,48 @@
        ========================================================== */
 
     /**
-     * Valide le format d'un numéro de téléphone sénégalais (+221 ou 221)
-     * Préfixes valides : 70, 72, 75, 76, 77, 78
+     * Valide le format d'un numéro de téléphone WhatsApp multi-pays (7 pays d'Afrique)
      */
     function validerFormatWhatsApp(numero) {
       if (!numero) return false;
-      const nettoye = String(numero).replace(/\s+/g, '').replace(/-/g, '');
-      return /^(\+?221)?(70|72|75|76|77|78)[0-9]{7}$/.test(nettoye);
+      return validerTelephoneMultiPays(numero);
     }
 
     /**
-     * Nettoie le numéro WhatsApp pour les liens wa.me
+     * Nettoie le numéro WhatsApp pour les liens wa.me (indicatif international pur sans +, espaces ni tirets)
      */
     function nettoyerNumeroWhatsApp(numero) {
-      let nettoye = numero.replace(/\s+/g, '').replace(/-/g, '').replace('+', '');
-      if (!nettoye.startsWith('221')) {
-        nettoye = '221' + nettoye;
+      if (!numero) return "";
+      let nettoye = String(numero).replace(/\s+/g, '').replace(/-/g, '').replace('+', '');
+      if (nettoye.startsWith('00')) {
+        nettoye = nettoye.substring(2);
       }
-      return nettoye;
+      // Si commence déjà par un indicatif reconnu parmi les 7 pays
+      for (let i = 0; i < PAYS_AFRIQUE.length; i++) {
+        let indDigits = PAYS_AFRIQUE[i].indicatif.replace(/[^0-9]/g, '');
+        if (nettoye.startsWith(indDigits)) {
+          return nettoye;
+        }
+      }
+      // Si sans indicatif, ajouter l'indicatif par défaut (221)
+      return '221' + nettoye;
     }
 
 function normaliserNumeroWa(numero) {
   if (!numero) return "";
   var nettoye = String(numero).replace(/[^0-9]/g, "");
-  // Retirer un éventuel 00 initial (au cas où c'est 00221...)
+  // Retirer un éventuel 00 initial
   if (nettoye.startsWith("00")) {
     nettoye = nettoye.substring(2);
   }
-  // Si ça commence déjà par 221, on garde
-  if (nettoye.startsWith("221")) {
-    return nettoye;
+  // Vérifier si commence déjà par un indicatif reconnu
+  for (var i = 0; i < PAYS_AFRIQUE.length; i++) {
+    var indDigits = PAYS_AFRIQUE[i].indicatif.replace(/[^0-9]/g, "");
+    if (nettoye.startsWith(indDigits)) {
+      return nettoye;
+    }
   }
-  // Si le numéro a 9 chiffres (format sénégalais sans indicatif), on ajoute 221
-  if (nettoye.length === 9) {
-    return "221" + nettoye;
-  }
-  // Sinon on préfixe aussi par 221 par défaut
+  // Sinon on préfixe par 221 par défaut
   return "221" + nettoye;
 }
 window.normaliserNumeroWa = normaliserNumeroWa;
@@ -24640,12 +24933,12 @@ setTimeout(function() {
             
             <div class="signup-form-group">
               <label>Prénom</label>
-              <input type="text" id="signup-prenom" placeholder="Ex : Cheikh" value="${escapeHtml(signupData.prenom)}" maxlength="30">
+              <input type="text" id="signup-prenom" placeholder="Ex : Modou" value="${escapeHtml(signupData.prenom)}" maxlength="30">
             </div>
             
             <div class="signup-form-group">
               <label>Nom</label>
-              <input type="text" id="signup-nom" placeholder="Ex : Gueye" value="${escapeHtml(signupData.nom)}" maxlength="30">
+              <input type="text" id="signup-nom" placeholder="Ex : Ndiaye" value="${escapeHtml(signupData.nom)}" maxlength="30">
             </div>
             
             <div class="signup-actions">
@@ -24683,8 +24976,8 @@ setTimeout(function() {
             <p class="signup-step-subtitle">Il servira uniquement pour te contacter lors des transactions</p>
             
             <div class="signup-form-group">
-              <label>Numéro WhatsApp (+221)</label>
-              <input type="tel" id="signup-telephone" placeholder="Ex : 77 123 45 67" value="${escapeHtml(signupData.telephone)}" maxlength="20">
+              <label>Numéro WhatsApp <span style="font-size: 11.5px; color: #888; font-weight: 400;">(choisir le pays)</span></label>
+              ${genererChampTelephone('signup-telephone', signupData.telephone, signupData.codePays || PAYS_DEFAUT)}
             </div>
             
             <div style="font-size: 11.5px; color: #f59e0b; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 10px 12px; margin-top: 8px; line-height: 1.4;">
@@ -24702,22 +24995,10 @@ setTimeout(function() {
         
         setTimeout(function() {
           var telInput = document.getElementById('signup-telephone');
-          if (telInput) telInput.focus();
-          
-          function verifier() {
-            var t = (telInput ? telInput.value.trim() : '');
-            var btn = document.getElementById('signup-next-btn');
-            var valide = false;
-            if (typeof validerTelephoneSenegal === 'function') {
-              valide = validerTelephoneSenegal(t);
-            } else {
-              valide = t.replace(/[^0-9]/g, '').length >= 9;
-            }
-            if (btn) btn.disabled = !valide;
+          if (telInput) {
+            telInput.focus();
+            onSaisieTelephone('signup-telephone');
           }
-          
-          if (telInput) telInput.addEventListener('input', verifier);
-          verifier();
         }, 50);
       }
       else if (signupStep === 4) {
@@ -24813,8 +25094,16 @@ setTimeout(function() {
       }
       else if (signupStep === 3) {
         var tel = document.getElementById('signup-telephone');
-        if (tel) signupData.telephone = tel.value.trim();
-        if (typeof validerTelephoneSenegal === 'function' && !validerTelephoneSenegal(signupData.telephone)) return;
+        var sel = document.getElementById('signup-telephone-country');
+        var codePays = sel ? sel.value : (signupData.codePays || PAYS_DEFAUT);
+        signupData.codePays = codePays;
+        var pays = getPaysByCode(codePays);
+        if (tel) {
+          var brut = tel.value.trim();
+          var digits = brut.replace(/[^0-9]/g, '');
+          signupData.telephone = digits ? (pays.indicatif + digits) : '';
+        }
+        if (typeof validerTelephoneMultiPays === 'function' && !validerTelephoneMultiPays(signupData.telephone, codePays)) return;
       }
       else if (signupStep === 4) {
         var loc = document.getElementById('signup-localisation');
