@@ -9063,33 +9063,105 @@
      * Sauvegarde le profil utilisateur dans Firestore (collection "utilisateurs", doc ID = user.uid)
      */
     function sauvegarderProfilFirestore(profilData) {
-      var user = (typeof firebase !== 'undefined' && firebase.auth) 
-        ? firebase.auth().currentUser : null;
-      if (!user || !db) return Promise.resolve(false);
-      
-      var data = {
-        prenom: profilData.prenom || "",
-        nom: profilData.nom || "",
-        telephone: profilData.telephone || "",
-        localisation: profilData.localisation || "Dakar",
-        photo: profilData.photo || user.photoURL || null,
-        email: profilData.email || user.email || null,
-        complete: profilData.complete === true,
-        dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      
-      return db.collection("utilisateurs").doc(user.uid)
-        .set(data, { merge: true })
-        .then(function() {
-          console.log("✅ Profil sauvegardé dans Firestore");
-          return true;
-        })
-        .catch(function(err) {
-          console.warn("❌ Erreur sauvegarde profil :", err);
-          return false;
-        });
+      try {
+        var user = (typeof firebase !== 'undefined' && firebase.auth) 
+          ? firebase.auth().currentUser : null;
+        if (!user || !db) return Promise.resolve(false);
+        
+        var data = {
+          prenom: profilData.prenom || "",
+          nom: profilData.nom || "",
+          telephone: profilData.telephone || "",
+          codePays: profilData.codePays || "SN",
+          localisation: profilData.localisation || "Dakar",
+          photo: profilData.photo || user.photoURL || null,
+          email: profilData.email || user.email || null,
+          complete: profilData.complete === true,
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        return db.collection("utilisateurs").doc(user.uid)
+          .set(data, { merge: true })
+          .then(function() {
+            console.log("✅ Profil sauvegardé dans Firestore");
+            return true;
+          })
+          .catch(function(err) {
+            console.warn("❌ Erreur sauvegarde profil :", err);
+            return false;
+          });
+      } catch (e) {
+        console.warn("Erreur sauvegarderProfilFirestore :", e);
+        return Promise.resolve(false);
+      }
     }
     window.sauvegarderProfilFirestore = sauvegarderProfilFirestore;
+
+    function sauvegarderProfilFirestoreSecurise(profilData) {
+      try {
+        // Vérifier que firebase et db sont disponibles
+        if (typeof firebase === 'undefined' || !firebase.auth || !db) {
+          console.warn("⚠️ Firestore non disponible, profil sauvé localement uniquement");
+          return Promise.resolve(false);
+        }
+        
+        // Vérifier que l'utilisateur est bien authentifié
+        var user = firebase.auth().currentUser;
+        if (!user || !user.uid) {
+          console.warn("⚠️ Aucun utilisateur connecté, on attend 1s...");
+          // Attendre et réessayer une fois
+          return new Promise(function(resolve) {
+            setTimeout(function() {
+              var userRetry = firebase.auth().currentUser;
+              if (userRetry && userRetry.uid) {
+                executerEcritureProfil(profilData, userRetry);
+                resolve(true);
+              } else {
+                console.warn("⚠️ Toujours pas d'utilisateur après retry");
+                resolve(false);
+              }
+            }, 1000);
+          });
+        }
+        
+        return executerEcritureProfil(profilData, user);
+      } catch (e) {
+        console.warn("Erreur sauvegarderProfilFirestoreSecurise :", e);
+        return Promise.resolve(false);
+      }
+    }
+
+    function executerEcritureProfil(profilData, user) {
+      try {
+        var data = {
+          prenom: profilData.prenom || "",
+          nom: profilData.nom || "",
+          telephone: profilData.telephone || "",
+          codePays: profilData.codePays || "SN",
+          localisation: profilData.localisation || "Dakar",
+          photo: profilData.photo || user.photoURL || null,
+          email: profilData.email || user.email || null,
+          complete: true,
+          dateMiseAJour: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        return db.collection("utilisateurs").doc(user.uid)
+          .set(data, { merge: true })
+          .then(function() {
+            console.log("✅ Profil sauvegardé dans Firestore");
+            return true;
+          })
+          .catch(function(err) {
+            console.warn("❌ Erreur écriture profil Firestore :", err);
+            return false;
+          });
+      } catch (e) {
+        console.warn("Erreur executerEcritureProfil :", e);
+        return Promise.resolve(false);
+      }
+    }
+
+    window.sauvegarderProfilFirestoreSecurise = sauvegarderProfilFirestoreSecurise;
 
     /**
      * Crée automatiquement le document Firestore au login si absent
@@ -9187,6 +9259,17 @@
     if (auth) {
       try {
         auth.onAuthStateChanged(function(user) {
+          // Protection contre les init multiples
+          if (window._authInitEnCours) {
+            console.log("⏳ Init auth déjà en cours, ignoré");
+            return;
+          }
+          window._authInitEnCours = true;
+
+          setTimeout(function() {
+            window._authInitEnCours = false;
+          }, 2000);
+
           try {
             if (user) {
               console.log("🔍 [AUTH] User connecté :", user.uid);
@@ -25140,17 +25223,34 @@ setTimeout(function() {
     }
 
     function terminerInscription() {
-      // Créer le profil final
       var profilData = {
         prenom: signupData.prenom,
         nom: signupData.nom,
         telephone: signupData.telephone,
+        codePays: signupData.codePays || PAYS_DEFAUT,
         localisation: signupData.localisation,
         complete: true
       };
       
-      // Si mode invité : créer un compte anonyme
+      // Désactiver le bouton pendant le traitement
+      var btns = document.querySelectorAll('.signup-btn-next');
+      btns.forEach(function(b) {
+        b.disabled = true;
+        b.style.opacity = '0.6';
+      });
+      
+      // Afficher un indicateur
+      var container = document.getElementById('signup-step-container');
+      if (container) {
+        var loadingHtml = '<div style="text-align: center; padding: 30px 0;">' +
+          '<div style="font-size: 40px; margin-bottom: 12px;">⏳</div>' +
+          '<div style="color: #aaa; font-size: 13.5px;">Création de ton compte...</div>' +
+          '</div>';
+        // On ne remplace pas tout, juste un petit message
+      }
+      
       if (signupData.mode === 'guest') {
+        // Mode invité : créer un compte anonyme
         firebase.auth().signInAnonymously()
           .then(function(cred) {
             var user = cred.user;
@@ -25162,15 +25262,20 @@ setTimeout(function() {
             localStorage.setItem('efoot_nom', (signupData.prenom + ' ' + signupData.nom).trim());
             localStorage.removeItem('efoot_profil_saute');
             
-            // Sauvegarder dans Firestore
-            if (typeof sauvegarderProfilFirestore === 'function') {
-              sauvegarderProfilFirestore(profilData);
-            }
-            
-            fermerInscriptionFinal();
+            // ⚠️ Attendre 600ms que onAuthStateChanged finisse de 
+            // s'exécuter AVANT d'écrire dans Firestore
+            setTimeout(function() {
+              sauvegarderProfilFirestoreSecurise(profilData);
+              fermerInscriptionFinal();
+            }, 600);
           })
           .catch(function(err) {
-            alert("Erreur : " + err.message);
+            console.error("Erreur signup invité :", err);
+            alert("Erreur de création de compte : " + err.message);
+            btns.forEach(function(b) {
+              b.disabled = false;
+              b.style.opacity = '1';
+            });
           });
       }
       else if (signupData.mode === 'google' && signupData.user) {
@@ -25183,27 +25288,42 @@ setTimeout(function() {
         localStorage.setItem('efoot_nom', (signupData.prenom + ' ' + signupData.nom).trim());
         localStorage.removeItem('efoot_profil_saute');
         
-        if (typeof sauvegarderProfilFirestore === 'function') {
-          sauvegarderProfilFirestore(profilData);
-        }
-        
+        // ⚠️ Attendre 600ms aussi
+        setTimeout(function() {
+          sauvegarderProfilFirestoreSecurise(profilData);
+          fermerInscriptionFinal();
+        }, 600);
+      }
+      else {
+        // Cas imprévu : fermer proprement
         fermerInscriptionFinal();
       }
     }
 
     function fermerInscriptionFinal() {
-      var signup = document.getElementById('signup-screen');
-      if (signup) signup.classList.remove('active');
-      cacherLanding();
-      
-      // Afficher l'app
-      if (typeof afficherApplication === 'function') {
-        afficherApplication();
+      try {
+        var signup = document.getElementById('signup-screen');
+        if (signup) signup.classList.remove('active');
+        cacherLanding();
+        
+        // Petite pause pour éviter les race conditions
+        setTimeout(function() {
+          try {
+            if (typeof afficherApplication === 'function') {
+              afficherApplication();
+            }
+            if (typeof mettreAJourAffichageUtilisateur === 'function') {
+              var user = firebase.auth().currentUser;
+              if (user) mettreAJourAffichageUtilisateur(user);
+            }
+            afficherNotification("Bienvenue sur EFoot Market SN !", "🎉");
+          } catch (e) {
+            console.warn("Erreur affichage final :", e);
+          }
+        }, 300);
+      } catch (e) {
+        console.warn("Erreur fermerInscriptionFinal :", e);
       }
-      if (typeof mettreAJourAffichageUtilisateur === 'function') {
-        mettreAJourAffichageUtilisateur(firebase.auth().currentUser);
-      }
-      afficherNotification("Bienvenue sur EFoot Market SN !", "🎉");
     }
 
     window.afficherLanding = afficherLanding;
