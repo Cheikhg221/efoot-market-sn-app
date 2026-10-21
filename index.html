@@ -5366,6 +5366,14 @@
       .signup-header h2 { font-size: 19px; }
     }
 
+    /* Masquer les iframes Adsterra sur les pages sensibles */
+    body.page-paiement iframe[src*="adsterra"],
+    body.page-paiement iframe[src*="bauval"],
+    body.page-escrow iframe[src*="adsterra"],
+    body.page-escrow iframe[src*="bauval"] {
+      display: none !important;
+      visibility: hidden !important;
+    }
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -6391,6 +6399,20 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div style="display: flex; justify-content: center; align-items: center; margin: 30px auto; padding: 15px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; max-width: 320px; overflow: hidden;">
+        <!-- Adsterra Banner 300x250 - Accueil -->
+        <script type="text/javascript">
+          atOptions = {
+            'key' : '8d3e4ce37124ada21b5ed7e2c864853e',
+            'format' : 'iframe',
+            'height' : 250,
+            'width' : 300,
+            'params' : {}
+          };
+        </script>
+        <script type="text/javascript" src="https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e"></script>
       </div>
     </section>
 
@@ -8659,6 +8681,7 @@
     var uploadedImageBase64 = null;
     var pendingActionCallback = null;
     var publicationEnCours = false;
+    var _adsterraSocialBarCharge = false;
 
     var signupStep = 1;
     var signupData = {
@@ -13052,6 +13075,8 @@ window.normaliserNumeroWa = normaliserNumeroWa;
             <p>${escapeHtml(ad.description || 'Aucune description fournie.')}</p>
           </div>
 
+          <div id="adsterra-detail-slot" style="display: flex; justify-content: center; align-items: center; margin: 20px auto; padding: 15px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; max-width: 320px; overflow: hidden;"></div>
+
           <!-- Section Vendeur avec lien vers son profil & avis -->
           <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}', '${ad.vendeurId || ''}')" title="Voir le profil complet et les avis de ${nomVendeurAffiche}">
             <div class="seller-left">
@@ -13170,6 +13195,25 @@ window.normaliserNumeroWa = normaliserNumeroWa;
           }
         }
       }, 100);
+
+      // Injection de la bannière Adsterra sur la page détail
+      setTimeout(function() {
+        var adSlot = document.getElementById('adsterra-detail-slot');
+        if (adSlot) {
+          adSlot.innerHTML = ''; // Nettoyer au cas où
+          
+          var scriptOptions = document.createElement('script');
+          scriptOptions.type = 'text/javascript';
+          scriptOptions.text = "atOptions = { 'key' : '8d3e4ce37124ada21b5ed7e2c864853e', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };";
+          
+          var scriptLoader = document.createElement('script');
+          scriptLoader.type = 'text/javascript';
+          scriptLoader.src = "https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e";
+          
+          adSlot.appendChild(scriptOptions);
+          adSlot.appendChild(scriptLoader);
+        }
+      }, 500);
     }
 
     /**
@@ -25338,6 +25382,14 @@ setTimeout(function() {
     window.etapeSignupPrecedente = etapeSignupPrecedente;
     window.terminerInscription = terminerInscription;
     window.fermerInscriptionFinal = fermerInscriptionFinal;
+
+    // Contrôle chargement unique du Social Bar Adsterra
+    function verifierAdsterraSocialBar() {
+      if (_adsterraSocialBarCharge) return;
+      _adsterraSocialBarCharge = true;
+      console.log("✅ Adsterra Social Bar chargé");
+    }
+    window.verifierAdsterraSocialBar = verifierAdsterraSocialBar;
   </script>
 
   <!-- ==========================================================
@@ -25570,5 +25622,9 @@ setTimeout(function() {
       </p>
     </div>
   </div>
+
+  <!-- ═══ ADSTERRA SOCIAL BAR ═══ -->
+  <script data-cfasync="false" src="https://bauval.org/14/edfde1105189c0492334656d2eea0944"></script>
+  <!-- ═══ FIN ADSTERRA SOCIAL BAR ═══ -->
 </body>
 </html>
