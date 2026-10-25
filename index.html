@@ -12096,8 +12096,12 @@
       // Carte publicitaire insérée en première position (avant la 1ère annonce)
       const pubHtml = premierePub ? genererHtmlCartePub(premierePub) : '';
 
-      // Rendu des cartes de compte
-      const annoncesHtml = liste.map(ad => {
+      // ═══ GÉNÉRATION AVEC PUB TOUTES LES 6 ANNONCES ═══
+      let htmlFinal = pubHtml; // La pub partenaire violette (en haut)
+      let compteur = 0;
+
+      liste.forEach(function(ad, index) {
+        // 1. Générer le HTML de la carte (même code qu'avant)
         const mediaHtml = ad.image ? 
           `<img src="${ad.image}" alt="${ad.titre}" loading="lazy">` : 
           `<div class="card-placeholder">
@@ -12110,10 +12114,10 @@
         const noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
         const isFav = estFavori(ad.id);
 
-        return `
-          <article class="ad-card ${estAnnonceBoostee(ad) ? 'boosted-card' : ''}" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
+        const carteHtml = `
+          <article class="ad-card ${(typeof estAnnonceBoostee === 'function' && estAnnonceBoostee(ad)) ? 'boosted-card' : ''}" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
             <div class="card-media">
-              ${estAnnonceBoostee(ad) ? '<div class="boost-badge">⭐ BOOSTÉ</div>' : ''}
+              ${(typeof estAnnonceBoostee === 'function' && estAnnonceBoostee(ad)) ? '<div class="boost-badge">⭐ BOOSTÉ</div>' : ''}
               ${mediaHtml}
               <div class="card-platform-badge">
                 <span>${(ad.plateforme && (ad.plateforme.toLowerCase().includes('mobile') || ad.plateforme.toLowerCase().includes('android') || ad.plateforme.toLowerCase().includes('ios'))) ? '📱' : '🎮'}</span>
@@ -12125,7 +12129,6 @@
                 data-fav-id="${ad.id}"
                 onclick="toggleFavori('${ad.id}', event)" 
                 title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
-                aria-label="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
               >
                 ${isFav ? '❤️' : '🤍'}
               </button>
@@ -12138,7 +12141,7 @@
                 <div class="card-price">${formaterPrix(ad.prix)}</div>
                 ${ad.puissance ? `<div class="card-power-badge">💪 ${escapeHtml(String(ad.puissance))}</div>` : ''}
               </div>
-              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}', '${ad.vendeurId || ''}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);" title="Voir le profil et les avis de ${ad.vendeur}">
+              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}', '${ad.vendeurId || ''}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                   <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: var(--text-white);">
                     <span title="${infoBadge.texte}" style="font-size: 14px;">${infoBadge.icone}</span>
@@ -12160,9 +12163,42 @@
             </div>
           </article>
         `;
-      }).join('');
 
-      container.innerHTML = pubHtml + annoncesHtml;
+        // 2. Ajouter la carte au HTML final
+        htmlFinal += carteHtml;
+        compteur++;
+
+        // 3. Toutes les 6 annonces, insérer le conteneur de pub (sauf si c'est la dernière annonce de la liste)
+        if (compteur === 6 && index < liste.length - 1) {
+          htmlFinal += `
+            <div class="adsterra-grid-slot" style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; margin: 10px 0; padding: 15px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; width: 100%; overflow: hidden;">
+              <!-- Bannière Adsterra - Grille -->
+            </div>
+          `;
+          compteur = 0; // Réinitialiser le compteur
+        }
+      });
+
+      container.innerHTML = htmlFinal;
+
+      // ═══ 2. INJECTER LE SCRIPT ADSTERRA DANS LES EMPLACEMENTS ═══
+      setTimeout(function() {
+        var slots = document.querySelectorAll('.adsterra-grid-slot');
+        slots.forEach(function(slot) {
+          slot.innerHTML = ''; // Nettoyer avant injection
+          
+          var scriptOptions = document.createElement('script');
+          scriptOptions.type = 'text/javascript';
+          scriptOptions.text = "atOptions = { 'key' : '8d3e4ce37124ada21b5ed7e2c864853e', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };";
+          
+          var scriptLoader = document.createElement('script');
+          scriptLoader.type = 'text/javascript';
+          scriptLoader.src = "https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e";
+          
+          slot.appendChild(scriptOptions);
+          slot.appendChild(scriptLoader);
+        });
+      }, 100);
     }
 
     /**
