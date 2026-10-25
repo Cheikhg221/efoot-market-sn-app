@@ -12181,22 +12181,40 @@
 
       container.innerHTML = htmlFinal;
 
-      // ═══ 2. INJECTER LE SCRIPT ADSTERRA DANS LES EMPLACEMENTS ═══
+      // ═══ 2. INJECTER LE SCRIPT ADSTERRA (Via iframe sécurisée) ═══
       setTimeout(function() {
         var slots = document.querySelectorAll('.adsterra-grid-slot');
         slots.forEach(function(slot) {
-          slot.innerHTML = ''; // Nettoyer avant injection
+          slot.innerHTML = '';
           
-          var scriptOptions = document.createElement('script');
-          scriptOptions.type = 'text/javascript';
-          scriptOptions.text = "atOptions = { 'key' : '8d3e4ce37124ada21b5ed7e2c864853e', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };";
+          // Créer une iframe qui va contenir le script Adsterra
+          var iframe = document.createElement('iframe');
+          iframe.style.width = '300px';
+          iframe.style.height = '250px';
+          iframe.style.border = 'none';
+          iframe.style.overflow = 'hidden';
+          iframe.scrolling = 'no';
+          iframe.frameBorder = '0';
           
-          var scriptLoader = document.createElement('script');
-          scriptLoader.type = 'text/javascript';
-          scriptLoader.src = "https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e";
+          slot.appendChild(iframe);
           
-          slot.appendChild(scriptOptions);
-          slot.appendChild(scriptLoader);
+          // Écrire le script Adsterra à l'intérieur de l'iframe
+          var iframeDoc = iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(`
+            <html>
+            <head>
+              <style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; }</style>
+            </head>
+            <body>
+              <script type="text/javascript">
+                atOptions = { 'key' : '8d3e4ce37124ada21b5ed7e2c864853e', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };
+              <\/script>
+              <script type="text/javascript" src="https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e"><\/script>
+            </body>
+            </html>
+          `);
+          iframeDoc.close();
         });
       }, 100);
     }
