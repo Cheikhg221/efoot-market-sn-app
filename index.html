@@ -127,6 +127,14 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/logo.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/logo.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/logo.png">
+
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- PWA & iOS Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EFoot Market">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#00C853">
 
   <!-- Police Google Fonts : Poppins -->
@@ -5454,6 +5462,17 @@
     </nav>
 
     <div class="landing-content">
+      <div id="pwa-install-banner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; background: linear-gradient(135deg, #131313 0%, #1a1a1a 100%); border: 1.5px solid #00C853; border-radius: 14px; padding: 14px 18px; box-shadow: 0 10px 30px rgba(0, 200, 83, 0.25); z-index: 9999; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img src="/logo.png" alt="EFoot" style="width: 40px; height: 40px; border-radius: 10px;">
+          <div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff;">Installer l'application</div>
+            <div style="font-size: 11.5px; color: #aaa;">Accès rapide depuis ton écran d'accueil</div>
+          </div>
+        </div>
+        <button type="button" onclick="installerPWA()" style="background: #00C853; color: #000; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12.5px; font-weight: 800; cursor: pointer; white-space: nowrap;">Installer</button>
+        <button type="button" onclick="fermerBannierePWA()" style="position: absolute; top: -8px; right: -8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+      </div>
       
       <!-- HERO -->
       <section class="landing-section landing-hero">
@@ -25444,6 +25463,69 @@ setTimeout(function() {
       console.log("✅ Adsterra Social Bar chargé");
     }
     window.verifierAdsterraSocialBar = verifierAdsterraSocialBar;
+
+    // ═══ PWA : Enregistrement du Service Worker ═══
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(reg) {
+            console.log('✅ Service Worker enregistré avec succès');
+          })
+          .catch(function(err) {
+            console.warn('⚠️ Erreur Service Worker:', err);
+          });
+      });
+    }
+
+    // ═══ PWA : Gestion de l'invite d'installation ═══
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Empêche Chrome d'afficher la mini-infobar par défaut
+      e.preventDefault();
+      // Stocke l'événement pour le déclencher manuellement plus tard
+      deferredPrompt = e;
+      
+      // Affiche notre propre bannière (sauf si l'utilisateur l'a déjà fermée)
+      if (!localStorage.getItem('pwa_banner_closed')) {
+        const banner = document.getElementById('pwa-install-banner');
+        if (banner) banner.style.display = 'flex';
+      }
+    });
+
+    function installerPWA() {
+      if (deferredPrompt) {
+        // Affiche l'invite d'installation native
+        deferredPrompt.prompt();
+        
+        // Attend le choix de l'utilisateur
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('✅ L\'utilisateur a installé l\'application');
+            afficherNotification("Application installée avec succès !", "📱");
+          } else {
+            console.log('❌ L\'utilisateur a refusé l\'installation');
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+
+    function fermerBannierePWA() {
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+      localStorage.setItem('pwa_banner_closed', 'true');
+    }
+
+    window.installerPWA = installerPWA;
+    window.fermerBannierePWA = fermerBannierePWA;
+
+    // Détecte si l'application est déjà installée
+    window.addEventListener('appinstalled', (evt) => {
+      console.log('✅ Application installée avec succès');
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+    });
   </script>
 
   <!-- ==========================================================
