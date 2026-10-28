@@ -12173,6 +12173,40 @@
       });
 
       container.innerHTML = htmlFinalAvecPubs;
+
+      // ═══ INJECTION MONETAG VIA IFRAME (Plus stable pour SPA) ═══
+      setTimeout(function() {
+        var slots = document.querySelectorAll('.monetag-grid-slot');
+        slots.forEach(function(slot) {
+          // Nettoyer le slot
+          slot.innerHTML = '<div style="color: #666; font-size: 10px; position: absolute; top: 8px; right: 12px; text-transform: uppercase; letter-spacing: 1px;">Publicité</div>';
+          
+          // Créer l'iframe
+          var iframe = document.createElement('iframe');
+          iframe.style.width = '100%';
+          iframe.style.height = '250px';
+          iframe.style.border = 'none';
+          iframe.style.overflow = 'hidden';
+          iframe.scrolling = 'no';
+          
+          slot.appendChild(iframe);
+          
+          // Injecter le code Monetag à l'intérieur
+          var iframeDoc = iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(`
+            <html>
+            <head>
+              <style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; }</style>
+            </head>
+            <body>
+              <script>(function(s){s.dataset.zone='12139782',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))<\/script>
+            </body>
+            </html>
+          `);
+          iframeDoc.close();
+        });
+      }, 200);
     }
 
     /**
