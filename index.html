@@ -5373,15 +5373,6 @@
       .signup-container { padding: 22px 18px 26px; }
       .signup-header h2 { font-size: 19px; }
     }
-
-    /* Masquer les iframes Adsterra sur les pages sensibles */
-    body.page-paiement iframe[src*="adsterra"],
-    body.page-paiement iframe[src*="bauval"],
-    body.page-escrow iframe[src*="adsterra"],
-    body.page-escrow iframe[src*="bauval"] {
-      display: none !important;
-      visibility: hidden !important;
-    }
   </style>
 
   <!-- Données structurées Schema.org (JSON-LD) -->
@@ -6418,20 +6409,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div style="display: flex; justify-content: center; align-items: center; margin: 30px auto; padding: 15px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; max-width: 320px; overflow: hidden;">
-        <!-- Adsterra Banner 300x250 - Accueil -->
-        <script type="text/javascript">
-          atOptions = {
-            'key' : '8d3e4ce37124ada21b5ed7e2c864853e',
-            'format' : 'iframe',
-            'height' : 250,
-            'width' : 300,
-            'params' : {}
-          };
-        </script>
-        <script type="text/javascript" src="https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e"></script>
       </div>
     </section>
 
@@ -8700,7 +8677,6 @@
     var uploadedImageBase64 = null;
     var pendingActionCallback = null;
     var publicationEnCours = false;
-    var _adsterraSocialBarCharge = false;
 
     var signupStep = 1;
     var signupData = {
@@ -12115,12 +12091,8 @@
       // Carte publicitaire insérée en première position (avant la 1ère annonce)
       const pubHtml = premierePub ? genererHtmlCartePub(premierePub) : '';
 
-      // ═══ GÉNÉRATION AVEC PUB TOUTES LES 6 ANNONCES ═══
-      let htmlFinal = pubHtml; // La pub partenaire violette (en haut)
-      let compteur = 0;
-
-      liste.forEach(function(ad, index) {
-        // 1. Générer le HTML de la carte (même code qu'avant)
+      // Rendu des cartes de compte
+      const annoncesHtml = liste.map(ad => {
         const mediaHtml = ad.image ? 
           `<img src="${ad.image}" alt="${ad.titre}" loading="lazy">` : 
           `<div class="card-placeholder">
@@ -12133,7 +12105,7 @@
         const noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
         const isFav = estFavori(ad.id);
 
-        const carteHtml = `
+        return `
           <article class="ad-card ${(typeof estAnnonceBoostee === 'function' && estAnnonceBoostee(ad)) ? 'boosted-card' : ''}" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
             <div class="card-media">
               ${(typeof estAnnonceBoostee === 'function' && estAnnonceBoostee(ad)) ? '<div class="boost-badge">⭐ BOOSTÉ</div>' : ''}
@@ -12148,6 +12120,7 @@
                 data-fav-id="${ad.id}"
                 onclick="toggleFavori('${ad.id}', event)" 
                 title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+                aria-label="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
               >
                 ${isFav ? '❤️' : '🤍'}
               </button>
@@ -12160,7 +12133,7 @@
                 <div class="card-price">${formaterPrix(ad.prix)}</div>
                 ${ad.puissance ? `<div class="card-power-badge">💪 ${escapeHtml(String(ad.puissance))}</div>` : ''}
               </div>
-              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}', '${ad.vendeurId || ''}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);">
+              <div class="card-seller-row" onclick="event.stopPropagation(); ouvrirProfilVendeur('${ad.vendeur}', '${ad.vendeurId || ''}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);" title="Voir le profil et les avis de ${ad.vendeur}">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                   <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: var(--text-white);">
                     <span title="${infoBadge.texte}" style="font-size: 14px;">${infoBadge.icone}</span>
@@ -12182,60 +12155,9 @@
             </div>
           </article>
         `;
+      }).join('');
 
-        // 2. Ajouter la carte au HTML final
-        htmlFinal += carteHtml;
-        compteur++;
-
-        // 3. Toutes les 6 annonces, insérer le conteneur de pub (sauf si c'est la dernière annonce de la liste)
-        if (compteur === 6 && index < liste.length - 1) {
-          htmlFinal += `
-            <div class="adsterra-grid-slot" style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; margin: 10px 0; padding: 15px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; width: 100%; overflow: hidden;">
-              <!-- Bannière Adsterra - Grille -->
-            </div>
-          `;
-          compteur = 0; // Réinitialiser le compteur
-        }
-      });
-
-      container.innerHTML = htmlFinal;
-
-      // ═══ 2. INJECTER LE SCRIPT ADSTERRA (Via iframe sécurisée) ═══
-      setTimeout(function() {
-        var slots = document.querySelectorAll('.adsterra-grid-slot');
-        slots.forEach(function(slot) {
-          slot.innerHTML = '';
-          
-          // Créer une iframe qui va contenir le script Adsterra
-          var iframe = document.createElement('iframe');
-          iframe.style.width = '300px';
-          iframe.style.height = '250px';
-          iframe.style.border = 'none';
-          iframe.style.overflow = 'hidden';
-          iframe.scrolling = 'no';
-          iframe.frameBorder = '0';
-          
-          slot.appendChild(iframe);
-          
-          // Écrire le script Adsterra à l'intérieur de l'iframe
-          var iframeDoc = iframe.contentWindow.document;
-          iframeDoc.open();
-          iframeDoc.write(`
-            <html>
-            <head>
-              <style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; }</style>
-            </head>
-            <body>
-              <script type="text/javascript">
-                atOptions = { 'key' : '8d3e4ce37124ada21b5ed7e2c864853e', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };
-              <\/script>
-              <script type="text/javascript" src="https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e"><\/script>
-            </body>
-            </html>
-          `);
-          iframeDoc.close();
-        });
-      }, 100);
+      container.innerHTML = pubHtml + annoncesHtml;
     }
 
     /**
@@ -13148,8 +13070,6 @@ window.normaliserNumeroWa = normaliserNumeroWa;
             <p>${escapeHtml(ad.description || 'Aucune description fournie.')}</p>
           </div>
 
-          <div id="adsterra-detail-slot" style="display: flex; justify-content: center; align-items: center; margin: 20px auto; padding: 15px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; max-width: 320px; overflow: hidden;"></div>
-
           <!-- Section Vendeur avec lien vers son profil & avis -->
           <div class="detail-seller-box" style="cursor: pointer;" onclick="ouvrirProfilVendeur('${escapeHtml(ad.vendeur || '')}', '${ad.vendeurId || ''}')" title="Voir le profil complet et les avis de ${nomVendeurAffiche}">
             <div class="seller-left">
@@ -13268,25 +13188,6 @@ window.normaliserNumeroWa = normaliserNumeroWa;
           }
         }
       }, 100);
-
-      // Injection de la bannière Adsterra sur la page détail
-      setTimeout(function() {
-        var adSlot = document.getElementById('adsterra-detail-slot');
-        if (adSlot) {
-          adSlot.innerHTML = ''; // Nettoyer au cas où
-          
-          var scriptOptions = document.createElement('script');
-          scriptOptions.type = 'text/javascript';
-          scriptOptions.text = "atOptions = { 'key' : '8d3e4ce37124ada21b5ed7e2c864853e', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };";
-          
-          var scriptLoader = document.createElement('script');
-          scriptLoader.type = 'text/javascript';
-          scriptLoader.src = "https://bauval.org/22/8d3e4ce37124ada21b5ed7e2c864853e";
-          
-          adSlot.appendChild(scriptOptions);
-          adSlot.appendChild(scriptLoader);
-        }
-      }, 500);
     }
 
     /**
@@ -25456,14 +25357,6 @@ setTimeout(function() {
     window.terminerInscription = terminerInscription;
     window.fermerInscriptionFinal = fermerInscriptionFinal;
 
-    // Contrôle chargement unique du Social Bar Adsterra
-    function verifierAdsterraSocialBar() {
-      if (_adsterraSocialBarCharge) return;
-      _adsterraSocialBarCharge = true;
-      console.log("✅ Adsterra Social Bar chargé");
-    }
-    window.verifierAdsterraSocialBar = verifierAdsterraSocialBar;
-
     // ═══ PWA : Enregistrement du Service Worker ═══
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
@@ -25758,9 +25651,5 @@ setTimeout(function() {
       </p>
     </div>
   </div>
-
-  <!-- ═══ ADSTERRA SOCIAL BAR ═══ -->
-  <script data-cfasync="false" src="https://bauval.org/14/edfde1105189c0492334656d2eea0944"></script>
-  <!-- ═══ FIN ADSTERRA SOCIAL BAR ═══ -->
 </body>
 </html>
