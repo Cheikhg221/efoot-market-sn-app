@@ -83,9 +83,9 @@
   </script>
 
   <!-- Scripts Firebase SDK Compat chargés de manière sécurisée -->
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" crossorigin="anonymous"></script>
   <script>
     if (typeof firebase !== 'undefined' && firebase.firestore && typeof firebase.firestore.setLogLevel === 'function') {
       try {
@@ -8783,21 +8783,18 @@
         db = firebase.firestore();
         try {
           db.settings({
-            experimentalAutoDetectLongPolling: true
+            experimentalAutoDetectLongPolling: true,
+            merge: true
           });
         } catch (errSettings) {
           try {
             db.settings({
-              experimentalForceLongPolling: true
+              experimentalForceLongPolling: true,
+              merge: true
             });
           } catch (errSettings2) {
             console.warn("Paramètres Firestore non appliqués :", errSettings2);
           }
-        }
-        if (typeof db.enablePersistence === 'function') {
-          db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
-            console.warn("ℹ️ Persistance hors-ligne Firestore :", err ? (err.code || err.message) : "");
-          });
         }
         auth = firebase.auth();
       }
@@ -12274,10 +12271,9 @@
       }
 
       try {
-        // Requête 1 : annonces actives
+        // Requête 1 : annonces actives (triées côté client dans combinerAnnonces)
         db.collection("annonces")
           .where("statut", "==", "active")
-          .orderBy("datePublication", "desc")
           .onSnapshot(function(snapshot) {
             clearTimeout(securiteFirestore);
             annoncesActives = [];
@@ -12286,29 +12282,13 @@
             });
             combinerAnnonces();
           }, function(error) {
-            console.warn("Erreur requête actives, repli sans orderBy :", error);
-            try {
-              db.collection("annonces")
-                .where("statut", "==", "active")
-                .onSnapshot(function(snapshot) {
-                  clearTimeout(securiteFirestore);
-                  annoncesActives = [];
-                  snapshot.forEach(function(doc) {
-                    annoncesActives.push({ id: doc.id, ...doc.data() });
-                  });
-                  combinerAnnonces();
-                }, function(errFallback) {
-                  console.warn("Erreur repli Firestore actives :", errFallback);
-                });
-            } catch (exActives) {
-              console.warn("Exception repli Firestore actives :", exActives);
-            }
+            console.warn("Erreur écoute Firestore annonces actives :", error);
+            combinerAnnonces();
           });
 
-        // Requête 2 : annonces en cours
+        // Requête 2 : annonces en cours (triées côté client dans combinerAnnonces)
         db.collection("annonces")
           .where("statut", "==", "en_cours")
-          .orderBy("datePublication", "desc")
           .onSnapshot(function(snapshot) {
             clearTimeout(securiteFirestore);
             annoncesEnCours = [];
@@ -12317,23 +12297,8 @@
             });
             combinerAnnonces();
           }, function(error) {
-            console.warn("Erreur requête en_cours, repli sans orderBy :", error);
-            try {
-              db.collection("annonces")
-                .where("statut", "==", "en_cours")
-                .onSnapshot(function(snapshot) {
-                  clearTimeout(securiteFirestore);
-                  annoncesEnCours = [];
-                  snapshot.forEach(function(doc) {
-                    annoncesEnCours.push({ id: doc.id, ...doc.data() });
-                  });
-                  combinerAnnonces();
-                }, function(errFallback) {
-                  console.warn("Erreur repli Firestore en_cours :", errFallback);
-                });
-            } catch (exEnCours) {
-              console.warn("Exception repli Firestore en_cours :", exEnCours);
-            }
+            console.warn("Erreur écoute Firestore annonces en_cours :", error);
+            combinerAnnonces();
           });
 
         // Requête 3 : annonces du vendeur connecté en attente de confirmation acheteur

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'efoot-market-sn-v2';
+const CACHE_NAME = 'efoot-market-sn-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
