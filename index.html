@@ -12091,8 +12091,10 @@
       // Carte publicitaire insérée en première position (avant la 1ère annonce)
       const pubHtml = premierePub ? genererHtmlCartePub(premierePub) : '';
 
-      // Rendu des cartes de compte
-      const annoncesHtml = liste.map(ad => {
+      let htmlFinalAvecPubs = pubHtml;
+      let compteur = 0;
+
+      liste.forEach(function(ad, index) {
         const mediaHtml = ad.image ? 
           `<img src="${ad.image}" alt="${ad.titre}" loading="lazy">` : 
           `<div class="card-placeholder">
@@ -12105,7 +12107,7 @@
         const noteAffichage = statsVendeur.totalAvis > 0 ? statsVendeur.noteMoyenne.toFixed(1) : null;
         const isFav = estFavori(ad.id);
 
-        return `
+        const carteHtml = `
           <article class="ad-card ${(typeof estAnnonceBoostee === 'function' && estAnnonceBoostee(ad)) ? 'boosted-card' : ''}" onclick="changerPage('detail', { annonceId: '${ad.id}' })">
             <div class="card-media">
               ${(typeof estAnnonceBoostee === 'function' && estAnnonceBoostee(ad)) ? '<div class="boost-badge">⭐ BOOSTÉ</div>' : ''}
@@ -12155,9 +12157,39 @@
             </div>
           </article>
         `;
-      }).join('');
 
-      container.innerHTML = pubHtml + annoncesHtml;
+        htmlFinalAvecPubs += carteHtml; 
+        compteur++;
+
+        // 2. Toutes les 6 annonces, insérer le conteneur de pub (sauf si c'est la dernière)
+        if (compteur === 6 && index < liste.length - 1) {
+          htmlFinalAvecPubs += `
+            <div class="monetag-grid-slot" style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; margin: 15px 0; padding: 20px 10px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; min-height: 250px; max-width: 100%; overflow: hidden; position: relative;">
+              <div style="color: #666; font-size: 10px; position: absolute; top: 8px; right: 12px; text-transform: uppercase; letter-spacing: 1px;">Publicité</div>
+              <!-- Emplacement Monetag -->
+            </div>
+          `;
+          compteur = 0; // Réinitialiser le compteur
+        }
+      });
+
+      container.innerHTML = htmlFinalAvecPubs;
+
+      // ═══ INJECTION MONETAG (Zone 12139782) ═══
+      setTimeout(function() {
+        var slots = document.querySelectorAll('.monetag-grid-slot');
+        slots.forEach(function(slot) {
+          // Nettoyer le slot avant d'injecter
+          slot.innerHTML = '<div style="color: #666; font-size: 10px; position: absolute; top: 8px; right: 12px; text-transform: uppercase; letter-spacing: 1px;">Publicité</div>';
+          
+          // Injection du script Monetag
+          var script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.text = "(function(s){s.dataset.zone='12139782',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))";
+          
+          slot.appendChild(script);
+        });
+      }, 150);
     }
 
     /**
@@ -25651,5 +25683,9 @@ setTimeout(function() {
       </p>
     </div>
   </div>
+
+  <!-- ═══ MONETAG GLOBAL ═══ -->
+  <script>(function(s){s.dataset.zone='11862065',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <!-- ═══ FIN MONETAG GLOBAL ═══ -->
 </body>
 </html>
