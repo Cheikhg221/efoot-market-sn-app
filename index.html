@@ -5428,11 +5428,6 @@
   <meta name="google-adsense-account" content="ca-pub-1829251294223331">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1829251294223331" crossorigin="anonymous"></script>
 
-  <!-- ═══ MONETAG SCRIPTS ═══ -->
-  <!-- Zone 3 : In-Page Push (Grille) -->
-  <script>(function(s){s.dataset.zone='12139782',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  <!-- ═══ FIN MONETAG SCRIPTS ═══ -->
-
 </head>
 <body>
 
@@ -12178,19 +12173,6 @@
       });
 
       container.innerHTML = htmlFinalAvecPubs;
-
-      setTimeout(function() {
-        var slots = document.querySelectorAll('.monetag-grid-slot');
-        slots.forEach(function(slot) {
-          slot.innerHTML = '<div style="color: #666; font-size: 10px; position: absolute; top: 8px; right: 12px; text-transform: uppercase; letter-spacing: 1px;">Publicité</div>';
-          
-          var script = document.createElement('script');
-          script.type = 'text/javascript';
-          script.text = "(function(s){s.dataset.zone='12139782',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))";
-          
-          slot.appendChild(script);
-        });
-      }, 150);
     }
 
     /**
