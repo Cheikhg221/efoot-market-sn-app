@@ -5425,6 +5425,17 @@
   <meta name="google-adsense-account" content="ca-pub-1829251294223331">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1829251294223331" crossorigin="anonymous"></script>
 
+  <!-- ═══ MONETAG SCRIPTS ═══ -->
+  <!-- Zone 1 : In-Page Push Global -->
+  <script>(function(s){s.dataset.zone='11862065',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+
+  <!-- Zone 2 : Vignette (flottante) -->
+  <script>(function(s){s.dataset.zone='12139769',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+
+  <!-- Zone 3 : In-Page Push (Grille) -->
+  <script>(function(s){s.dataset.zone='12139782',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <!-- ═══ FIN MONETAG SCRIPTS ═══ -->
+
 </head>
 <body>
 
@@ -12166,30 +12177,13 @@
           htmlFinalAvecPubs += `
             <div class="monetag-grid-slot" style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; margin: 15px 0; padding: 20px 10px; background: #131313; border-radius: 12px; border: 1px solid #2a2a2a; min-height: 250px; max-width: 100%; overflow: hidden; position: relative;">
               <div style="color: #666; font-size: 10px; position: absolute; top: 8px; right: 12px; text-transform: uppercase; letter-spacing: 1px;">Publicité</div>
-              <!-- Emplacement Monetag -->
             </div>
           `;
-          compteur = 0; // Réinitialiser le compteur
+          compteur = 0;
         }
       });
 
       container.innerHTML = htmlFinalAvecPubs;
-
-      // ═══ INJECTION MONETAG (Zone 12139782) ═══
-      setTimeout(function() {
-        var slots = document.querySelectorAll('.monetag-grid-slot');
-        slots.forEach(function(slot) {
-          // Nettoyer le slot avant d'injecter
-          slot.innerHTML = '<div style="color: #666; font-size: 10px; position: absolute; top: 8px; right: 12px; text-transform: uppercase; letter-spacing: 1px;">Publicité</div>';
-          
-          // Injection du script Monetag
-          var script = document.createElement('script');
-          script.type = 'text/javascript';
-          script.text = "(function(s){s.dataset.zone='12139782',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))";
-          
-          slot.appendChild(script);
-        });
-      }, 150);
     }
 
     /**
@@ -25683,9 +25677,5 @@ setTimeout(function() {
       </p>
     </div>
   </div>
-
-  <!-- ═══ MONETAG GLOBAL ═══ -->
-  <script>(function(s){s.dataset.zone='11862065',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  <!-- ═══ FIN MONETAG GLOBAL ═══ -->
 </body>
 </html>
