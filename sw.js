@@ -24,6 +24,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.url.includes('firebase') || 
+      event.request.url.includes('googleapis') || 
+      event.request.url.includes('firestore')) {
+    return; // On ne touche pas à Firebase
+  }
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;

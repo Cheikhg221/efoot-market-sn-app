@@ -11262,31 +11262,6 @@
     }
 
     /**
-     * Affiche un message d'erreur si le chargement des annonces a échoué
-     */
-    function afficherErreurChargement() {
-      var container = document.getElementById('products-grid-container');
-      var counter = document.getElementById('ads-counter');
-      if (counter) counter.textContent = "?";
-      if (!container) return;
-      
-      container.innerHTML = `
-        <div class="empty-state" style="grid-column: 1 / -1; padding: 60px 20px;">
-          <div class="empty-icon" style="font-size: 56px;">📡</div>
-          <div class="empty-title" style="font-size: 20px;">Connexion lente détectée</div>
-          <div class="empty-desc" style="font-size: 14px; max-width: 400px; line-height: 1.6;">
-            Le chargement des annonces prend plus de temps que prévu.<br>
-            Cela peut arriver sur une connexion mobile lente.
-          </div>
-          <button class="btn-primary" onclick="location.reload()" 
-            style="padding: 14px 28px; font-size: 15px; margin-top: 10px;">
-            🔄 Recharger la page
-          </button>
-        </div>
-      `;
-    }
-
-    /**
      * Filtre et trie les annonces en fonction des critères sélectionnés
      */
     function appliquerFiltres() {
@@ -12166,121 +12141,47 @@
     /**
      * 2. AFFICHER LES ANNONCES (temps réel avec Firebase Firestore)
      */
-    function afficherAnnonces(arg) {
-      // Si une liste filtrée est passée directement en paramètre
-      if (Array.isArray(arg)) {
-        afficherCartes(arg);
-        return;
-      }
-
-      // Compteur pour savoir quand les 2 requêtes ont fini
-      var annoncesActives = [];
-      var annoncesEnCours = [];
-      var requetesTerminees = 0;
-
-      // Timeout de secours étendu à 20 secondes (pour éviter les faux "0 annonces")
-      var securiteFirestore = setTimeout(function() {
-        if (!annoncesChargees && requetesTerminees < 2) {
-          console.warn("⚠️ Firestore n'a pas répondu après 20s, on force l'affichage");
-          // On ne montre PAS l'empty state, on garde le skeleton et on log
-          // Seulement si vraiment aucune requête n'a été reçue
-          if (typeof afficherErreurChargement === 'function') {
-            afficherErreurChargement();
-          }
-        }
-      }, 20000);
-
-      function combinerAnnonces() {
-        requetesTerminees++;
-        if (requetesTerminees >= 2) {
-          clearTimeout(securiteFirestore);
-          var toutesAnnonces = annoncesActives.concat(annoncesEnCours);
-          
-          // Supprimer les doublons éventuels
-          var mapUniq = new Map();
-          toutesAnnonces.forEach(function(a) { mapUniq.set(a.id, a); });
-          var annonces = Array.from(mapUniq.values());
-          
-          // Trier par date décroissante
-          annonces.sort(function(a, b) {
-            var timeA = (a.datePublication && a.datePublication.toMillis) ? a.datePublication.toMillis() : new Date(a.datePublication || a.date || 0).getTime();
-            var timeB = (b.datePublication && b.datePublication.toMillis) ? b.datePublication.toMillis() : new Date(b.datePublication || b.date || 0).getTime();
-            return timeB - timeA;
-          });
-          
-          annoncesFirestore = annonces;
-          annoncesChargees = true;  // ← IMPORTANT : avant appliquerFiltres
-          
-          // Aucune annonce : afficher l'état vide normal
-          // (pas de seeding automatique)
-          
-          // Rafraîchir l'affichage en temps réel
-          if (currentPage === 'accueil') {
-            appliquerFiltres();
-          } else if (currentPage === 'mes-annonces') {
-            afficherMesAnnonces();
-          } else if (currentPage === 'favoris') {
-            afficherFavoris();
-          } else if (currentPage === 'detail' && currentDetailAdId) {
-            afficherDetailAnnonce(currentDetailAdId);
-          }
-          verifierLienPartageUrl();
-        }
-      }
-
-      // Si déjà initialisé, ne pas relancer
-      if (firestoreUnsubscribeAnnonces === true) {
-        clearTimeout(securiteFirestore);
-        return;
-      }
-
+    function afficherAnnonces() {
+      if (firestoreUnsubscribeAnnonces) return;
+      
       if (!db) {
-        clearTimeout(securiteFirestore);
         console.warn("Firestore non disponible");
-        var annoncesLocales = []; // Plus utilisé, Firestore est la source
         annoncesChargees = true;
         if (currentPage === 'accueil') appliquerFiltres();
         return;
       }
 
       try {
-        // Requête 1 : annonces actives (triées côté client dans combinerAnnonces)
-        db.collection("annonces")
-          .where("statut", "==", "active")
+        // Une seule requête pour TOUTES les annonces (plus rapide)
+        firestoreUnsubscribeAnnonces = db.collection("annonces")
+          .orderBy("datePublication", "desc")
           .onSnapshot(function(snapshot) {
-            clearTimeout(securiteFirestore);
-            annoncesActives = [];
+            var toutesAnnonces = [];
             snapshot.forEach(function(doc) {
-              annoncesActives.push({ id: doc.id, ...doc.data() });
+              var data = doc.data();
+              var s = (data.statut || '').toLowerCase();
+              
+              // On garde uniquement les annonces visibles
+              if (s === 'active' || s === 'en_cours' || s === 'active') {
+                toutesAnnonces.push({ id: doc.id, ...data });
+              }
             });
-            combinerAnnonces();
+            
+            annoncesFirestore = toutesAnnonces;
+            annoncesChargees = true;
+            
+            // Rafraîchir l'affichage
+            if (currentPage === 'accueil') appliquerFiltres();
+            if (currentPage === 'mes-annonces') afficherMesAnnonces();
+            if (currentPage === 'favoris') afficherFavoris();
+            if (currentPage === 'detail' && currentDetailAdId) afficherDetailAnnonce(currentDetailAdId);
+            
           }, function(error) {
-            console.warn("Erreur écoute Firestore annonces actives :", error);
-            combinerAnnonces();
+            console.warn("Erreur Firestore annonces :", error);
           });
-
-        // Requête 2 : annonces en cours (triées côté client dans combinerAnnonces)
-        db.collection("annonces")
-          .where("statut", "==", "en_cours")
-          .onSnapshot(function(snapshot) {
-            clearTimeout(securiteFirestore);
-            annoncesEnCours = [];
-            snapshot.forEach(function(doc) {
-              annoncesEnCours.push({ id: doc.id, ...doc.data() });
-            });
-            combinerAnnonces();
-          }, function(error) {
-            console.warn("Erreur écoute Firestore annonces en_cours :", error);
-            combinerAnnonces();
-          });
-
-        // Requête 3 : annonces du vendeur connecté en attente de confirmation acheteur
-        ecouterAnnoncesEnAttenteFirestore();
-
-        firestoreUnsubscribeAnnonces = true;
-
+          
       } catch (e) {
-        console.error("Erreur initialisation Firestore :", e);
+        console.error("Erreur init Firestore :", e);
       }
     }
 
@@ -24333,6 +24234,12 @@ function annulerTransaction(demandeId, annonceId) {
        SECTION 10 : INITIALISATION DE L'APPLICATION AU DÉMARRAGE
        ========================================================== */
     function initialiserApplication() {
+      // Nettoyage préventif du localStorage
+      try {
+        localStorage.removeItem('efoot_annonces'); // Ancien cache inutile
+        localStorage.removeItem('efoot_banner_escrow_dismissed');
+      } catch(e) {}
+
 // Nettoyage de sécurité : à chaque chargement, vérifier qu'il n'y a pas 
 // d'escrow orphelin dont la demande est annulée
 setTimeout(function() {
@@ -24479,13 +24386,6 @@ setTimeout(function() {
             });
         }
       }, 2000);
-
-      setTimeout(function() {
-        if (!annoncesChargees) {
-          console.warn("Firestore n'a pas répondu après 25 secondes - affichage erreur");
-          afficherErreurChargement();
-        }
-      }, 25000);
 
       try {
         // Démarrer l'écoute temps réel de la collection Firestore "annonces"
